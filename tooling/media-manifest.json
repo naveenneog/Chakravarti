@@ -1,0 +1,17 @@
+{
+  "chapter": "kalinga",
+  "audio": {
+    "output": "public/media/kalinga-intro-en-IN.mp3",
+    "voice": "en-IN-PrabhatNeural",
+    "language": "en-IN",
+    "rate": "-4%",
+    "pitch": "0%",
+    "text": "Before empire became remorse, Kalinga stood beyond Mauryan rule. Command the advance, weigh every loss, and discover what Ashoka's own edict records, and what history leaves unknown."
+  },
+  "video": {
+    "output": "public/media/kalinga-intro.mp4",
+    "seconds": "8",
+    "size": "720x1280",
+    "prompt": "Eight-second vertical cinematic chapter introduction for a historically grounded strategy game set during the Mauryan conquest of Kalinga, circa third century BCE. Dawn over the forested eastern Indian landscape, a broad river in mist, disciplined Mauryan infantry and war elephants seen from a respectful distance, Kalingan defenders holding higher ground, carved stone and period-appropriate natural materials, monumental scale but sober human tone. The camera rises slowly from trampled earth to the two distant armies, then settles on an unoccupied stone command seal as dust moves through warm light. No named ruler portrait, no gore, no fantasy armor, no modern flags, no text, no logos, no deities, no anachronistic architecture. Cinematic realism, archaeological restraint, deep crimson cloth accents, mobile portrait composition with the focal action in the center."
+  }
+}
