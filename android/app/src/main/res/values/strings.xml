@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chakravarti</string>
+    <string name="title_activity_main">Chakravarti</string>
+    <string name="package_name">com.naveenneog.chakravarti</string>
+    <string name="custom_url_scheme">com.naveenneog.chakravarti</string>
+</resources>

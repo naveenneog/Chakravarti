@@ -4,6 +4,11 @@ A mobile-first, turn-based historical strategy anthology about Indian rulers,
 defenders, and decisive wars. The first playable vertical slice is **The Cost
 of Kalinga**, set during the Mauryan conquest around 261 BCE.
 
+**Play:** <https://naveenneog.github.io/Chakravarti/>  
+**Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.2.0/Chakravarti-v0.2.0.apk>
+
+![Kalinga chapter cinematic](public/media/kalinga-intro-poster.jpg)
+
 The game never treats tactical invention as established history. Every chapter
 separates:
 
@@ -42,13 +47,30 @@ npm run lint
 
 ## Distribution direction
 
-1. **Mobile first:** PWA, then Capacitor packaging for Android and iOS.
+1. **Mobile first:** installable PWA and Capacitor Android APK.
 2. **Desktop second:** the same React rules and content packaged with Tauri,
    adding keyboard shortcuts, larger maps, and expanded command panels.
 
 The rules engine and scenario data stay platform-neutral so mobile and desktop
 do not fork into different games.
 
-See [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md),
-[docs/HISTORICAL_METHOD.md](docs/HISTORICAL_METHOD.md), and
-[docs/AZURE_MEDIA_PIPELINE.md](docs/AZURE_MEDIA_PIPELINE.md).
+See [project-docs/GAME_DESIGN.md](project-docs/GAME_DESIGN.md),
+[project-docs/HISTORICAL_METHOD.md](project-docs/HISTORICAL_METHOD.md), and
+[project-docs/AZURE_MEDIA_PIPELINE.md](project-docs/AZURE_MEDIA_PIPELINE.md).
+
+## Android package
+
+```powershell
+npm run apk
+```
+
+This produces `Chakravarti-v<version>.apk`, signed with the Android debug key
+for direct installation and GitHub release distribution.
+
+## GitHub Pages package
+
+```powershell
+npm run build:pages
+```
+
+The generated `docs/` directory is the deployable GitHub Pages site.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 - 2026-07-12
+
+### Added
+
+- Capacitor Android application with portrait-first native packaging.
+- Branded launcher icons and splash screens generated without vulnerable tooling.
+- Debug-signed release APK build script and versioned APK artifact.
+- Generated `docs/` production site for GitHub Pages.
+- PolyForm Noncommercial 1.0.0 license.
+
 ## 0.1.0 - 2026-07-12
 
 ### Added

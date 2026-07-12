@@ -15,6 +15,7 @@ dist-ssr
 tooling/.media-state.json
 __pycache__/
 *.pyc
+Chakravarti-v*.apk
 
 # Editor directories and files
 .vscode/*

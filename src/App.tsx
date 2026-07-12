@@ -147,6 +147,7 @@ function HomeView({
           <video
             className="hero-video"
             src="./media/kalinga-intro.mp4"
+            poster="./media/kalinga-intro-poster.jpg"
             autoPlay
             muted
             loop

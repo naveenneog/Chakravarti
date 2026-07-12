@@ -1,22 +1,30 @@
 {
   "name": "chakravarti-chronicles",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "build:pages": "tsc -b && vite build --outDir docs --emptyOutDir",
+    "lint": "oxlint src vite.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:add": "cap add android",
+    "cap:sync": "npm run build && cap sync android",
+    "apk": "powershell -ExecutionPolicy Bypass -File tooling\\build_apk.ps1"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "lucide-react": "^1.23.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.1",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

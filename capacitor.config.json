@@ -1,0 +1,11 @@
+{
+  "appId": "com.naveenneog.chakravarti",
+  "appName": "Chakravarti",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#f7f4ef"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
