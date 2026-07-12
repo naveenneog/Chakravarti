@@ -473,7 +473,7 @@
   left: 12px;
   z-index: 40;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   padding: 6px;
   border: 1px solid var(--cp-border);
@@ -844,6 +844,21 @@
 
 .text-button:hover {
   background: var(--cp-surface-soft);
+}
+
+.app-loading {
+  display: grid;
+  min-height: 320px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: var(--cp-accent);
+  text-align: center;
+}
+
+.app-loading h2 {
+  margin: 0;
+  color: var(--cp-text);
 }
 
 @media (min-width: 640px) {

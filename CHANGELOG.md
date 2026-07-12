@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0 - 2026-07-12
+
+### Added
+
+- Separate **Mauryan Rise** campaign centered on Chandragupta Maurya and
+  Kautilya without merging their period into Ashoka's Kalinga chapter.
+- Mobile-first low-poly 3D Magadha province with Pataliputra, river, buildings,
+  army camp, characters, guided camera, and device-quality safeguards.
+- Six-season deterministic kingdom loop covering construction, resources,
+  recruitment, upkeep, legitimacy, readiness, threat, and three endings.
+- Six in-context council debates with evidence category, source ID, explanation,
+  forecasts, and consequences visible before commitment.
+- Infantry, archers, cavalry, and elephants with distinct requirements, upkeep,
+  formation bonuses, and strategic roles.
+- Pre-resolved 3D border-war vignette with pause, skip, and identical fallback
+  outcomes.
+- Versioned local saves, invalid-save backup, ordered command log, and replay
+  tests.
+- Full accessible HTML campaign mode for devices without WebGL.
+- Original adaptive Web Audio score for world, council, battle, and aftermath.
+- Azure Speech voices for Chandragupta, Kautilya, and the campaign narrator.
+- Azure Sora vertical cinematic and poster for the Mauryan campaign.
+- Reviewed historical and architecture roadmap with mobile performance budgets.
+
 ## 0.2.0 - 2026-07-12
 
 ### Added

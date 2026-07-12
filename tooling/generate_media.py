@@ -330,15 +330,28 @@ def generate_video(config: dict[str, Any], force: bool) -> pathlib.Path:
 
 
 def main() -> None:
+    global MANIFEST_PATH, STATE_PATH
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio", action="store_true", help="Generate narration only.")
     parser.add_argument("--video", action="store_true", help="Generate Sora intro only.")
+    parser.add_argument(
+        "--manifest",
+        default=str(MANIFEST_PATH),
+        help="Media manifest JSON path.",
+    )
+    parser.add_argument(
+        "--state",
+        default=str(STATE_PATH),
+        help="Sora submission state path.",
+    )
     parser.add_argument(
         "--force-video",
         action="store_true",
         help="Submit a new paid Sora render even when state or output exists.",
     )
     arguments = parser.parse_args()
+    MANIFEST_PATH = pathlib.Path(arguments.manifest).resolve()
+    STATE_PATH = pathlib.Path(arguments.state).resolve()
     manifest = load_json(MANIFEST_PATH)
     run_audio = arguments.audio or not arguments.video
     run_video = arguments.video or not arguments.audio

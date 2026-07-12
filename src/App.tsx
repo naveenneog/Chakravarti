@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import {
   BookOpen,
   ChevronRight,
@@ -35,12 +35,16 @@ import type {
   EvidenceKind,
 } from './game/types'
 
-type View = 'home' | 'battle' | 'codex'
+type View = 'home' | 'maurya' | 'battle' | 'codex'
+
+const MauryaCampaign = lazy(() => import('./maurya/MauryaCampaign'))
 
 const evidenceLabels: Record<EvidenceKind, string> = {
-  recorded: 'Recorded evidence',
-  'source-claim': 'Claim in primary source',
-  reconstruction: 'Gameplay reconstruction',
+  'recorded-evidence': 'Recorded evidence',
+  'claim-in-source': 'Claim in primary source',
+  'scholarly-inference': 'Scholarly inference',
+  'gameplay-reconstruction': 'Gameplay reconstruction',
+  'literary-tradition': 'Literary tradition',
 }
 
 const resultCopy: Record<
@@ -125,12 +129,14 @@ function CampaignCard({
 }
 
 function HomeView({
-  onStart,
+  onMaurya,
+  onKalinga,
   onCodex,
   videoFailed,
   setVideoFailed,
 }: {
-  onStart: () => void
+  onMaurya: () => void
+  onKalinga: () => void
   onCodex: () => void
   videoFailed: boolean
   setVideoFailed: (failed: boolean) => void
@@ -146,8 +152,8 @@ function HomeView({
         {!videoFailed ? (
           <video
             className="hero-video"
-            src="./media/kalinga-intro.mp4"
-            poster="./media/kalinga-intro-poster.jpg"
+            src="./media/maurya/intro.mp4"
+            poster="./media/maurya/intro-poster.jpg"
             autoPlay
             muted
             loop
@@ -171,9 +177,13 @@ function HomeView({
             and the tactical reconstruction needed to make history playable.
           </p>
           <div className="hero-actions">
-            <button className="primary-button" type="button" onClick={onStart}>
+            <button className="primary-button" type="button" onClick={onMaurya}>
               <Swords size={19} />
-              Play the Kalinga chapter
+              Enter the 3D Mauryan kingdom
+            </button>
+            <button className="secondary-button" type="button" onClick={onKalinga}>
+              <Shield size={19} />
+              Play the Kalinga battle
             </button>
             <button className="secondary-button" type="button" onClick={onCodex}>
               <BookOpen size={19} />
@@ -199,7 +209,9 @@ function HomeView({
             <CampaignCard
               campaign={campaign}
               key={campaign.id}
-              onPlay={onStart}
+              onPlay={
+                campaign.id === 'mauryan-rise' ? onMaurya : onKalinga
+              }
             />
           ))}
         </div>
@@ -573,6 +585,10 @@ function App() {
     setView('battle')
   }
 
+  const startMaurya = () => {
+    setView('maurya')
+  }
+
   const toggleNarration = async () => {
     const audio = audioRef.current
     if (!audio || audioUnavailable) {
@@ -594,7 +610,7 @@ function App() {
     <div className="app-shell">
       <audio
         ref={audioRef}
-        src="./media/kalinga-intro-en-IN.mp3"
+        src="./media/maurya/intro-narration.mp3"
         preload="metadata"
         onPlay={() => setNarrating(true)}
         onPause={() => setNarrating(false)}
@@ -626,6 +642,13 @@ function App() {
             Chronicles
           </button>
           <button
+            className={`nav-button ${view === 'maurya' ? 'active' : ''}`}
+            type="button"
+            onClick={startMaurya}
+          >
+            Kingdom
+          </button>
+          <button
             className={`nav-button ${view === 'battle' ? 'active' : ''}`}
             type="button"
             onClick={startBattle}
@@ -642,36 +665,53 @@ function App() {
         </nav>
 
         <div className="header-actions">
-          <button
-            className="icon-button"
-            type="button"
-            onClick={toggleNarration}
-            disabled={audioUnavailable}
-            aria-label={
-              audioUnavailable
-                ? 'Narration unavailable'
-                : narrating
-                  ? 'Pause chapter narration'
+          {view !== 'maurya' ? (
+            <button
+              className="icon-button"
+              type="button"
+              onClick={toggleNarration}
+              disabled={audioUnavailable}
+              aria-label={
+                audioUnavailable
+                  ? 'Narration unavailable'
+                  : narrating
+                    ? 'Pause chapter narration'
+                    : 'Play chapter narration'
+              }
+              title={
+                audioUnavailable
+                  ? 'Narration unavailable'
                   : 'Play chapter narration'
-            }
-            title={
-              audioUnavailable
-                ? 'Narration unavailable'
-                : 'Play chapter narration'
-            }
-          >
-            {narrating ? <Pause size={19} /> : <Volume2 size={19} />}
-          </button>
+              }
+            >
+              {narrating ? <Pause size={19} /> : <Volume2 size={19} />}
+            </button>
+          ) : null}
         </div>
       </header>
 
       {view === 'home' ? (
         <HomeView
-          onStart={startBattle}
+          onMaurya={startMaurya}
+          onKalinga={startBattle}
           onCodex={() => setView('codex')}
           videoFailed={videoFailed}
           setVideoFailed={setVideoFailed}
         />
+      ) : null}
+      {view === 'maurya' ? (
+        <Suspense
+          fallback={
+            <main className="page">
+              <section className="panel-card app-loading">
+                <Crown size={28} />
+                <h2>Preparing the 3D kingdom...</h2>
+              </section>
+            </main>
+          }
+        >
+          <MauryaCampaign onExit={() => setView('home')} />
+        </Suspense>
       ) : null}
       {view === 'battle' ? (
         <BattleView
@@ -691,6 +731,14 @@ function App() {
         >
           <Home size={19} />
           Chronicles
+        </button>
+        <button
+          className={view === 'maurya' ? 'active' : ''}
+          type="button"
+          onClick={startMaurya}
+        >
+          <Crown size={19} />
+          Kingdom
         </button>
         <button
           className={view === 'battle' ? 'active' : ''}

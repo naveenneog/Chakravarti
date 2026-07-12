@@ -9,6 +9,10 @@ Azure CLI. No API keys or access tokens are stored in the repository.
 | --- | --- | --- |
 | English India narration | Azure AI Speech | `public/media/kalinga-intro-en-IN.mp3` |
 | Mobile chapter cinematic | Azure Sora 2 | `public/media/kalinga-intro.mp4` |
+| Mauryan campaign narration | Azure AI Speech | `public/media/maurya/intro-narration.mp3` |
+| Chandragupta council voice | Azure AI Speech | `public/media/maurya/chandragupta.mp3` |
+| Kautilya council voice | Azure AI Speech | `public/media/maurya/kautilya.mp3` |
+| Mauryan campaign cinematic | Azure Sora 2 | `public/media/maurya/intro.mp4` |
 
 The text, voice, prompt, duration, and output paths live in
 `tooling/media-manifest.json`.
@@ -30,13 +34,18 @@ az login
 ```powershell
 python tooling\generate_media.py --audio
 python tooling\generate_media.py --video
+python tooling\generate_maurya_voices.py
+python tooling\generate_media.py --video `
+  --manifest tooling\maurya-media-manifest.json `
+  --state tooling\.media-state-maurya.json
 ```
 
 Running with no mode flag generates both.
 
-The Sora path writes `tooling/.media-state.json` before the paid submission and
-stores the provider job ID before polling. A crashed or ambiguous submission is
-not automatically repeated. `--force-video` is an explicit paid re-render.
+Each Sora path writes its specified `tooling/.media-state*.json` before the paid
+submission and stores the provider job ID before polling. A crashed or ambiguous
+submission is not automatically repeated. `--force-video` is an explicit paid
+re-render.
 
 ## Media doctrine
 

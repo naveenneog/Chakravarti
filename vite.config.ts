@@ -4,6 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: './',
+  build: {
+    chunkSizeWarningLimit: 1000,
+  },
   plugins: [
     react(),
     VitePWA({
@@ -13,7 +16,7 @@ export default defineConfig({
         name: 'Chakravarti: Chronicles of Bharat',
         short_name: 'Chakravarti',
         description:
-          'A mobile-first historical strategy anthology about the rulers, defenders, and decisive wars of India.',
+          'A mobile-first 3D historical strategy anthology about Indian rulers, statecraft, kingdoms, and decisive wars.',
         display: 'standalone',
         start_url: './',
         scope: './',

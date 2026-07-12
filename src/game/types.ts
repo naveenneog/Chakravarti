@@ -16,7 +16,12 @@ export type BattleResult = 'maurya-victory' | 'kalinga-victory' | 'stalemate'
 
 export type CampaignStatus = 'playable' | 'planned' | 'research'
 
-export type EvidenceKind = 'recorded' | 'source-claim' | 'reconstruction'
+export type EvidenceKind =
+  | 'recorded-evidence'
+  | 'claim-in-source'
+  | 'scholarly-inference'
+  | 'gameplay-reconstruction'
+  | 'literary-tradition'
 
 export type Position = Readonly<{
   row: number

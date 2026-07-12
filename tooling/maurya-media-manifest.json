@@ -1,0 +1,9 @@
+{
+  "chapter": "mauryan-rise",
+  "video": {
+    "output": "public/media/maurya/intro.mp4",
+    "seconds": "8",
+    "size": "720x1280",
+    "prompt": "Eight-second vertical cinematic introduction for a historically responsible strategy game set in Magadha in the late fourth century BCE. From behind, a young Indian ruler and an older scholar-adviser stand on a timber watch platform overlooking a vast riverside capital inspired by ancient Pataliputra: wooden palisades, moat, river landing, irrigated fields, market stalls, army cantonment, infantry formations, cavalry, and a few carefully handled war elephants. The city is alive with construction and logistics rather than fantasy spectacle. The camera begins close behind the two figures, rises slowly to reveal the full province and Ganges corridor, then settles on the growing capital at dawn. Grand scale, sober statecraft, realistic natural materials, period-inspired plain textiles and equipment. No exact named-person facial portrait, no text, no logos, no gore, no fantasy armor, no modern flags, no deity imagery, no anachronistic stone palace skyline. Mobile portrait composition with key action centered."
+  }
+}

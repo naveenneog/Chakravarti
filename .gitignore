@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 .env
-tooling/.media-state.json
+tooling/.media-state*.json
 __pycache__/
 *.pyc
 Chakravarti-v*.apk

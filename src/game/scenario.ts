@@ -173,25 +173,25 @@ export const kalingaScenario: Scenario = {
   historyMoments: [
     {
       title: 'An independent Kalinga',
-      kind: 'recorded',
+      kind: 'recorded-evidence',
       text:
         'Kalinga was outside Mauryan control before the conquest. Its exact political organization and the identity of its wartime leaders are not securely known.',
     },
     {
       title: 'Ashoka records the human toll',
-      kind: 'source-claim',
+      kind: 'claim-in-source',
       text:
         "Major Rock Edict XIII says 150,000 people were deported, 100,000 were killed, and many more died. These are Ashoka's stated figures, not independently verified totals.",
     },
     {
       title: 'The battlefield is not preserved',
-      kind: 'reconstruction',
+      kind: 'gameplay-reconstruction',
       text:
         'No surviving Kalingan account gives formations, commanders, troop numbers, or a turn-by-turn battle. This map and every tactical unit are clearly labeled gameplay reconstruction.',
     },
     {
       title: 'From conquest to remorse',
-      kind: 'recorded',
+      kind: 'recorded-evidence',
       text:
         'The same edict expresses remorse for the suffering in Kalinga and presents conquest through dhamma as preferable to armed conquest.',
     },
@@ -199,6 +199,17 @@ export const kalingaScenario: Scenario = {
 }
 
 export const campaigns: readonly Campaign[] = [
+  {
+    id: 'mauryan-rise',
+    figure: 'Chandragupta Maurya and Kautilya',
+    title: 'Mauryan Rise',
+    era: 'c. 4th century BCE',
+    region: 'Magadha and the northwest',
+    status: 'playable',
+    evidence: '3D strategic reconstruction',
+    description:
+      'Build a living province, debate statecraft, recruit a fourfold army, and resolve a reconstructed frontier war across six seasons.',
+  },
   {
     id: 'kalinga',
     figure: 'Ashoka Maurya',
