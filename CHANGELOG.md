@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.0 - 2026-07-13
+
+### Added
+
+- Separate Unity 6 native action client under `unity/ChakravartiAction`.
+- Reproducible Unity scene bootstrap and automated Windows/Android build entry
+  points.
+- Third-person character controller, smooth follow camera, jump, sword combat,
+  recovery, guard pursuit, objectives, and an opening timber gate.
+- Rigged CC0 FBX hero and guards with extracted Idle, Run, Jump, SwordSlash,
+  Punch, RecieveHit, and Defeat clips.
+- Native scene lighting, fog, shadows, torches, materials, mobile controls, HUD,
+  and runtime-generated adaptive audio.
+- Deterministic native runtime smoke mode that moves, attacks, captures a
+  screenshot, and exits.
+- MCP for Unity v10 integration and GitHub Copilot CLI `unityMCP`
+  configuration.
+- Unity action architecture and build documentation.
+
+### Changed
+
+- The Unity client is now the production destination for release-facing action
+  gameplay. The web client remains the strategy, historical-content, and
+  browser-prototype surface.
+
 ## 0.4.2 - 2026-07-13
 
 ### Changed

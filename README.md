@@ -6,8 +6,15 @@ Kautilya's strategic planning to a playable third-person Chandragupta mission.
 The six-season **Mauryan Rise** kingdom campaign and earlier **Cost of Kalinga**
 tactical chapter remain playable.
 
+The production action client is now being rebuilt in **Unity 6** under
+`unity/ChakravartiAction`. The web build remains available as the strategy and
+historical-content prototype.
+
 **Play:** <https://naveenneog.github.io/Chakravarti/>  
 **Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.4.2/Chakravarti-v0.4.2.apk>
+
+**Unity Windows:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.5.0/ChakravartiAction-v0.5.0-Windows.zip>
+**Unity Android:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.5.0/ChakravartiAction-v0.5.0.apk>
 
 ![Mauryan Rise cinematic](public/media/maurya/intro-poster.jpg)
 
@@ -101,6 +108,8 @@ do not fork into different games.
 See [project-docs/GAME_DESIGN.md](project-docs/GAME_DESIGN.md),
 [project-docs/HISTORICAL_METHOD.md](project-docs/HISTORICAL_METHOD.md), and
 [project-docs/AZURE_MEDIA_PIPELINE.md](project-docs/AZURE_MEDIA_PIPELINE.md).
+The native action architecture is documented in
+[project-docs/UNITY_ACTION_ARCHITECTURE.md](project-docs/UNITY_ACTION_ARCHITECTURE.md).
 The reviewed expansion plan is in
 [project-docs/MAURYAN_RISE_ROADMAP.md](project-docs/MAURYAN_RISE_ROADMAP.md).
 Open-source and generated art provenance is in

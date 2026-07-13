@@ -28,6 +28,8 @@ The upstream license text is retained beside the model files.
 - Included files:
   - `public/models/cc0/quaternius-characters/BaseCharacter.gltf`
   - `public/models/cc0/quaternius-characters/Ninja_Sand.gltf`
+  - `unity/ChakravartiAction/Assets/Resources/Characters/Kimono_Male.fbx`
+  - `unity/ChakravartiAction/Assets/Resources/Characters/Ninja_Sand.fbx`
 - Use: rigged animation bases with embedded Idle, Run, Jump, SwordSlash,
   RecieveHit, and Defeat clips. The neutral base character receives original
   bone-attached dhoti, shoulder cloth, belt, hair, diadem, and sword geometry.
