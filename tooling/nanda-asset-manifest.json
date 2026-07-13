@@ -1,0 +1,53 @@
+{
+  "chapter": "fall-of-nandas",
+  "openSourceAssets": [
+    {
+      "id": "kenney-nature-tree-oak",
+      "creator": "Kenney",
+      "pack": "Nature Kit",
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "file": "public/models/cc0/kenney-nature/tree_oak.glb",
+      "use": "Generic broadleaf silhouette for the Gangetic plain; not presented as a specific botanical reconstruction."
+    },
+    {
+      "id": "kenney-nature-bush-large",
+      "creator": "Kenney",
+      "pack": "Nature Kit",
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0-1.0",
+      "file": "public/models/cc0/kenney-nature/plant_bushLarge.glb",
+      "use": "Low-poly courtyard vegetation."
+    }
+  ],
+  "generatedAssets": [
+    {
+      "id": "mauryan-storage-jar",
+      "concept": "public/media/nanda/asset-concepts/mauryan-storage-jar.png",
+      "output": "public/models/nanda/mauryan-storage-jar.glb",
+      "generator": "dcharlot65-aurasense/triposr-onnx-web",
+      "model": "https://huggingface.co/dcharlot65-aurasense/triposr-onnx-web",
+      "preferredSpace": "https://huggingface.co/spaces/trellis-community/TRELLIS",
+      "seed": 404321,
+      "license": "Project-original generated asset",
+      "historicalNote": "An original low-poly storage vessel inspired by broad ancient South Asian ceramic forms. It does not reproduce a specific museum object or claim an exact Nanda-period typology.",
+      "backendUsed": "onnx",
+      "bytes": 108828,
+      "sha256": "69ee2ebccbed9903ae51ebd3ee1ebcc8d95658cf0bd39796a7b0b4847e607498"
+    }
+  ],
+  "futureTargets": [
+    {
+      "id": "timber-gate-module",
+      "reason": "CC0 castle kits use European stone crenellations unlike Pataliputra's evidenced timber defenses."
+    },
+    {
+      "id": "mauryan-round-shield",
+      "reason": "Available CC0 weapon packs are visibly European and are suitable only as temporary animation placeholders."
+    },
+    {
+      "id": "chandragupta-hero-mesh",
+      "reason": "CC0 humanoids provide useful rigs and animations but not historically responsible Indian clothing silhouettes."
+    }
+  ]
+}

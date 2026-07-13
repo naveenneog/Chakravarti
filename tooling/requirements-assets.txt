@@ -1,0 +1,8 @@
+gradio_client==2.5.0
+Pillow==11.3.0
+huggingface_hub>=0.34.0
+numpy>=2.2.0
+onnxruntime>=1.23.0
+PyMCubes>=0.1.6
+trimesh>=4.7.0
+fast-simplification>=0.1.12
