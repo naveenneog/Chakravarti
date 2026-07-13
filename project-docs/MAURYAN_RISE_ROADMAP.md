@@ -141,6 +141,13 @@ evidence material, and command-mode fallback remain available but secondary.
 The hero is articulated and animated, the camera is closer, and all live mission
 UI is overlaid on the full-screen world.
 
+#### 0.4.2 - Grandiose presentation foundation
+
+Replace release-facing primitive characters with rigged CC0 animation bases and
+project-original costume geometry. Add adaptive score, ambience, event-driven
+effects, shadows, torch lighting, dark-theme parity, and camera impact response.
+These systems become mandatory foundations for every later action chapter.
+
 ### 0.5 - The Northwest Frontier
 
 Add a regional campaign map, roads, rivers, passes, supply, and diplomacy around

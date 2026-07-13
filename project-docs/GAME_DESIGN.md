@@ -129,3 +129,15 @@ The visual identity should be monumental but evidence-aware:
   tradition specifically calls for them.
 - War is shown without gore. Aftermath emphasizes people, policy, and memory.
 - Every generated asset receives a prompt record and historical review.
+
+## Presentation quality gate
+
+- The main playable character must use a rigged, animated humanoid or a reviewed
+  equivalent asset. Primitive mannequin geometry is allowed only for internal
+  collision and prototyping, never as the release-facing hero.
+- Every live action mission needs ambience, adaptive music, movement sounds,
+  combat impacts, damage response, objective cues, and outcome audio.
+- Lighting must provide readable depth through shadows, key and fill lights,
+  atmospheric separation, and visible landmarks in both light and dark themes.
+- A release is not "grandiose" merely because the setting is historical; scale,
+  animation, sound, camera, material treatment, and feedback must support it.

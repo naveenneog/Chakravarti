@@ -7,7 +7,7 @@ The six-season **Mauryan Rise** kingdom campaign and earlier **Cost of Kalinga**
 tactical chapter remain playable.
 
 **Play:** <https://naveenneog.github.io/Chakravarti/>  
-**Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.4.1/Chakravarti-v0.4.1.apk>
+**Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.4.2/Chakravarti-v0.4.2.apk>
 
 ![Mauryan Rise cinematic](public/media/maurya/intro-poster.jpg)
 
@@ -44,6 +44,10 @@ npm run lint
   strategy never block first play.
 - Use an articulated hero with running, jumping, and sword-swing motion from a
   closer third-person camera.
+- Hear adaptive music, city and river ambience, footsteps, sword swings,
+  impacts, damage, objectives, recovery, and the timber gate.
+- Rigged CC0 character bases are restyled with original bone-attached clothing
+  and accessories rather than shipped with their source-pack appearance.
 - Choose intelligence, alliance, and logistics preparations before entering the
   reconstructed Pataliputra district only when opening the optional War Council.
 - Control Chandragupta in a mobile third-person mission with movement, jumping,

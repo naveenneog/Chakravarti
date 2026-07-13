@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.2 - 2026-07-13
+
+### Changed
+
+- Replaced the primitive mannequin hero and guards with rigged CC0 Quaternius
+  humanoids containing authored Idle, Run, Jump, SwordSlash, RecieveHit, Punch,
+  and Defeat animation clips.
+- Built project-original bone-attached hero costume pieces: dhoti, torso wrap,
+  shoulder cloth, belt, hair, diadem, and sword.
+- Added an interactive Web Audio sound director with ambient wind and river
+  texture, adaptive melodic score, percussion, footsteps, jumping, sword swing,
+  impact, damage, objective, healing, gate, and defeat cues.
+- Sound starts safely from the first movement, attack, or touch gesture; mute
+  state is persisted and exposed in the live action HUD.
+- Added cast and receive shadows, hemisphere and directional lighting, torch
+  lights, a brighter horizon layer, deeper fog, and combat camera shake.
+- Corrected character orientation and a Strict Mode animation-mixer cache issue
+  that could blank the scene, particularly in dark theme.
+- Added complete CC0 source and license provenance for the animated characters.
+
 ## 0.4.1 - 2026-07-13
 
 ### Changed

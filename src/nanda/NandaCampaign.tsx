@@ -29,6 +29,8 @@ import {
   Swords,
   Target,
   Users,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import './NandaCampaign.css'
@@ -56,6 +58,7 @@ import {
   type NandaMissionControls,
   type NandaMissionHud,
 } from './missionTypes'
+import { useNandaAudio } from './audio'
 import type {
   EvidenceRef,
   MissionModifiers,
@@ -681,6 +684,7 @@ function MissionPanel({
   const [paused, setPaused] = useState(false)
   const [councilOpen, setCouncilOpen] = useState(false)
   const [resetToken, setResetToken] = useState(0)
+  const audio = useNandaAudio()
   const controlsRef = useRef<NandaMissionControls>(createMissionControls())
   const [hud, setHud] = useState<NandaMissionHud | null>(() =>
     modifiers ? initialHud(modifiers) : null,
@@ -700,6 +704,7 @@ function MissionPanel({
   const holdHandlers = (control: keyof NandaMissionControls) => ({
     onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => {
       event.currentTarget.setPointerCapture(event.pointerId)
+      void audio.ensureStarted()
       setControl(control, true)
     },
     onPointerUp: () => setControl(control, false),
@@ -749,6 +754,8 @@ function MissionPanel({
                 resetToken={resetToken}
                 onHudChange={setHud}
                 onComplete={complete}
+                onAudioStart={audio.ensureStarted}
+                onSound={audio.playEffect}
               />
             </Suspense>
           </MissionErrorBoundary>
@@ -775,17 +782,17 @@ function MissionPanel({
           ) : null}
           <button
             type="button"
+            onClick={() => void audio.toggleMuted()}
+            aria-label={audio.muted ? 'Enable sound' : 'Mute sound'}
+          >
+            {audio.muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          </button>
+          <button
+            type="button"
             onClick={() => setCouncilOpen(true)}
             aria-label="Open War Council"
           >
             <Crown size={17} />
-          </button>
-          <button
-            type="button"
-            onClick={onExit}
-            aria-label="Open chronicles"
-          >
-            <Home size={17} />
           </button>
         </div>
 
@@ -937,6 +944,14 @@ function MissionPanel({
                 >
                   <BookOpen size={17} />
                   {reducedMode ? 'Return to 3D mode' : 'Use command mode'}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={onExit}
+                >
+                  <Home size={17} />
+                  Open chronicles
                 </button>
               </div>
             </section>

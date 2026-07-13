@@ -8,10 +8,12 @@ import type { RefObject } from 'react'
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import {
   type NandaMissionControls,
   type NandaMissionHud,
 } from './missionTypes'
+import type { NandaSoundEffect } from './audio'
 import type { MissionModifiers, MissionResult } from './types'
 
 type NandaMissionProps = {
@@ -21,6 +23,8 @@ type NandaMissionProps = {
   resetToken: number
   onHudChange: (hud: NandaMissionHud) => void
   onComplete: (result: MissionResult) => void
+  onAudioStart: () => void
+  onSound: (effect: NandaSoundEffect) => void
 }
 
 type WorldColors = {
@@ -45,12 +49,21 @@ type EnemyRuntime = {
   hp: number
   alive: boolean
   attackCooldown: number
+  attackAnimation: number
+  defeatTimer: number
 }
 
 type HeroMotion = {
   moving: boolean
   attacking: boolean
   airborne: boolean
+  hurt: boolean
+}
+
+type GuardMotion = {
+  moving: boolean
+  attacking: boolean
+  defeated: boolean
 }
 
 const readWorldColors = (): WorldColors => {
@@ -117,7 +130,10 @@ const objectivePositions = [
   new THREE.Vector3(6.4, 0.25, -5.1),
 ]
 
-function useKeyboardControls(controlsRef: RefObject<NandaMissionControls>) {
+function useKeyboardControls(
+  controlsRef: RefObject<NandaMissionControls>,
+  onAudioStart: () => void,
+) {
   useEffect(() => {
     const keyMap: Record<string, keyof NandaMissionControls | undefined> = {
       KeyW: 'forward',
@@ -139,6 +155,9 @@ function useKeyboardControls(controlsRef: RefObject<NandaMissionControls>) {
         return
       }
       event.preventDefault()
+      if (pressed) {
+        onAudioStart()
+      }
       controlsRef.current[control] = pressed
     }
     const onDown = (event: KeyboardEvent) => update(event, true)
@@ -149,10 +168,16 @@ function useKeyboardControls(controlsRef: RefObject<NandaMissionControls>) {
       window.removeEventListener('keydown', onDown)
       window.removeEventListener('keyup', onUp)
     }
-  }, [controlsRef])
+  }, [controlsRef, onAudioStart])
 }
 
-function CameraRig({ target }: { target: RefObject<THREE.Group | null> }) {
+function CameraRig({
+  target,
+  shakeRef,
+}: {
+  target: RefObject<THREE.Group | null>
+  shakeRef: RefObject<number>
+}) {
   const { camera } = useThree()
   const desired = useMemo(() => new THREE.Vector3(), [])
   const lookAt = useMemo(() => new THREE.Vector3(), [])
@@ -163,9 +188,14 @@ function CameraRig({ target }: { target: RefObject<THREE.Group | null> }) {
       return
     }
     desired.set(
-      player.position.x,
-      player.position.y + 4.15,
-      player.position.z + 6.25,
+      player.position.x +
+        Math.sin(performance.now() * 0.055) * (shakeRef.current ?? 0),
+      player.position.y +
+        4.15 +
+        Math.cos(performance.now() * 0.07) * (shakeRef.current ?? 0) * 0.45,
+      player.position.z +
+        6.25 +
+        Math.sin(performance.now() * 0.045) * (shakeRef.current ?? 0) * 0.65,
     )
     camera.position.lerp(desired, 1 - Math.exp(-6 * delta))
     lookAt.set(
@@ -229,10 +259,23 @@ function PataliputraDistrict({
   colors: WorldColors
   sideGateOpen: boolean
 }) {
+  const districtRef = useRef<THREE.Group>(null)
   const cityPosts = Array.from({ length: 11 }, (_, index) => -10 + index * 2)
+  useEffect(() => {
+    districtRef.current?.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
+  }, [])
   return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+    <group ref={districtRef}>
+      <mesh
+        receiveShadow
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.04, 0]}
+      >
         <planeGeometry args={[22, 34]} />
         <meshStandardMaterial color={colors.ground} roughness={1} />
       </mesh>
@@ -305,6 +348,8 @@ const themedClone = (source: THREE.Object3D, color: string) => {
     if (!(child instanceof THREE.Mesh)) {
       return
     }
+    child.castShadow = true
+    child.receiveShadow = true
     const recolor = (material: THREE.Material) => {
       const themed = material.clone()
       if ('color' in themed && themed.color instanceof THREE.Color) {
@@ -406,6 +451,93 @@ function OpenAssetProps({ colors }: { colors: WorldColors }) {
   )
 }
 
+function TorchLights({ colors }: { colors: WorldColors }) {
+  const positions: readonly [number, number, number][] = [
+    [-8.6, 1.6, 1.2],
+    [8.6, 1.6, 1.2],
+    [-4.8, 1.5, -10.4],
+    [4.8, 1.5, -10.4],
+  ]
+  return (
+    <group>
+      {positions.map((position, index) => (
+        <group key={index} position={position}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.07, 0.1, 1.2, 8]} />
+            <meshStandardMaterial color={colors.wallDark} roughness={0.95} />
+          </mesh>
+          <mesh position={[0, 0.72, 0]}>
+            <sphereGeometry args={[0.16, 10, 8]} />
+            <meshStandardMaterial
+              color={colors.warning}
+              emissive={colors.warning}
+              emissiveIntensity={1.8}
+            />
+          </mesh>
+          <pointLight
+            color={colors.warning}
+            intensity={8}
+            distance={8}
+            decay={2}
+            position={[0, 0.85, 0]}
+          />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+const themedCharacterClone = (
+  source: THREE.Object3D,
+  colors: WorldColors,
+  role: 'hero' | 'guard',
+) => {
+  const actor = cloneSkeleton(source)
+  actor.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) {
+      return
+    }
+    child.castShadow = true
+    child.receiveShadow = true
+    const recolor = (material: THREE.Material) => {
+      const themed = material.clone()
+      if (!('color' in themed) || !(themed.color instanceof THREE.Color)) {
+        return themed
+      }
+      const name = material.name.toLowerCase()
+      const color =
+        name.includes('skin') || name.includes('face')
+          ? colors.warning
+          : role === 'hero'
+            ? name.includes('band')
+              ? colors.warning
+              : colors.accent
+            : name.includes('details')
+              ? colors.warning
+              : name.includes('grey')
+                ? colors.wallDark
+                : colors.danger
+      themed.color.set(color)
+      if ('map' in themed) {
+        themed.map = null
+      }
+      return themed
+    }
+    child.material = Array.isArray(child.material)
+      ? child.material.map(recolor)
+      : recolor(child.material)
+  })
+  return actor
+}
+
+const animationActions = (
+  mixer: THREE.AnimationMixer,
+  clips: readonly THREE.AnimationClip[],
+) =>
+  Object.fromEntries(
+    clips.map((clip) => [clip.name, mixer.clipAction(clip)]),
+  ) as Record<string, THREE.AnimationAction>
+
 function HeroFigure({
   colors,
   heroRef,
@@ -415,120 +547,172 @@ function HeroFigure({
   heroRef: RefObject<THREE.Group | null>
   motionRef: RefObject<HeroMotion>
 }) {
-  const bodyRef = useRef<THREE.Group>(null)
-  const leftArmRef = useRef<THREE.Group>(null)
-  const rightArmRef = useRef<THREE.Group>(null)
-  const leftLegRef = useRef<THREE.Group>(null)
-  const rightLegRef = useRef<THREE.Group>(null)
+  const gltf = useLoader(
+    GLTFLoader,
+    './models/cc0/quaternius-characters/BaseCharacter.gltf',
+  )
+  const actor = useMemo(
+    () => themedCharacterClone(gltf.scene, colors, 'hero'),
+    [colors, gltf.scene],
+  )
+  const mixer = useMemo(() => new THREE.AnimationMixer(actor), [actor])
+  const actions = useMemo(
+    () => animationActions(mixer, gltf.animations),
+    [gltf.animations, mixer],
+  )
+  const activeAction = useRef<THREE.AnimationAction | null>(null)
 
-  useFrame(({ clock }) => {
+  useEffect(() => {
+    const hips = actor.getObjectByName('Hips')
+    const torso = actor.getObjectByName('Torso')
+    const head = actor.getObjectByName('Head')
+    const hand = actor.getObjectByName('Fist.R')
+    const clothMaterial = new THREE.MeshStandardMaterial({
+      color: colors.accent,
+      roughness: 0.86,
+    })
+    const sashMaterial = new THREE.MeshStandardMaterial({
+      color: colors.groundSoft,
+      roughness: 0.9,
+    })
+    const goldMaterial = new THREE.MeshStandardMaterial({
+      color: colors.warning,
+      metalness: 0.42,
+      roughness: 0.35,
+    })
+    const hairMaterial = new THREE.MeshStandardMaterial({
+      color: colors.text,
+      roughness: 0.96,
+    })
+    const swordMaterial = new THREE.MeshStandardMaterial({
+      color: colors.text,
+      metalness: 0.72,
+      roughness: 0.24,
+    })
+    const sword = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 1.15, 0.11),
+      swordMaterial,
+    )
+    sword.position.set(0, -0.65, 0)
+    sword.rotation.z = 0.08
+    const torsoWrap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.34, 0.42, 0.7, 8),
+      clothMaterial,
+    )
+    torsoWrap.position.set(0, 0.02, 0)
+    const shoulderCloth = new THREE.Mesh(
+      new THREE.BoxGeometry(0.17, 0.92, 0.08),
+      sashMaterial,
+    )
+    shoulderCloth.position.set(-0.2, 0.02, 0.28)
+    shoulderCloth.rotation.z = 0.32
+    const dhoti = new THREE.Mesh(
+      new THREE.ConeGeometry(0.5, 1.0, 8),
+      clothMaterial,
+    )
+    dhoti.position.set(0, -0.34, 0)
+    const belt = new THREE.Mesh(
+      new THREE.TorusGeometry(0.38, 0.055, 6, 16),
+      goldMaterial,
+    )
+    belt.rotation.x = Math.PI / 2
+    belt.position.set(0, 0.08, 0)
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.27, 12, 8),
+      hairMaterial,
+    )
+    hair.scale.set(1, 0.58, 1)
+    hair.position.set(0, 0.18, -0.02)
+    const topKnot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 10, 8),
+      hairMaterial,
+    )
+    topKnot.position.set(0, 0.36, -0.03)
+    const diadem = new THREE.Mesh(
+      new THREE.TorusGeometry(0.235, 0.034, 6, 16),
+      goldMaterial,
+    )
+    diadem.rotation.x = Math.PI / 2
+    diadem.position.set(0, 0.11, 0)
+    ;[
+      torsoWrap,
+      shoulderCloth,
+      dhoti,
+      belt,
+      hair,
+      topKnot,
+      diadem,
+      sword,
+    ].forEach((mesh) => {
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+    })
+    torso?.add(torsoWrap, shoulderCloth)
+    hips?.add(dhoti, belt)
+    head?.add(hair, topKnot, diadem)
+    hand?.add(sword)
+    return () => {
+      torso?.remove(torsoWrap, shoulderCloth)
+      hips?.remove(dhoti, belt)
+      head?.remove(hair, topKnot, diadem)
+      hand?.remove(sword)
+      ;[
+        torsoWrap,
+        shoulderCloth,
+        dhoti,
+        belt,
+        hair,
+        topKnot,
+        diadem,
+        sword,
+      ].forEach((mesh) => mesh.geometry.dispose())
+      clothMaterial.dispose()
+      sashMaterial.dispose()
+      goldMaterial.dispose()
+      hairMaterial.dispose()
+      swordMaterial.dispose()
+      mixer.stopAllAction()
+    }
+  }, [
+    actions,
+    actor,
+    colors.accent,
+    colors.groundSoft,
+    colors.text,
+    colors.warning,
+    mixer,
+  ])
+
+  useFrame((_, delta) => {
     const motion = motionRef.current
-    const body = bodyRef.current
-    const leftArm = leftArmRef.current
-    const rightArm = rightArmRef.current
-    const leftLeg = leftLegRef.current
-    const rightLeg = rightLegRef.current
-    if (!motion || !body || !leftArm || !rightArm || !leftLeg || !rightLeg) {
+    if (!motion) {
       return
     }
-    const stride = motion.moving
-      ? Math.sin(clock.elapsedTime * 10.5) * 0.72
-      : Math.sin(clock.elapsedTime * 2.2) * 0.05
-    leftLeg.rotation.x = stride
-    rightLeg.rotation.x = -stride
-    leftArm.rotation.x = -stride * 0.7
-    rightArm.rotation.x = motion.attacking
-      ? -1.8 + Math.sin(clock.elapsedTime * 28) * 0.5
-      : stride * 0.7
-    rightArm.rotation.z = motion.attacking ? -0.75 : -0.08
-    body.position.y = motion.airborne
-      ? 0.08
-      : motion.moving
-        ? Math.abs(Math.sin(clock.elapsedTime * 10.5)) * 0.07
-        : 0
-    body.rotation.z = motion.moving ? Math.sin(clock.elapsedTime * 10.5) * 0.025 : 0
+    const clipName = motion.hurt
+      ? 'RecieveHit'
+      : motion.attacking
+        ? 'SwordSlash'
+        : motion.airborne
+          ? 'Jump'
+          : motion.moving
+            ? 'Run'
+            : 'Idle'
+    const next = actions[clipName] ?? actions.Idle
+    if (next && activeAction.current !== next) {
+      activeAction.current?.fadeOut(0.12)
+      next.reset().fadeIn(0.12).play()
+      activeAction.current = next
+    }
+    mixer.update(delta)
   })
 
   return (
-    <group ref={heroRef}>
-      <group ref={bodyRef}>
-        <mesh position={[0, 0.82, 0]}>
-          <boxGeometry args={[0.78, 0.92, 0.42]} />
-          <meshStandardMaterial color={colors.accent} roughness={0.82} />
-        </mesh>
-        <mesh position={[0, 0.22, 0]}>
-          <coneGeometry args={[0.52, 0.95, 6]} />
-          <meshStandardMaterial color={colors.accentHover} roughness={0.9} />
-        </mesh>
-        <mesh position={[0, 1.48, 0]}>
-          <sphereGeometry args={[0.31, 14, 12]} />
-          <meshStandardMaterial color={colors.warning} roughness={0.9} />
-        </mesh>
-        <mesh position={[0, 1.69, -0.02]} scale={[1.02, 0.5, 1.02]}>
-          <sphereGeometry args={[0.32, 12, 8]} />
-          <meshStandardMaterial color={colors.text} roughness={0.95} />
-        </mesh>
-        <mesh position={[0.22, 1.76, -0.08]} rotation={[0, 0, -0.65]}>
-          <coneGeometry args={[0.12, 0.42, 8]} />
-          <meshStandardMaterial color={colors.text} roughness={0.95} />
-        </mesh>
-        <mesh position={[-0.16, 0.9, 0.27]} rotation={[0.12, 0, 0.12]}>
-          <boxGeometry args={[0.2, 1.28, 0.08]} />
-          <meshStandardMaterial color={colors.groundSoft} roughness={0.88} />
-        </mesh>
-        <group ref={leftArmRef} position={[-0.49, 1.16, 0]}>
-          <mesh position={[0, -0.38, 0]}>
-            <capsuleGeometry args={[0.11, 0.58, 4, 8]} />
-            <meshStandardMaterial color={colors.warning} roughness={0.9} />
-          </mesh>
-          <mesh position={[0, -0.74, 0]}>
-            <sphereGeometry args={[0.12, 8, 6]} />
-            <meshStandardMaterial color={colors.warning} />
-          </mesh>
-        </group>
-        <group ref={rightArmRef} position={[0.49, 1.16, 0]}>
-          <mesh position={[0, -0.38, 0]}>
-            <capsuleGeometry args={[0.11, 0.58, 4, 8]} />
-            <meshStandardMaterial color={colors.warning} roughness={0.9} />
-          </mesh>
-          <mesh position={[0, -0.76, 0]}>
-            <sphereGeometry args={[0.12, 8, 6]} />
-            <meshStandardMaterial color={colors.warning} />
-          </mesh>
-          <mesh position={[0, -1.15, 0]} rotation={[0, 0, 0.08]}>
-            <boxGeometry args={[0.08, 0.9, 0.1]} />
-            <meshStandardMaterial
-              color={colors.text}
-              metalness={0.55}
-              roughness={0.35}
-            />
-          </mesh>
-          <mesh position={[0, -0.7, 0]}>
-            <boxGeometry args={[0.35, 0.08, 0.13]} />
-            <meshStandardMaterial color={colors.warning} metalness={0.25} />
-          </mesh>
-        </group>
-        <group ref={leftLegRef} position={[-0.2, 0.05, 0]}>
-          <mesh position={[0, -0.43, 0]}>
-            <capsuleGeometry args={[0.13, 0.62, 4, 8]} />
-            <meshStandardMaterial color={colors.warning} roughness={0.92} />
-          </mesh>
-          <mesh position={[0, -0.82, -0.08]}>
-            <boxGeometry args={[0.25, 0.12, 0.42]} />
-            <meshStandardMaterial color={colors.wallDark} roughness={0.95} />
-          </mesh>
-        </group>
-        <group ref={rightLegRef} position={[0.2, 0.05, 0]}>
-          <mesh position={[0, -0.43, 0]}>
-            <capsuleGeometry args={[0.13, 0.62, 4, 8]} />
-            <meshStandardMaterial color={colors.warning} roughness={0.92} />
-          </mesh>
-          <mesh position={[0, -0.82, -0.08]}>
-            <boxGeometry args={[0.25, 0.12, 0.42]} />
-            <meshStandardMaterial color={colors.wallDark} roughness={0.95} />
-          </mesh>
-        </group>
-      </group>
+    <group ref={heroRef} rotation={[0, Math.PI, 0]}>
+      <primitive
+        object={actor}
+        position={[0, -0.85, 0]}
+        scale={0.66}
+      />
     </group>
   )
 }
@@ -537,43 +721,77 @@ function GuardFigure({
   colors,
   groupRef,
   healthRef,
+  motion,
 }: {
   colors: WorldColors
   groupRef: (group: THREE.Group | null) => void
   healthRef: (mesh: THREE.Mesh | null) => void
+  motion: GuardMotion
 }) {
+  const localRef = useRef<THREE.Group>(null)
+  const lastPosition = useRef(new THREE.Vector3())
+  const gltf = useLoader(
+    GLTFLoader,
+    './models/cc0/quaternius-characters/Ninja_Sand.gltf',
+  )
+  const actor = useMemo(
+    () => themedCharacterClone(gltf.scene, colors, 'guard'),
+    [colors, gltf.scene],
+  )
+  const mixer = useMemo(() => new THREE.AnimationMixer(actor), [actor])
+  const actions = useMemo(
+    () => animationActions(mixer, gltf.animations),
+    [gltf.animations, mixer],
+  )
+  const activeAction = useRef<THREE.AnimationAction | null>(null)
+
+  useEffect(
+    () => () => {
+      mixer.stopAllAction()
+    },
+    [actor, mixer],
+  )
+
+  useFrame((_, delta) => {
+    const group = localRef.current
+    if (!group) {
+      return
+    }
+    motion.moving = group.position.distanceToSquared(lastPosition.current) > 0.0001
+    lastPosition.current.copy(group.position)
+    const clipName = motion.defeated
+      ? 'Defeat'
+      : motion.attacking
+        ? 'Punch'
+        : motion.moving
+          ? 'Run'
+          : 'Idle'
+    const next = actions[clipName] ?? actions.Idle
+    if (next && activeAction.current !== next) {
+      activeAction.current?.fadeOut(0.12)
+      next.reset().fadeIn(0.12).play()
+      activeAction.current = next
+    }
+    mixer.update(delta)
+  })
+
   return (
-    <group ref={groupRef}>
-      <mesh position={[0, 0.9, 0]}>
-        <boxGeometry args={[0.68, 0.9, 0.4]} />
-        <meshStandardMaterial color={colors.danger} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 0.28, 0]}>
-        <coneGeometry args={[0.46, 0.85, 6]} />
-        <meshStandardMaterial color={colors.wallDark} roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 1.58, 0]}>
-        <sphereGeometry args={[0.3, 10, 8]} />
-        <meshStandardMaterial color={colors.warning} roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.48, 0.95, 0]} rotation={[0, 0, 0.16]}>
-        <boxGeometry args={[0.12, 1.15, 0.12]} />
-        <meshStandardMaterial color={colors.text} />
-      </mesh>
-      <mesh position={[-0.2, 0.2, 0]}>
-        <capsuleGeometry args={[0.12, 0.55, 4, 8]} />
-        <meshStandardMaterial color={colors.warning} />
-      </mesh>
-      <mesh position={[0.2, 0.2, 0]}>
-        <capsuleGeometry args={[0.12, 0.55, 4, 8]} />
-        <meshStandardMaterial color={colors.warning} />
-      </mesh>
-      <mesh position={[0, 2.25, 0]}>
-        <boxGeometry args={[0.82, 0.1, 0.1]} />
+    <group
+      ref={(group) => {
+        localRef.current = group
+        groupRef(group)
+      }}
+    >
+      <primitive
+        object={actor}
+        scale={0.65}
+      />
+      <mesh position={[0, 2.35, 0]}>
+        <boxGeometry args={[0.9, 0.1, 0.1]} />
         <meshStandardMaterial color={colors.wallDark} />
       </mesh>
-      <mesh ref={healthRef} position={[-0.41, 2.25, 0.03]}>
-        <boxGeometry args={[0.82, 0.11, 0.12]} />
+      <mesh ref={healthRef} position={[-0.45, 2.35, 0.03]}>
+        <boxGeometry args={[0.9, 0.11, 0.12]} />
         <meshBasicMaterial color={colors.success} />
       </mesh>
     </group>
@@ -617,6 +835,7 @@ function MissionScene({
   paused,
   onHudChange,
   onComplete,
+  onSound,
 }: Omit<NandaMissionProps, 'resetToken'>) {
   const colors = useMemo(readWorldColors, [])
   const heroRef = useRef<THREE.Group>(null)
@@ -624,7 +843,9 @@ function MissionScene({
     moving: false,
     attacking: false,
     airborne: false,
+    hurt: false,
   })
+  const cameraShake = useRef(0)
   const enemyGroups = useRef(new Map<string, THREE.Group>())
   const enemyHealthBars = useRef(new Map<string, THREE.Mesh>())
   const objectiveGroups = useRef(new Map<number, THREE.Group>())
@@ -635,7 +856,17 @@ function MissionScene({
       hp: modifiers.enemyHealth,
       alive: true,
       attackCooldown: 0.4 + index * 0.08,
+      attackAnimation: 0,
+      defeatTimer: 0,
     })),
+  )
+  const enemyMotions = useRef(
+    new Map(
+      enemies.current.map((enemy) => [
+        enemy.id,
+        { moving: false, attacking: false, defeated: false },
+      ]),
+    ),
   )
   const playerPosition = useRef(new THREE.Vector3(0, 0.85, 13.4))
   const verticalVelocity = useRef(0)
@@ -648,6 +879,8 @@ function MissionScene({
   const elapsedSeconds = useRef(0)
   const attackCooldown = useRef(0)
   const attackAnimation = useRef(0)
+  const hurtAnimation = useRef(0)
+  const footstepTimer = useRef(0)
   const healCooldown = useRef(0)
   const jumpLatch = useRef(false)
   const interactLatch = useRef(false)
@@ -663,6 +896,9 @@ function MissionScene({
         return
       }
       completionSent.current = true
+      if (!success) {
+        onSound('defeat')
+      }
       onComplete({
         success,
         healthRemaining: health.current,
@@ -676,7 +912,7 @@ function MissionScene({
         routeLabel: modifiers.routeLabel,
       })
     },
-    [modifiers, onComplete],
+    [modifiers, onComplete, onSound],
   )
 
   useFrame((_, delta) => {
@@ -687,10 +923,13 @@ function MissionScene({
     }
 
     const step = Math.min(delta, 0.05)
+    cameraShake.current = Math.max(0, cameraShake.current - step * 1.8)
     elapsedSeconds.current += step
     attackCooldown.current = Math.max(0, attackCooldown.current - step)
     attackAnimation.current = Math.max(0, attackAnimation.current - step)
+    hurtAnimation.current = Math.max(0, hurtAnimation.current - step)
     healCooldown.current = Math.max(0, healCooldown.current - step)
+    footstepTimer.current = Math.max(0, footstepTimer.current - step)
 
     moveDirection.set(
       Number(controls.right) - Number(controls.left),
@@ -724,6 +963,10 @@ function MissionScene({
         }
       }
       hero.rotation.y = Math.atan2(moveDirection.x, moveDirection.z)
+      if (grounded.current && footstepTimer.current <= 0) {
+        onSound('step')
+        footstepTimer.current = 0.31
+      }
     }
     heroMotion.current.moving = moveDirection.lengthSq() > 0
 
@@ -731,6 +974,7 @@ function MissionScene({
       verticalVelocity.current = modifiers.jumpForce
       grounded.current = false
       jumpLatch.current = true
+      onSound('jump')
     }
     if (!controls.jump) {
       jumpLatch.current = false
@@ -755,6 +999,7 @@ function MissionScene({
     if (controls.attack && attackCooldown.current <= 0) {
       attackCooldown.current = 0.42
       attackAnimation.current = 0.34
+      onSound('sword')
       let nearest: EnemyRuntime | undefined
       let nearestDistance = Number.POSITIVE_INFINITY
       for (const enemy of enemies.current) {
@@ -769,9 +1014,13 @@ function MissionScene({
       }
       if (nearest && nearestDistance <= 2.25) {
         nearest.hp -= modifiers.attackDamage
+        onSound('impact')
+        cameraShake.current = Math.max(cameraShake.current, 0.1)
         if (nearest.hp <= 0) {
           nearest.alive = false
+          nearest.defeatTimer = 0.9
           guardsDefeated.current += 1
+          onSound('defeat')
         }
       }
     }
@@ -786,16 +1035,24 @@ function MissionScene({
       healingCharges.current -= 1
       healingUsed.current += 1
       health.current = Math.min(modifiers.maxHealth, health.current + 42)
+      onSound('heal')
     }
 
     for (const enemy of enemies.current) {
       const group = enemyGroups.current.get(enemy.id)
       const healthBar = enemyHealthBars.current.get(enemy.id)
+      const motion = enemyMotions.current.get(enemy.id)
       if (!group) {
         continue
       }
-      group.visible = enemy.alive
+      enemy.attackAnimation = Math.max(0, enemy.attackAnimation - step)
+      if (motion) {
+        motion.attacking = enemy.attackAnimation > 0
+        motion.defeated = !enemy.alive
+      }
+      group.visible = enemy.alive || enemy.defeatTimer > 0
       if (!enemy.alive) {
+        enemy.defeatTimer = Math.max(0, enemy.defeatTimer - step)
         continue
       }
       enemy.attackCooldown = Math.max(0, enemy.attackCooldown - step)
@@ -818,7 +1075,11 @@ function MissionScene({
         }
       } else if (distance <= 1.55 && enemy.attackCooldown <= 0) {
         enemy.attackCooldown = 0.95
+        enemy.attackAnimation = 0.45
+        hurtAnimation.current = 0.32
         health.current = Math.max(0, health.current - 9)
+        onSound('hurt')
+        cameraShake.current = Math.max(cameraShake.current, 0.17)
       }
       enemy.position.y = floorHeightAt(enemy.position.x, enemy.position.z)
       group.position.set(
@@ -846,6 +1107,7 @@ function MissionScene({
           Math.abs(position.y - playerPosition.current.y) <= 1.8)
       ) {
         collectedObjectives.current.add(index)
+        onSound('objective')
         if (marker) {
           marker.visible = false
         }
@@ -855,6 +1117,7 @@ function MissionScene({
     hero.position.copy(playerPosition.current)
     heroMotion.current.attacking = attackAnimation.current > 0
     heroMotion.current.airborne = !grounded.current
+    heroMotion.current.hurt = hurtAnimation.current > 0
 
     const objectivesSecured =
       modifiers.securedObjectives + collectedObjectives.current.size
@@ -865,6 +1128,8 @@ function MissionScene({
     const readyAtGate =
       objectivesSecured >= modifiers.requiredObjectives && gateDistance <= 2.4
     if (controls.interact && !interactLatch.current && readyAtGate) {
+      onSound('gate')
+      cameraShake.current = 0.24
       emitResult(true)
     }
     interactLatch.current = controls.interact
@@ -904,21 +1169,39 @@ function MissionScene({
   return (
     <>
       <color attach="background" args={[colors.background]} />
-      <fog attach="fog" args={[colors.background, 16, 37]} />
-      <ambientLight intensity={1.45} />
-      <directionalLight position={[8, 14, 10]} intensity={2.1} />
-      <directionalLight position={[-8, 6, -10]} intensity={0.65} />
+      <fog attach="fog" args={[colors.background, 18, 45]} />
+      <hemisphereLight
+        args={[colors.warning, colors.wallDark, 1.15]}
+      />
+      <ambientLight intensity={0.72} />
+      <directionalLight
+        castShadow
+        position={[9, 15, 11]}
+        intensity={2.8}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-camera-left={-18}
+        shadow-camera-right={18}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+      />
+      <directionalLight position={[-8, 8, -12]} intensity={1.05} />
+      <mesh position={[0, 8, -28]}>
+        <planeGeometry args={[62, 34]} />
+        <meshStandardMaterial color={colors.groundSoft} roughness={1} />
+      </mesh>
       <PataliputraDistrict
         colors={colors}
         sideGateOpen={modifiers.sideGateOpen}
       />
       <OpenAssetProps colors={colors} />
+      <TorchLights colors={colors} />
       <HeroFigure
         colors={colors}
         heroRef={heroRef}
         motionRef={heroMotion}
       />
-      <CameraRig target={heroRef} />
+      <CameraRig target={heroRef} shakeRef={cameraShake} />
       {enemies.current.map((enemy) => (
         <GuardFigure
           key={enemy.id}
@@ -937,6 +1220,13 @@ function MissionScene({
               enemyHealthBars.current.delete(enemy.id)
             }
           }}
+          motion={
+            enemyMotions.current.get(enemy.id) ?? {
+              moving: false,
+              attacking: false,
+              defeated: false,
+            }
+          }
         />
       ))}
       {objectivePositions.map((position, index) => (
@@ -969,15 +1259,16 @@ function MissionScene({
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value))
 
 export default function NandaMission(props: NandaMissionProps) {
-  useKeyboardControls(props.controlsRef)
+  useKeyboardControls(props.controlsRef, props.onAudioStart)
 
   return (
     <div className="nanda-canvas" data-reset-token={props.resetToken}>
       <Canvas
         key={props.resetToken}
+        shadows
         camera={{ position: [0, 4.8, 19], fov: 58, near: 0.1, far: 80 }}
         dpr={[1, 1.5]}
-        gl={{ antialias: false, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, powerPreference: 'high-performance' }}
       >
         <MissionScene {...props} />
       </Canvas>
