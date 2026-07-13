@@ -1,0 +1,1 @@
+var e=()=>({forward:!1,backward:!1,left:!1,right:!1,jump:!1,attack:!1,interact:!1,heal:!1});export{e as t};

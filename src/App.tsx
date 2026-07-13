@@ -5,6 +5,7 @@ import {
   Clock3,
   Crown,
   Flag,
+  Gamepad2,
   Heart,
   Home,
   Info,
@@ -35,9 +36,10 @@ import type {
   EvidenceKind,
 } from './game/types'
 
-type View = 'home' | 'maurya' | 'battle' | 'codex'
+type View = 'home' | 'nanda' | 'maurya' | 'battle' | 'codex'
 
 const MauryaCampaign = lazy(() => import('./maurya/MauryaCampaign'))
+const NandaCampaign = lazy(() => import('./nanda/NandaCampaign'))
 
 const evidenceLabels: Record<EvidenceKind, string> = {
   'recorded-evidence': 'Recorded evidence',
@@ -129,12 +131,14 @@ function CampaignCard({
 }
 
 function HomeView({
+  onNanda,
   onMaurya,
   onKalinga,
   onCodex,
   videoFailed,
   setVideoFailed,
 }: {
+  onNanda: () => void
   onMaurya: () => void
   onKalinga: () => void
   onCodex: () => void
@@ -177,7 +181,11 @@ function HomeView({
             and the tactical reconstruction needed to make history playable.
           </p>
           <div className="hero-actions">
-            <button className="primary-button" type="button" onClick={onMaurya}>
+            <button className="primary-button" type="button" onClick={onNanda}>
+              <Gamepad2 size={19} />
+              Play The Timber Gate
+            </button>
+            <button className="secondary-button" type="button" onClick={onMaurya}>
               <Swords size={19} />
               Enter the 3D Mauryan kingdom
             </button>
@@ -210,7 +218,11 @@ function HomeView({
               campaign={campaign}
               key={campaign.id}
               onPlay={
-                campaign.id === 'mauryan-rise' ? onMaurya : onKalinga
+                campaign.id === 'fall-of-nandas'
+                  ? onNanda
+                  : campaign.id === 'mauryan-rise'
+                    ? onMaurya
+                    : onKalinga
               }
             />
           ))}
@@ -589,6 +601,10 @@ function App() {
     setView('maurya')
   }
 
+  const startNanda = () => {
+    setView('nanda')
+  }
+
   const toggleNarration = async () => {
     const audio = audioRef.current
     if (!audio || audioUnavailable) {
@@ -642,6 +658,13 @@ function App() {
             Chronicles
           </button>
           <button
+            className={`nav-button ${view === 'nanda' ? 'active' : ''}`}
+            type="button"
+            onClick={startNanda}
+          >
+            Action
+          </button>
+          <button
             className={`nav-button ${view === 'maurya' ? 'active' : ''}`}
             type="button"
             onClick={startMaurya}
@@ -665,7 +688,7 @@ function App() {
         </nav>
 
         <div className="header-actions">
-          {view !== 'maurya' ? (
+          {view !== 'maurya' && view !== 'nanda' ? (
             <button
               className="icon-button"
               type="button"
@@ -692,12 +715,27 @@ function App() {
 
       {view === 'home' ? (
         <HomeView
+          onNanda={startNanda}
           onMaurya={startMaurya}
           onKalinga={startBattle}
           onCodex={() => setView('codex')}
           videoFailed={videoFailed}
           setVideoFailed={setVideoFailed}
         />
+      ) : null}
+      {view === 'nanda' ? (
+        <Suspense
+          fallback={
+            <main className="page">
+              <section className="panel-card app-loading">
+                <Gamepad2 size={28} />
+                <h2>Preparing the action-strategy chapter...</h2>
+              </section>
+            </main>
+          }
+        >
+          <NandaCampaign onExit={() => setView('home')} />
+        </Suspense>
       ) : null}
       {view === 'maurya' ? (
         <Suspense
@@ -723,40 +761,46 @@ function App() {
       ) : null}
       {view === 'codex' ? <CodexView /> : null}
 
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        <button
-          className={view === 'home' ? 'active' : ''}
-          type="button"
-          onClick={() => setView('home')}
-        >
-          <Home size={19} />
-          Chronicles
-        </button>
-        <button
-          className={view === 'maurya' ? 'active' : ''}
-          type="button"
-          onClick={startMaurya}
-        >
-          <Crown size={19} />
-          Kingdom
-        </button>
-        <button
-          className={view === 'battle' ? 'active' : ''}
-          type="button"
-          onClick={startBattle}
-        >
-          <Swords size={19} />
-          Battle
-        </button>
-        <button
-          className={view === 'codex' ? 'active' : ''}
-          type="button"
-          onClick={() => setView('codex')}
-        >
-          <BookOpen size={19} />
-          Codex
-        </button>
-      </nav>
+      {view !== 'nanda' ? (
+        <nav className="mobile-nav" aria-label="Mobile navigation">
+          <button
+            className={view === 'home' ? 'active' : ''}
+            type="button"
+            onClick={() => setView('home')}
+          >
+            <Home size={19} />
+            Chronicles
+          </button>
+          <button type="button" onClick={startNanda}>
+            <Gamepad2 size={19} />
+            Action
+          </button>
+          <button
+            className={view === 'maurya' ? 'active' : ''}
+            type="button"
+            onClick={startMaurya}
+          >
+            <Crown size={19} />
+            Kingdom
+          </button>
+          <button
+            className={view === 'battle' ? 'active' : ''}
+            type="button"
+            onClick={startBattle}
+          >
+            <Swords size={19} />
+            Battle
+          </button>
+          <button
+            className={view === 'codex' ? 'active' : ''}
+            type="button"
+            onClick={() => setView('codex')}
+          >
+            <BookOpen size={19} />
+            Codex
+          </button>
+        </nav>
+      ) : null}
     </div>
   )
 }

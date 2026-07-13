@@ -50,6 +50,29 @@ uses numismatic and inscriptional evidence for the defeat of the Western
 Kshatrapas. Later dramatic stories are presented as literary tradition, not
 quietly merged into the military record.
 
+## Nanda transition chapter boundaries
+
+The chapter can state that:
+
+- The Nanda dynasty ruled Magadha before Chandragupta Maurya.
+- Independent later Indian and Greco-Roman traditions agree on the broad
+  transition from Nanda to Mauryan rule.
+- Archaeology at ancient Pataliputra confirms major timber fortification, a
+  defensive moat, and monumental construction.
+- The Arthashastra tradition describes intelligence, alliances, logistics, and
+  political destabilization, while the extant text has a debated, layered
+  history.
+
+The chapter must also state that:
+
+- No contemporary narrative records the campaign against the Nandas.
+- The name Dhana Nanda, specific Chanakya intrigues, and stories of an unpopular
+  ruler survive in later literary traditions or transmitted foreign accounts.
+- No secure source preserves a battle name, route, siege sequence, palace
+  assault, commander list, troop strength, or verbatim dialogue.
+- The Timber Gate district, dispatches, guards, routes, combat, and outcomes are
+  gameplay reconstruction.
+
 ## Review workflow
 
 1. Write a one-page evidence brief for the chapter.

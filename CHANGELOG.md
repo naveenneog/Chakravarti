@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.4.0 - 2026-07-13
+
+### Added
+
+- **The Timber Gate**, a playable action-strategy vertical slice for the Fall of
+  the Nandas chapter.
+- Three-part strategic planning across intelligence, alliances, and logistics;
+  every choice materially changes the real-time mission.
+- Mobile third-person movement, jumping, elevated traversal, close combat,
+  pursuing guards, recovery supplies, dispatch objectives, pause, and restart.
+- Full accessible command-mode mission that resolves through the same campaign
+  reducer when WebGL is unavailable or reduced mode is selected.
+- Versioned save, locked mission modifiers, sanitized action results, ordered
+  event log, deterministic replay, and distinct success, costly-entry, and
+  withdrawal outcomes.
+- Evidence-labeled briefing and debrief separating the accepted Nanda-Maurya
+  transition, Pataliputra archaeology, later literary traditions, and invented
+  mission details.
+- CC0 Kenney vegetation with retained license and documented provenance.
+- Project-original storage-jar GLB generated locally from a Hugging Face
+  TripoSR ONNX model, with reproducible concept, settings, checksum, and tooling.
+- Offline PWA caching for PNG concept art and GLB game assets.
+
 ## 0.3.0 - 2026-07-12
 
 ### Added

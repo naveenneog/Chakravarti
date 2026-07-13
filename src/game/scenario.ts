@@ -200,6 +200,17 @@ export const kalingaScenario: Scenario = {
 
 export const campaigns: readonly Campaign[] = [
   {
+    id: 'fall-of-nandas',
+    figure: 'Chandragupta Maurya and Kautilya',
+    title: 'The Fall of the Nandas',
+    era: 'Late 4th century BCE',
+    region: 'Magadha and Pataliputra',
+    status: 'playable',
+    evidence: 'Action-strategy gameplay reconstruction',
+    description:
+      'Plan intelligence, alliance, and logistics, then control Chandragupta through a third-person timber-gate mission whose outcome changes the campaign.',
+  },
+  {
     id: 'mauryan-rise',
     figure: 'Chandragupta Maurya and Kautilya',
     title: 'Mauryan Rise',

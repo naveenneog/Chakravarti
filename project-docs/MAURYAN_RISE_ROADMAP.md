@@ -114,10 +114,24 @@ and legitimacy, leaving a recovery path through future income and council choice
 
 ## Longer roadmap
 
-### 0.4 - The Fall of the Nandas
+### 0.4 - The Fall of the Nandas (delivered vertical slice)
 
-Add a multi-mission political campaign, unrest, alliances, intelligence, and a
-reconstructed Pataliputra confrontation.
+**The Timber Gate** proves the action-strategy bridge:
+
+- choose one intelligence, alliance, and logistics preparation;
+- lock those choices into versioned mission modifiers;
+- play Chandragupta in a third-person reconstructed Pataliputra district;
+- move, jump, cross elevated timber routes, fight or avoid guards, recover,
+  secure dispatches, and open the gate;
+- return health, objectives, time, and guard outcomes to political state;
+- complete the same campaign contract through an accessible command mode;
+- load CC0 vegetation and a project-original Hugging Face-generated prop while
+  retaining license and model provenance.
+
+The complete multi-mission fall of the Nandas remains future work: unrest across
+multiple regions, coalition loyalty, intelligence networks, ministerial
+defection traditions, and a final political settlement should build on this
+contract rather than expanding the one district into an unbounded action level.
 
 ### 0.5 - The Northwest Frontier
 
