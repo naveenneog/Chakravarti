@@ -16,6 +16,22 @@ tooling/.media-state*.json
 __pycache__/
 *.pyc
 Chakravarti-v*.apk
+ChakravartiAction-v*.apk
+ChakravartiAction-v*.zip
+
+# Unity generated state and local builds
+unity/**/[Ll]ibrary/
+unity/**/[Tt]emp/
+unity/**/[Oo]bj/
+unity/**/[Ll]ogs/
+unity/**/[Uu]serSettings/
+unity/**/[Mm]emoryCaptures/
+unity/**/[Bb]uild/
+unity/**/[Bb]uilds/
+unity/**/.utmp/
+unity/**/*.csproj
+unity/**/*.sln
+unity/**/*.user
 
 # Editor directories and files
 .vscode/*
