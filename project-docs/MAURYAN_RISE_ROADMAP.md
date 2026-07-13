@@ -133,6 +133,14 @@ multiple regions, coalition loyalty, intelligence networks, ministerial
 defection traditions, and a final political settlement should build on this
 contract rather than expanding the one district into an unbounded action level.
 
+#### 0.4.1 - Action First
+
+The product launches directly into the graphical single-player Timber Gate
+mission with a balanced default loadout. The War Council, anthology navigation,
+evidence material, and command-mode fallback remain available but secondary.
+The hero is articulated and animated, the camera is closer, and all live mission
+UI is overlaid on the full-screen world.
+
 ### 0.5 - The Northwest Frontier
 
 Add a regional campaign map, roads, rivers, passes, supply, and diplomacy around

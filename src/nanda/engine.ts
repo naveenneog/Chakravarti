@@ -87,7 +87,7 @@ const canAfford = (state: NandaCampaignState, delta: StrategyDelta) =>
 
 export const createNandaCampaign = (seed = 404): NandaCampaignState => ({
   schemaVersion: 1,
-  contentVersion: '0.4.0',
+  contentVersion: '0.4.1',
   campaignId: 'fall-of-nandas',
   seed,
   phase: 'briefing',
@@ -406,3 +406,31 @@ export const replayNandaCampaign = (
   seed: number,
   commands: readonly NandaCommand[],
 ) => commands.reduce(nandaCampaignReducer, createNandaCampaign(seed))
+
+export const createActionFirstCampaign = (
+  seed = 505,
+): NandaCampaignState => {
+  const quickStartCommands: readonly NandaCommand[] = [
+    { type: 'OPEN_PLANNING' },
+    {
+      type: 'SELECT_PLAN',
+      category: 'intelligence',
+      planId: 'watch-rotations',
+    },
+    {
+      type: 'SELECT_PLAN',
+      category: 'alliance',
+      planId: 'frontier-veterans',
+    },
+    {
+      type: 'SELECT_PLAN',
+      category: 'logistics',
+      planId: 'hidden-caches',
+    },
+    { type: 'BEGIN_MISSION' },
+  ]
+  return quickStartCommands.reduce(
+    nandaCampaignReducer,
+    createNandaCampaign(seed),
+  )
+}

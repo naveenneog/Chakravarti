@@ -33,12 +33,14 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import './NandaCampaign.css'
 import {
+  nandaPlans,
   nandaSourceById,
   planCategoryCopy,
   plansByCategory,
 } from './content'
 import {
   combinedPlanDelta,
+  createActionFirstCampaign,
   createNandaCampaign,
   missionLaunchForecast,
   nandaCampaignReducer,
@@ -665,14 +667,19 @@ function AccessibleMission({
 function MissionPanel({
   state,
   dispatch,
+  onExit,
+  onPlan,
 }: {
   state: NandaCampaignState
   dispatch: (command: NandaCommand) => void
+  onExit: () => void
+  onPlan: () => void
 }) {
   const modifiers = state.missionModifiers
   const webglAvailable = useMemo(supportsWebGL, [])
   const [reducedMode, setReducedMode] = useState(!webglAvailable)
   const [paused, setPaused] = useState(false)
+  const [councilOpen, setCouncilOpen] = useState(false)
   const [resetToken, setResetToken] = useState(0)
   const controlsRef = useRef<NandaMissionControls>(createMissionControls())
   const [hud, setHud] = useState<NandaMissionHud | null>(() =>
@@ -711,71 +718,13 @@ function MissionPanel({
     setResetToken((value) => value + 1)
   }
 
+  const activePlans = categoryOrder.flatMap((category) => {
+    const planId = state.selectedPlans[category]
+    return planId ? [nandaPlans[planId]] : []
+  })
+
   return (
-    <main className="nanda-mission-page">
-      <header className="nanda-mission-toolbar">
-        <div>
-          <p className="eyebrow">
-            <Gamepad2 size={14} />
-            Playable reconstruction
-          </p>
-          <h1>The Timber Gate</h1>
-          <p>{hud.prompt}</p>
-        </div>
-        <div className="nanda-toolbar-actions">
-          {!reducedMode ? (
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => setPaused((value) => !value)}
-            >
-              {paused ? <Play size={17} /> : <Pause size={17} />}
-              {paused ? 'Resume' : 'Pause'}
-            </button>
-          ) : null}
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => setReducedMode((value) => !value)}
-          >
-            <BookOpen size={17} />
-            {reducedMode ? 'Use 3D mode' : 'Use command mode'}
-          </button>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={restartMission}
-          >
-            <RotateCcw size={17} />
-            Restart
-          </button>
-        </div>
-      </header>
-
-      <section className="nanda-mission-hud" aria-live="polite">
-        <span>
-          <Heart size={16} />
-          <strong>{Math.ceil(hud.health)}</strong> / {hud.maxHealth}
-        </span>
-        <span>
-          <Target size={16} />
-          <strong>{hud.objectivesSecured}</strong> / {hud.requiredObjectives}{' '}
-          dispatches
-        </span>
-        <span>
-          <Swords size={16} />
-          <strong>{hud.guardsDefeated}</strong> / {hud.enemyCount} guards
-        </span>
-        <span>
-          <Shield size={16} />
-          <strong>{hud.healingCharges}</strong> recovery
-        </span>
-        <span>
-          <Flag size={16} />
-          <strong>{hud.elapsedSeconds}s</strong>
-        </span>
-      </section>
-
+    <main className="nanda-mission-page action-first">
       <section className="nanda-mission-frame">
         {reducedMode ? (
           <AccessibleMission
@@ -796,7 +745,7 @@ function MissionPanel({
               <NandaMission
                 controlsRef={controlsRef}
                 modifiers={modifiers}
-                paused={paused}
+                paused={paused || councilOpen}
                 resetToken={resetToken}
                 onHudChange={setHud}
                 onComplete={complete}
@@ -805,16 +754,63 @@ function MissionPanel({
           </MissionErrorBoundary>
         )}
 
+        <div className="nanda-action-title">
+          <p className="eyebrow">
+            <Gamepad2 size={14} />
+            Single-player action
+          </p>
+          <h1>The Timber Gate</h1>
+          <p>{hud.prompt}</p>
+        </div>
+
+        <div className="nanda-action-menu">
+          {!reducedMode ? (
+            <button
+              type="button"
+              onClick={() => setPaused((value) => !value)}
+              aria-label={paused ? 'Resume game' : 'Pause game'}
+            >
+              {paused ? <Play size={17} /> : <Pause size={17} />}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setCouncilOpen(true)}
+            aria-label="Open War Council"
+          >
+            <Crown size={17} />
+          </button>
+          <button
+            type="button"
+            onClick={onExit}
+            aria-label="Open chronicles"
+          >
+            <Home size={17} />
+          </button>
+        </div>
+
+        <section className="nanda-mission-hud" aria-live="polite">
+          <span>
+            <Heart size={16} />
+            <strong>{Math.ceil(hud.health)}</strong>
+          </span>
+          <span>
+            <Target size={16} />
+            <strong>{hud.objectivesSecured}</strong> /{' '}
+            {hud.requiredObjectives}
+          </span>
+          <span>
+            <Swords size={16} />
+            <strong>{hud.guardsDefeated}</strong>
+          </span>
+          <span>
+            <Shield size={16} />
+            <strong>{hud.healingCharges}</strong>
+          </span>
+        </section>
+
         {!reducedMode ? (
           <>
-            <div className="nanda-objective-card">
-              <strong>{modifiers.routeLabel}</strong>
-              <span>
-                {modifiers.revealObjectives
-                  ? 'Intelligence markers active'
-                  : 'Objectives reveal at close range'}
-              </span>
-            </div>
             <div className="nanda-touch-controls" aria-label="Touch controls">
               <div className="nanda-direction-pad">
                 <button
@@ -872,7 +868,78 @@ function MissionPanel({
           <div className="nanda-pause-overlay">
             <Pause size={30} />
             <h2>Mission paused</h2>
-            <p>Strategic state and action progress remain unchanged.</p>
+            <p>Resume immediately or restart the action.</p>
+            <div className="nanda-overlay-actions">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => setPaused(false)}
+              >
+                <Play size={17} />
+                Resume
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={restartMission}
+              >
+                <RotateCcw size={17} />
+                Restart
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {councilOpen ? (
+          <div className="nanda-war-council-overlay">
+            <section>
+              <p className="eyebrow">
+                <Crown size={14} />
+                Optional strategy
+              </p>
+              <h2>War Council</h2>
+              <p>
+                The game starts with a balanced field plan. Strategy can tune a
+                later run, but it never blocks play.
+              </p>
+              <div className="nanda-active-plans">
+                {activePlans.map((plan) => (
+                  <article key={plan.id}>
+                    <strong>{plan.title}</strong>
+                    <span>{plan.consequence}</span>
+                  </article>
+                ))}
+              </div>
+              <div className="nanda-overlay-actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => setCouncilOpen(false)}
+                >
+                  <Play size={17} />
+                  Continue mission
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={onPlan}
+                >
+                  <Map size={17} />
+                  Plan a different run
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setReducedMode((value) => !value)
+                    setCouncilOpen(false)
+                  }}
+                >
+                  <BookOpen size={17} />
+                  {reducedMode ? 'Return to 3D mode' : 'Use command mode'}
+                </button>
+              </div>
+            </section>
           </div>
         ) : null}
       </section>
@@ -966,10 +1033,12 @@ function DebriefPanel({
 function CompletePanel({
   state,
   onReplay,
+  onPlan,
   onExit,
 }: {
   state: NandaCampaignState
   onReplay: () => void
+  onPlan: () => void
   onExit: () => void
 }) {
   const copy = state.outcome ? outcomeCopy[state.outcome] : null
@@ -980,14 +1049,17 @@ function CompletePanel({
         <p className="eyebrow">Chronicle recorded</p>
         <h1>{copy?.title ?? 'The operation is complete'}</h1>
         <p>
-          This action-strategy slice proves the campaign bridge: council choices
-          configure the playable mission, and its result changes political state.
-          The wider fall of the Nandas remains a future multi-mission campaign.
+          Play again immediately, or open the optional War Council to tune the
+          next run.
         </p>
         <div className="nanda-complete-actions">
           <button className="primary-button" type="button" onClick={onReplay}>
             <RotateCcw size={18} />
-            Replay with another strategy
+            Play again
+          </button>
+          <button className="secondary-button" type="button" onClick={onPlan}>
+            <Crown size={18} />
+            Open War Council
           </button>
           <button className="secondary-button" type="button" onClick={onExit}>
             <Home size={18} />
@@ -1001,7 +1073,11 @@ function CompletePanel({
 
 export default function NandaCampaign({ onExit }: NandaCampaignProps) {
   const loaded = useMemo(loadNandaCampaign, [])
-  const [state, setState] = useState(loaded.state)
+  const [state, setState] = useState(() =>
+    loaded.state.phase === 'mission'
+      ? loaded.state
+      : createActionFirstCampaign(loaded.state.seed + 1),
+  )
   const [warning, setWarning] = useState(loaded.warning)
 
   useEffect(() => {
@@ -1014,12 +1090,26 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
 
   const replay = () => {
     clearNandaCampaign()
-    setState(createNandaCampaign(state.seed + 1))
+    setState(createActionFirstCampaign(state.seed + 1))
+    setWarning(undefined)
+  }
+
+  const planNewOperation = () => {
+    clearNandaCampaign()
+    const planning = nandaCampaignReducer(createNandaCampaign(state.seed + 1), {
+      type: 'OPEN_PLANNING',
+    })
+    setState(planning)
     setWarning(undefined)
   }
 
   return (
-    <div className="nanda-shell">
+    <div
+      className={`nanda-shell ${
+        state.phase === 'mission' ? 'action-live' : ''
+      }`}
+    >
+      {state.phase !== 'mission' ? (
       <header className="nanda-chapter-header">
         <button className="text-button" type="button" onClick={onExit}>
           <Home size={17} />
@@ -1034,6 +1124,7 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
           New operation
         </button>
       </header>
+      ) : null}
 
       {warning ? (
         <div className="nanda-save-warning" role="status">
@@ -1054,15 +1145,26 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
         <PlanningPanel state={state} dispatch={dispatch} />
       ) : null}
       {state.phase === 'mission' ? (
-        <MissionPanel state={state} dispatch={dispatch} />
+        <MissionPanel
+          state={state}
+          dispatch={dispatch}
+          onExit={onExit}
+          onPlan={planNewOperation}
+        />
       ) : null}
       {state.phase === 'debrief' ? (
         <DebriefPanel state={state} dispatch={dispatch} />
       ) : null}
       {state.phase === 'complete' ? (
-        <CompletePanel state={state} onReplay={replay} onExit={onExit} />
+        <CompletePanel
+          state={state}
+          onReplay={replay}
+          onPlan={planNewOperation}
+          onExit={onExit}
+        />
       ) : null}
 
+      {state.phase !== 'mission' ? (
       <footer className="nanda-disclosure">
         <Info size={16} />
         <span>
@@ -1071,6 +1173,7 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
           gameplay reconstruction.
         </span>
       </footer>
+      ) : null}
     </div>
   )
 }

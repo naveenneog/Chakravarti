@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.1 - 2026-07-13
+
+### Changed
+
+- Chakravarti now launches directly into the full-screen, single-player
+  **Timber Gate** mission instead of opening on the anthology or planning UI.
+- A forgiving default field plan immediately enables visible objectives,
+  stronger attacks, fewer guards, extra health, and recovery supplies.
+- Strategy is now optional through an in-game **War Council** and never blocks
+  first play.
+- The anthology header, mobile navigation, chapter header, and evidence footer
+  are removed from the live action viewport.
+- Mission title, health, objectives, controls, pause, War Council, and exit are
+  compact overlays on the 3D world.
+- Chandragupta now uses an articulated low-poly character with moving limbs,
+  running motion, airborne posture, and a sword-swing animation.
+- The third-person camera is lower, closer, and more responsive.
+- Completed or older campaign saves start a fresh action run on launch; invalid
+  prior-version saves are still backed up rather than silently discarded.
+
 ## 0.4.0 - 2026-07-13
 
 ### Added

@@ -7,7 +7,7 @@ The six-season **Mauryan Rise** kingdom campaign and earlier **Cost of Kalinga**
 tactical chapter remain playable.
 
 **Play:** <https://naveenneog.github.io/Chakravarti/>  
-**Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.4.0/Chakravarti-v0.4.0.apk>
+**Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.4.1/Chakravarti-v0.4.1.apk>
 
 ![Mauryan Rise cinematic](public/media/maurya/intro-poster.jpg)
 
@@ -40,15 +40,19 @@ npm run lint
 
 ### The Fall of the Nandas: The Timber Gate
 
+- Launch directly behind Chandragupta in the full-screen 3D mission; menus and
+  strategy never block first play.
+- Use an articulated hero with running, jumping, and sword-swing motion from a
+  closer third-person camera.
 - Choose intelligence, alliance, and logistics preparations before entering the
-  reconstructed Pataliputra district.
+  reconstructed Pataliputra district only when opening the optional War Council.
 - Control Chandragupta in a mobile third-person mission with movement, jumping,
   elevated routes, close combat, enemy pursuit, recovery, dispatch objectives,
   and a final gate interaction.
 - Every strategic choice changes guards, objective visibility, routes, health,
   mobility, damage, or recovery supplies.
 - Complete campaign command mode provides the same strategy-to-outcome loop
-  without WebGL.
+  without WebGL, but remains secondary to the graphical mission.
 - Strategy state, locked mission modifiers, results, and ordered commands are
   versioned and replay-tested.
 - CC0 Kenney vegetation and a project-original storage jar generated with a

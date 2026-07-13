@@ -47,6 +47,12 @@ type EnemyRuntime = {
   attackCooldown: number
 }
 
+type HeroMotion = {
+  moving: boolean
+  attacking: boolean
+  airborne: boolean
+}
+
 const readWorldColors = (): WorldColors => {
   const styles = getComputedStyle(document.documentElement)
   const read = (name: string) => styles.getPropertyValue(name).trim()
@@ -158,14 +164,14 @@ function CameraRig({ target }: { target: RefObject<THREE.Group | null> }) {
     }
     desired.set(
       player.position.x,
-      player.position.y + 5.4,
-      player.position.z + 8.2,
+      player.position.y + 4.15,
+      player.position.z + 6.25,
     )
-    camera.position.lerp(desired, 1 - Math.exp(-5 * delta))
+    camera.position.lerp(desired, 1 - Math.exp(-6 * delta))
     lookAt.set(
       player.position.x,
-      player.position.y + 0.8,
-      player.position.z - 2.2,
+      player.position.y + 1.05,
+      player.position.z - 2.8,
     )
     camera.lookAt(lookAt)
   })
@@ -403,28 +409,126 @@ function OpenAssetProps({ colors }: { colors: WorldColors }) {
 function HeroFigure({
   colors,
   heroRef,
+  motionRef,
 }: {
   colors: WorldColors
   heroRef: RefObject<THREE.Group | null>
+  motionRef: RefObject<HeroMotion>
 }) {
+  const bodyRef = useRef<THREE.Group>(null)
+  const leftArmRef = useRef<THREE.Group>(null)
+  const rightArmRef = useRef<THREE.Group>(null)
+  const leftLegRef = useRef<THREE.Group>(null)
+  const rightLegRef = useRef<THREE.Group>(null)
+
+  useFrame(({ clock }) => {
+    const motion = motionRef.current
+    const body = bodyRef.current
+    const leftArm = leftArmRef.current
+    const rightArm = rightArmRef.current
+    const leftLeg = leftLegRef.current
+    const rightLeg = rightLegRef.current
+    if (!motion || !body || !leftArm || !rightArm || !leftLeg || !rightLeg) {
+      return
+    }
+    const stride = motion.moving
+      ? Math.sin(clock.elapsedTime * 10.5) * 0.72
+      : Math.sin(clock.elapsedTime * 2.2) * 0.05
+    leftLeg.rotation.x = stride
+    rightLeg.rotation.x = -stride
+    leftArm.rotation.x = -stride * 0.7
+    rightArm.rotation.x = motion.attacking
+      ? -1.8 + Math.sin(clock.elapsedTime * 28) * 0.5
+      : stride * 0.7
+    rightArm.rotation.z = motion.attacking ? -0.75 : -0.08
+    body.position.y = motion.airborne
+      ? 0.08
+      : motion.moving
+        ? Math.abs(Math.sin(clock.elapsedTime * 10.5)) * 0.07
+        : 0
+    body.rotation.z = motion.moving ? Math.sin(clock.elapsedTime * 10.5) * 0.025 : 0
+  })
+
   return (
     <group ref={heroRef}>
-      <mesh position={[0, 0.95, 0]}>
-        <capsuleGeometry args={[0.35, 0.95, 5, 10]} />
-        <meshStandardMaterial color={colors.accent} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 1.9, 0]}>
-        <sphereGeometry args={[0.34, 12, 10]} />
-        <meshStandardMaterial color={colors.warning} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.42, 1.1, 0]} rotation={[0, 0, -0.18]}>
-        <boxGeometry args={[0.1, 1.25, 0.12]} />
-        <meshStandardMaterial color={colors.text} metalness={0.35} />
-      </mesh>
-      <mesh position={[0, 1.35, 0.28]} rotation={[0.2, 0, 0]}>
-        <coneGeometry args={[0.55, 1.25, 4]} />
-        <meshStandardMaterial color={colors.accentHover} roughness={0.9} />
-      </mesh>
+      <group ref={bodyRef}>
+        <mesh position={[0, 0.82, 0]}>
+          <boxGeometry args={[0.78, 0.92, 0.42]} />
+          <meshStandardMaterial color={colors.accent} roughness={0.82} />
+        </mesh>
+        <mesh position={[0, 0.22, 0]}>
+          <coneGeometry args={[0.52, 0.95, 6]} />
+          <meshStandardMaterial color={colors.accentHover} roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 1.48, 0]}>
+          <sphereGeometry args={[0.31, 14, 12]} />
+          <meshStandardMaterial color={colors.warning} roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 1.69, -0.02]} scale={[1.02, 0.5, 1.02]}>
+          <sphereGeometry args={[0.32, 12, 8]} />
+          <meshStandardMaterial color={colors.text} roughness={0.95} />
+        </mesh>
+        <mesh position={[0.22, 1.76, -0.08]} rotation={[0, 0, -0.65]}>
+          <coneGeometry args={[0.12, 0.42, 8]} />
+          <meshStandardMaterial color={colors.text} roughness={0.95} />
+        </mesh>
+        <mesh position={[-0.16, 0.9, 0.27]} rotation={[0.12, 0, 0.12]}>
+          <boxGeometry args={[0.2, 1.28, 0.08]} />
+          <meshStandardMaterial color={colors.groundSoft} roughness={0.88} />
+        </mesh>
+        <group ref={leftArmRef} position={[-0.49, 1.16, 0]}>
+          <mesh position={[0, -0.38, 0]}>
+            <capsuleGeometry args={[0.11, 0.58, 4, 8]} />
+            <meshStandardMaterial color={colors.warning} roughness={0.9} />
+          </mesh>
+          <mesh position={[0, -0.74, 0]}>
+            <sphereGeometry args={[0.12, 8, 6]} />
+            <meshStandardMaterial color={colors.warning} />
+          </mesh>
+        </group>
+        <group ref={rightArmRef} position={[0.49, 1.16, 0]}>
+          <mesh position={[0, -0.38, 0]}>
+            <capsuleGeometry args={[0.11, 0.58, 4, 8]} />
+            <meshStandardMaterial color={colors.warning} roughness={0.9} />
+          </mesh>
+          <mesh position={[0, -0.76, 0]}>
+            <sphereGeometry args={[0.12, 8, 6]} />
+            <meshStandardMaterial color={colors.warning} />
+          </mesh>
+          <mesh position={[0, -1.15, 0]} rotation={[0, 0, 0.08]}>
+            <boxGeometry args={[0.08, 0.9, 0.1]} />
+            <meshStandardMaterial
+              color={colors.text}
+              metalness={0.55}
+              roughness={0.35}
+            />
+          </mesh>
+          <mesh position={[0, -0.7, 0]}>
+            <boxGeometry args={[0.35, 0.08, 0.13]} />
+            <meshStandardMaterial color={colors.warning} metalness={0.25} />
+          </mesh>
+        </group>
+        <group ref={leftLegRef} position={[-0.2, 0.05, 0]}>
+          <mesh position={[0, -0.43, 0]}>
+            <capsuleGeometry args={[0.13, 0.62, 4, 8]} />
+            <meshStandardMaterial color={colors.warning} roughness={0.92} />
+          </mesh>
+          <mesh position={[0, -0.82, -0.08]}>
+            <boxGeometry args={[0.25, 0.12, 0.42]} />
+            <meshStandardMaterial color={colors.wallDark} roughness={0.95} />
+          </mesh>
+        </group>
+        <group ref={rightLegRef} position={[0.2, 0.05, 0]}>
+          <mesh position={[0, -0.43, 0]}>
+            <capsuleGeometry args={[0.13, 0.62, 4, 8]} />
+            <meshStandardMaterial color={colors.warning} roughness={0.92} />
+          </mesh>
+          <mesh position={[0, -0.82, -0.08]}>
+            <boxGeometry args={[0.25, 0.12, 0.42]} />
+            <meshStandardMaterial color={colors.wallDark} roughness={0.95} />
+          </mesh>
+        </group>
+      </group>
     </group>
   )
 }
@@ -440,17 +544,29 @@ function GuardFigure({
 }) {
   return (
     <group ref={groupRef}>
-      <mesh position={[0, 0.85, 0]}>
-        <capsuleGeometry args={[0.33, 0.82, 4, 8]} />
+      <mesh position={[0, 0.9, 0]}>
+        <boxGeometry args={[0.68, 0.9, 0.4]} />
         <meshStandardMaterial color={colors.danger} roughness={0.85} />
       </mesh>
-      <mesh position={[0, 1.72, 0]}>
+      <mesh position={[0, 0.28, 0]}>
+        <coneGeometry args={[0.46, 0.85, 6]} />
+        <meshStandardMaterial color={colors.wallDark} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 1.58, 0]}>
         <sphereGeometry args={[0.3, 10, 8]} />
         <meshStandardMaterial color={colors.warning} roughness={0.9} />
       </mesh>
-      <mesh position={[-0.44, 0.95, 0]} rotation={[0, 0, 0.16]}>
+      <mesh position={[-0.48, 0.95, 0]} rotation={[0, 0, 0.16]}>
         <boxGeometry args={[0.12, 1.15, 0.12]} />
         <meshStandardMaterial color={colors.text} />
+      </mesh>
+      <mesh position={[-0.2, 0.2, 0]}>
+        <capsuleGeometry args={[0.12, 0.55, 4, 8]} />
+        <meshStandardMaterial color={colors.warning} />
+      </mesh>
+      <mesh position={[0.2, 0.2, 0]}>
+        <capsuleGeometry args={[0.12, 0.55, 4, 8]} />
+        <meshStandardMaterial color={colors.warning} />
       </mesh>
       <mesh position={[0, 2.25, 0]}>
         <boxGeometry args={[0.82, 0.1, 0.1]} />
@@ -504,6 +620,11 @@ function MissionScene({
 }: Omit<NandaMissionProps, 'resetToken'>) {
   const colors = useMemo(readWorldColors, [])
   const heroRef = useRef<THREE.Group>(null)
+  const heroMotion = useRef<HeroMotion>({
+    moving: false,
+    attacking: false,
+    airborne: false,
+  })
   const enemyGroups = useRef(new Map<string, THREE.Group>())
   const enemyHealthBars = useRef(new Map<string, THREE.Mesh>())
   const objectiveGroups = useRef(new Map<number, THREE.Group>())
@@ -526,6 +647,7 @@ function MissionScene({
   const guardsDefeated = useRef(0)
   const elapsedSeconds = useRef(0)
   const attackCooldown = useRef(0)
+  const attackAnimation = useRef(0)
   const healCooldown = useRef(0)
   const jumpLatch = useRef(false)
   const interactLatch = useRef(false)
@@ -567,6 +689,7 @@ function MissionScene({
     const step = Math.min(delta, 0.05)
     elapsedSeconds.current += step
     attackCooldown.current = Math.max(0, attackCooldown.current - step)
+    attackAnimation.current = Math.max(0, attackAnimation.current - step)
     healCooldown.current = Math.max(0, healCooldown.current - step)
 
     moveDirection.set(
@@ -602,6 +725,7 @@ function MissionScene({
       }
       hero.rotation.y = Math.atan2(moveDirection.x, moveDirection.z)
     }
+    heroMotion.current.moving = moveDirection.lengthSq() > 0
 
     if (controls.jump && grounded.current && !jumpLatch.current) {
       verticalVelocity.current = modifiers.jumpForce
@@ -630,6 +754,7 @@ function MissionScene({
 
     if (controls.attack && attackCooldown.current <= 0) {
       attackCooldown.current = 0.42
+      attackAnimation.current = 0.34
       let nearest: EnemyRuntime | undefined
       let nearestDistance = Number.POSITIVE_INFINITY
       for (const enemy of enemies.current) {
@@ -728,6 +853,8 @@ function MissionScene({
     })
 
     hero.position.copy(playerPosition.current)
+    heroMotion.current.attacking = attackAnimation.current > 0
+    heroMotion.current.airborne = !grounded.current
 
     const objectivesSecured =
       modifiers.securedObjectives + collectedObjectives.current.size
@@ -786,7 +913,11 @@ function MissionScene({
         sideGateOpen={modifiers.sideGateOpen}
       />
       <OpenAssetProps colors={colors} />
-      <HeroFigure colors={colors} heroRef={heroRef} />
+      <HeroFigure
+        colors={colors}
+        heroRef={heroRef}
+        motionRef={heroMotion}
+      />
       <CameraRig target={heroRef} />
       {enemies.current.map((enemy) => (
         <GuardFigure
@@ -844,7 +975,7 @@ export default function NandaMission(props: NandaMissionProps) {
     <div className="nanda-canvas" data-reset-token={props.resetToken}>
       <Canvas
         key={props.resetToken}
-        camera={{ position: [0, 6.5, 19], fov: 53, near: 0.1, far: 80 }}
+        camera={{ position: [0, 4.8, 19], fov: 58, near: 0.1, far: 80 }}
         dpr={[1, 1.5]}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
       >

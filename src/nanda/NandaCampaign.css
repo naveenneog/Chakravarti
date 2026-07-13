@@ -9,7 +9,7 @@
 
 .nanda-chapter-header {
   position: sticky;
-  top: 64px;
+  top: 0;
   z-index: 25;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -936,7 +936,7 @@
 
 @media (max-width: 560px) {
   .nanda-chapter-header {
-    top: 64px;
+    top: 0;
     grid-template-columns: auto 1fr auto;
     padding-inline: 8px;
   }
@@ -1006,5 +1006,255 @@
 @media (prefers-reduced-motion: reduce) {
   .nanda-wall-silhouette span {
     transform: none;
+  }
+}
+
+.nanda-shell.action-live {
+  min-height: 100svh;
+  padding: 0;
+  overflow: hidden;
+  background: var(--cp-bg);
+}
+
+.nanda-shell.action-live .nanda-save-warning {
+  position: fixed;
+  right: 12px;
+  bottom: calc(128px + env(safe-area-inset-bottom));
+  z-index: 35;
+  width: min(420px, calc(100% - 24px));
+  margin: 0;
+  background: var(--cp-panel-strong);
+}
+
+.nanda-mission-page.action-first {
+  width: 100%;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+}
+
+.nanda-mission-page.action-first .nanda-mission-frame,
+.nanda-mission-page.action-first .nanda-canvas,
+.nanda-mission-page.action-first .nanda-fallback,
+.nanda-mission-page.action-first .nanda-mission-loading {
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.nanda-action-title {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 12px;
+  z-index: 5;
+  max-width: min(420px, calc(100% - 190px));
+  padding: 10px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+}
+
+.nanda-action-title .eyebrow,
+.nanda-action-title h1,
+.nanda-action-title p {
+  margin: 0;
+}
+
+.nanda-action-title h1 {
+  margin-top: 2px;
+  color: var(--cp-text);
+  font-size: clamp(24px, 6vw, 38px);
+  line-height: 1;
+}
+
+.nanda-action-title > p:last-child {
+  margin-top: 5px;
+  color: var(--cp-text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.nanda-action-menu {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 12px;
+  z-index: 7;
+  display: flex;
+  gap: 6px;
+}
+
+.nanda-action-menu button {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text);
+  cursor: pointer;
+}
+
+.nanda-action-menu button:hover,
+.nanda-action-menu button:focus-visible {
+  border-color: var(--cp-accent);
+  color: var(--cp-accent);
+}
+
+.nanda-mission-page.action-first .nanda-mission-hud {
+  position: absolute;
+  top: calc(100px + env(safe-area-inset-top));
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  width: auto;
+  gap: 5px;
+  margin: 0;
+}
+
+.nanda-mission-page.action-first .nanda-mission-hud span {
+  min-width: 54px;
+  min-height: 38px;
+  justify-content: center;
+  padding: 6px 8px;
+  background: var(--cp-panel-strong);
+}
+
+.nanda-mission-page.action-first .nanda-control-help {
+  display: none;
+}
+
+.nanda-mission-page.action-first .nanda-touch-controls {
+  bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+.nanda-mission-page.action-first .nanda-fallback {
+  overflow-y: auto;
+  padding: 160px 18px 110px;
+}
+
+.nanda-overlay-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.nanda-war-council-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow-y: auto;
+  background: var(--cp-overlay);
+}
+
+.nanda-war-council-overlay > section {
+  width: min(640px, 100%);
+  max-height: calc(100svh - 36px);
+  padding: clamp(20px, 5vw, 36px);
+  overflow-y: auto;
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  background: var(--cp-panel-strong);
+  box-shadow: var(--cp-shadow);
+  text-align: center;
+}
+
+.nanda-war-council-overlay h2 {
+  margin: 4px 0 8px;
+  color: var(--cp-text);
+  font-size: clamp(32px, 7vw, 52px);
+}
+
+.nanda-war-council-overlay > section > p {
+  margin: 0;
+  color: var(--cp-text-muted);
+  line-height: 1.5;
+}
+
+.nanda-active-plans {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  text-align: left;
+}
+
+.nanda-active-plans article {
+  padding: 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-surface-soft);
+}
+
+.nanda-active-plans strong,
+.nanda-active-plans span {
+  display: block;
+}
+
+.nanda-active-plans strong {
+  color: var(--cp-text);
+}
+
+.nanda-active-plans span {
+  margin-top: 4px;
+  color: var(--cp-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.nanda-mission-page.action-first .nanda-pause-overlay {
+  z-index: 22;
+}
+
+@media (max-width: 560px) {
+  .nanda-action-title {
+    top: calc(8px + env(safe-area-inset-top));
+    left: 8px;
+    max-width: calc(100% - 166px);
+    padding: 8px 10px;
+  }
+
+  .nanda-action-title h1 {
+    font-size: 24px;
+  }
+
+  .nanda-action-title .eyebrow,
+  .nanda-action-title > p:last-child {
+    font-size: 10px;
+  }
+
+  .nanda-action-menu {
+    top: calc(8px + env(safe-area-inset-top));
+    right: 8px;
+  }
+
+  .nanda-action-menu button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .nanda-mission-page.action-first .nanda-mission-hud {
+    top: calc(116px + env(safe-area-inset-top));
+    left: 8px;
+  }
+
+  .nanda-mission-page.action-first .nanda-mission-hud span {
+    min-width: 48px;
+    min-height: 34px;
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .nanda-mission-page.action-first .nanda-mission-hud {
+    top: calc(144px + env(safe-area-inset-top));
   }
 }

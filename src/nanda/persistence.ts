@@ -1,4 +1,4 @@
-import { createNandaCampaign } from './engine'
+import { createActionFirstCampaign } from './engine'
 import type { NandaCampaignState } from './types'
 
 export const NANDA_SAVE_KEY = 'chakravarti.fall-of-nandas.save'
@@ -84,7 +84,7 @@ const isNandaCampaignState = (
       : candidate.missionResult === null && candidate.outcome === null
   return (
     candidate.schemaVersion === 1 &&
-    candidate.contentVersion === '0.4.0' &&
+    candidate.contentVersion === '0.4.1' &&
     candidate.campaignId === 'fall-of-nandas' &&
     typeof candidate.seed === 'number' &&
     typeof candidate.phase === 'string' &&
@@ -118,18 +118,18 @@ export const loadNandaCampaign = (
   storage = defaultStorage(),
 ): NandaLoadResult => {
   if (!storage) {
-    return { state: createNandaCampaign() }
+    return { state: createActionFirstCampaign() }
   }
   const raw = storage.getItem(NANDA_SAVE_KEY)
   if (!raw) {
-    return { state: createNandaCampaign() }
+    return { state: createActionFirstCampaign() }
   }
 
   try {
     const parsed: unknown = JSON.parse(raw)
     if (!isNandaCampaignState(parsed)) {
       return {
-        state: createNandaCampaign(),
+        state: createActionFirstCampaign(),
         warning: backupInvalidSave(
           storage,
           raw,
@@ -140,7 +140,7 @@ export const loadNandaCampaign = (
     return { state: parsed }
   } catch {
     return {
-      state: createNandaCampaign(),
+      state: createActionFirstCampaign(),
       warning: backupInvalidSave(
         storage,
         raw,

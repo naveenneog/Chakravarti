@@ -16,7 +16,7 @@ export default defineConfig({
         name: 'Chakravarti: Chronicles of Bharat',
         short_name: 'Chakravarti',
         description:
-          'A mobile-first 3D historical strategy anthology about Indian rulers, statecraft, kingdoms, and decisive wars.',
+          'A mobile-first single-player 3D historical action game with optional strategy and evidence-aware campaigns.',
         display: 'standalone',
         start_url: './',
         scope: './',

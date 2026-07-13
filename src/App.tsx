@@ -581,7 +581,7 @@ function BattleView({
 }
 
 function App() {
-  const [view, setView] = useState<View>('home')
+  const [view, setView] = useState<View>('nanda')
   const [battle, setBattle] = useState<BattleState>(() => createBattleState())
   const [videoFailed, setVideoFailed] = useState(false)
   const [audioUnavailable, setAudioUnavailable] = useState(false)
@@ -623,7 +623,7 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${view === 'nanda' ? 'action-mode' : ''}`}>
       <audio
         ref={audioRef}
         src="./media/maurya/intro-narration.mp3"
@@ -634,6 +634,7 @@ function App() {
         onError={() => setAudioUnavailable(true)}
       />
 
+      {view !== 'nanda' ? (
       <header className="app-header">
         <button
           className="brand-button"
@@ -658,7 +659,7 @@ function App() {
             Chronicles
           </button>
           <button
-            className={`nav-button ${view === 'nanda' ? 'active' : ''}`}
+            className="nav-button"
             type="button"
             onClick={startNanda}
           >
@@ -688,7 +689,7 @@ function App() {
         </nav>
 
         <div className="header-actions">
-          {view !== 'maurya' && view !== 'nanda' ? (
+          {view !== 'maurya' ? (
             <button
               className="icon-button"
               type="button"
@@ -712,6 +713,7 @@ function App() {
           ) : null}
         </div>
       </header>
+      ) : null}
 
       {view === 'home' ? (
         <HomeView
@@ -726,11 +728,9 @@ function App() {
       {view === 'nanda' ? (
         <Suspense
           fallback={
-            <main className="page">
-              <section className="panel-card app-loading">
-                <Gamepad2 size={28} />
-                <h2>Preparing the action-strategy chapter...</h2>
-              </section>
+            <main className="action-loading">
+              <Gamepad2 size={34} />
+              <h2>Entering The Timber Gate...</h2>
             </main>
           }
         >

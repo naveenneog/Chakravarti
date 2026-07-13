@@ -115,7 +115,7 @@ export type NandaEvent = {
 
 export type NandaCampaignState = {
   schemaVersion: 1
-  contentVersion: '0.4.0'
+  contentVersion: '0.4.1'
   campaignId: 'fall-of-nandas'
   seed: number
   phase: NandaPhase

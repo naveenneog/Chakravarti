@@ -21,13 +21,16 @@ and statecraft without treating conquest or casualties as spectacle.
 
 ## Core loop
 
-1. Watch or skip a short chapter cinematic.
-2. Review the historical situation and evidence labels.
-3. Choose a small force and tactical objective.
-4. Play a five-to-eight-minute turn-based mission.
-5. See military outcome, human cost, and political consequence separately.
-6. Unlock a source card, map layer, biography, or alternate perspective.
-7. Carry campaign decisions into the next mission.
+1. Give the player direct control of one character in the graphical mission.
+2. Teach movement, traversal, combat, and the objective through play.
+3. Offer strategy, evidence, and campaign planning as optional overlays.
+4. Return the mission outcome to political and military state.
+5. Show human cost, historical evidence, and reconstruction boundaries after
+   the action instead of blocking first play with them.
+6. Carry campaign decisions into the next mission.
+
+The product must open action-first. Anthology navigation, codex, cinematics, and
+War Council planning support the game but never replace the first playable view.
 
 ## Battle model
 

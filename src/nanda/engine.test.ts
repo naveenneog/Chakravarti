@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   combinedPlanDelta,
+  createActionFirstCampaign,
   createNandaCampaign,
   missionLaunchForecast,
   missionModifiersFor,
@@ -57,6 +58,24 @@ const successfulResult = (
 })
 
 describe('Fall of the Nandas campaign engine', () => {
+  it('starts the product in a forgiving graphical action mission', () => {
+    const state = createActionFirstCampaign(505)
+
+    expect(state.phase).toBe('mission')
+    expect(state.selectedPlans).toEqual({
+      intelligence: 'watch-rotations',
+      alliance: 'frontier-veterans',
+      logistics: 'hidden-caches',
+    })
+    expect(state.missionModifiers).toMatchObject({
+      maxHealth: 130,
+      attackDamage: 42,
+      enemyCount: 4,
+      healingCharges: 2,
+      revealObjectives: true,
+    })
+  })
+
   it('requires one preparation from every strategic category', () => {
     let state = createNandaCampaign(84)
     state = nandaCampaignReducer(state, { type: 'OPEN_PLANNING' })
@@ -184,6 +203,7 @@ describe('Fall of the Nandas persistence', () => {
 
     expect(loaded.warning).toContain('unreadable')
     expect(loaded.state.campaignId).toBe('fall-of-nandas')
+    expect(loaded.state.phase).toBe('mission')
     expect(storage.getItem(NANDA_SAVE_KEY)).toBeNull()
     clearNandaCampaign(storage)
   })
@@ -191,8 +211,9 @@ describe('Fall of the Nandas persistence', () => {
   it('backs up structurally invalid plan selections', () => {
     const storage = new MemoryStorage()
     const invalid = {
-      ...createNandaCampaign(),
+      ...createActionFirstCampaign(),
       phase: 'planning',
+      missionModifiers: null,
       selectedPlans: {
         intelligence: 'unknown-network',
         alliance: null,
@@ -204,6 +225,7 @@ describe('Fall of the Nandas persistence', () => {
     const loaded = loadNandaCampaign(storage)
 
     expect(loaded.warning).toContain('incompatible')
-    expect(loaded.state.selectedPlans.intelligence).toBeNull()
+    expect(loaded.state.phase).toBe('mission')
+    expect(loaded.state.selectedPlans.intelligence).toBe('watch-rotations')
   })
 })
