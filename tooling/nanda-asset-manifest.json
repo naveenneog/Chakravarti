@@ -18,6 +18,24 @@
       "license": "CC0-1.0",
       "file": "public/models/cc0/kenney-nature/plant_bushLarge.glb",
       "use": "Low-poly courtyard vegetation."
+    },
+    {
+      "id": "quaternius-base-character",
+      "creator": "Quaternius",
+      "pack": "Ultimate Animated Character Pack",
+      "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+      "license": "CC0-1.0",
+      "file": "public/models/cc0/quaternius-characters/BaseCharacter.gltf",
+      "use": "Neutral rigged hero animation base with project-original bone-attached clothing and accessories."
+    },
+    {
+      "id": "quaternius-ninja-sand",
+      "creator": "Quaternius",
+      "pack": "Ultimate Animated Character Pack",
+      "source": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+      "license": "CC0-1.0",
+      "file": "public/models/cc0/quaternius-characters/Ninja_Sand.gltf",
+      "use": "Rigged guard animation base, recolored as a reconstructed Nanda district guard."
     }
   ],
   "generatedAssets": [

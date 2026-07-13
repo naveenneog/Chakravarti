@@ -19,6 +19,24 @@ repository, GitHub Pages build, and Android APK.
 
 The upstream license text is retained beside the model files.
 
+### Quaternius Ultimate Animated Character Pack
+
+- Source:
+  <https://quaternius.com/packs/ultimatedanimatedcharacter.html>
+- Creator: Quaternius
+- License: Creative Commons Zero 1.0 Universal
+- Included files:
+  - `public/models/cc0/quaternius-characters/BaseCharacter.gltf`
+  - `public/models/cc0/quaternius-characters/Ninja_Sand.gltf`
+- Use: rigged animation bases with embedded Idle, Run, Jump, SwordSlash,
+  RecieveHit, and Defeat clips. The neutral base character receives original
+  bone-attached dhoti, shoulder cloth, belt, hair, diadem, and sword geometry.
+- Historical boundary: their original materials and cultural styling are not
+  presented as Mauryan evidence. The runtime recolors them and adds original
+  accessories for the reconstructed chapter.
+
+The upstream pack and CC0 notice are retained beside the model files.
+
 ## Hugging Face generated assets
 
 ### Mauryan storage jar
