@@ -1,0 +1,17 @@
+{
+  "chapter": "timber-gate-story-intro",
+  "audio": {
+    "output": "public/media/story/timber-gate-intro-en-IN.mp3",
+    "voice": "en-IN-ArjunNeural",
+    "language": "en-IN",
+    "rate": "-6%",
+    "pitch": "-3%",
+    "text": "Magadha is ruled by the Nandas, and their grip is heavy. Tonight, a young Maurya walks toward the timber gate of Pataliputra. Move unseen, strike only when you must, and carry the dispatches to the northern wall. This is where an empire begins."
+  },
+  "video": {
+    "output": "public/media/story/timber-gate-intro.mp4",
+    "seconds": "8",
+    "size": "720x1280",
+    "prompt": "Eight-second vertical cinematic story-introduction for a historically grounded mobile action game set in Magadha in the late fourth century BCE, on the eve of the fall of the Nanda dynasty. Night falls over the outer timber district of an ancient riverside capital inspired by Pataliputra: tall wooden palisades, a moat, torch-lit lanes, storage jars, patrolling guards seen at a respectful distance. A lone hooded young figure, seen from behind and in silhouette, moves quietly along a mud lane toward a heavy timber gate lit by braziers. The camera starts low near the wet earth, glides forward past a flickering torch, and rises to reveal the fortified gate and the sleeping city beyond as embers drift through warm light. Grounded historical realism, archaeological restraint, deep crimson cloth accents, period-appropriate plain textiles and simple iron fittings. No named-person facial portrait, no gore, no fantasy armor, no modern flags, no text, no logos, no deity imagery, no anachronistic stone-palace skyline. Mobile portrait composition with the focal figure and gate centered."
+  }
+}
