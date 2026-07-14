@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.3 - 2026-07-14
+
+### Added
+
+- Stealth-aware guard AI: each Nanda guard now patrols a route and perceives the
+  player through a forward vision cone and by noise (running, landing, and
+  especially attacking), instead of always tracking the player.
+- Guard states — patrol, suspicious (investigate a last-known position), chase,
+  attack, and retreat when badly wounded — with flanking so guards spread out.
+- Telegraphed strikes: guards wind up before hitting, so retreating during the
+  wind-up dodges the blow.
+- On-screen alert indicators over guards (amber = suspicious, red = alerted) and
+  a "Spotted" / "a guard heard something" HUD prompt so stealth is legible.
+- Unit tests for perception, the state machine, wind-up timing, and flanking.
+
 ## 0.5.2 - 2026-07-14
 
 ### Added

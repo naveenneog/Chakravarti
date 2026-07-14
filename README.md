@@ -65,6 +65,9 @@ npm run lint
 - Control Chandragupta in a mobile third-person mission with movement, jumping,
   elevated routes, close combat, enemy pursuit, recovery, dispatch objectives,
   and a final gate interaction.
+- Evade stealth-aware guards: they patrol routes, spot you through a vision cone,
+  hear running and fighting, investigate, flank, telegraph strikes, and retreat
+  when wounded, so breaking line of sight and staying quiet matter.
 - Every strategic choice changes guards, objective visibility, routes, health,
   mobility, damage, or recovery supplies.
 - Complete campaign command mode provides the same strategy-to-outcome loop
