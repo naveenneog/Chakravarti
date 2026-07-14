@@ -332,6 +332,90 @@
   gap: 12px;
 }
 
+.gameplay-showcase {
+  scroll-margin-top: 88px;
+}
+
+.gameplay-feature-card,
+.gameplay-short-card {
+  overflow: hidden;
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  background: var(--cp-surface);
+  box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+}
+
+.gameplay-feature-card {
+  display: grid;
+}
+
+.gameplay-feature-card video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--cp-bg-elevated);
+  object-fit: cover;
+}
+
+.gameplay-feature-card > div {
+  padding: 18px;
+}
+
+.gameplay-feature-card h3,
+.shorts-heading h3,
+.gameplay-short-card h4 {
+  margin: 0;
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.gameplay-feature-card h3 {
+  font-size: clamp(24px, 5vw, 38px);
+  line-height: 1.05;
+}
+
+.gameplay-feature-card p,
+.gameplay-short-card p {
+  color: var(--cp-text-muted);
+  line-height: 1.5;
+}
+
+.gameplay-feature-card > div > p:last-child {
+  margin: 10px 0 0;
+}
+
+.shorts-heading {
+  margin: 24px 0 12px;
+}
+
+.shorts-heading h3 {
+  max-width: 760px;
+  font-size: clamp(22px, 4.5vw, 34px);
+}
+
+.gameplay-shorts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gameplay-short-card video {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: var(--cp-bg-elevated);
+  object-fit: cover;
+}
+
+.gameplay-short-card h4 {
+  padding: 12px 12px 0;
+  font-size: 17px;
+}
+
+.gameplay-short-card p {
+  margin: 5px 0 0;
+  padding: 0 12px 14px;
+  font-size: 12px;
+}
+
 .campaign-card,
 .pillar-card,
 .history-card,
@@ -897,6 +981,23 @@
   .pillar-grid,
   .history-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gameplay-feature-card {
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.75fr);
+    align-items: stretch;
+  }
+
+  .gameplay-feature-card > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 26px;
+  }
+
+  .gameplay-shorts-grid {
+    max-width: 720px;
+    gap: 16px;
   }
 
   .objective-strip {

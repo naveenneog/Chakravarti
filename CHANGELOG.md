@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.5.2 - 2026-07-14
+
+### Added
+
+- Cinematic story-intro (Sora-generated) that opens the first chapter, "The
+  Timber Gate," with narration, skip, and mute controls, plus a poster fallback.
+- First-run gameplay tutorial teaching move, jump, strike, open, and heal, with
+  a "How to play" button and a "Replay story intro" option in the War Council.
+- Reproducible `tooling/story-media-manifest.json` for the intro video and
+  narration via the existing Azure Sora + Speech pipeline.
+
+### Changed
+
+- Showcase videos now fall back to their poster image if playback fails.
+
+### Fixed
+
+- Unity showcase capture only deletes an output directory when the path is a
+  validated capture-style subfolder, never a drive or volume root.
+- The Windows/Android build script now requires a real `Unity.exe` leaf file
+  rather than any existing path.
+
+## 0.5.1 - 2026-07-14
+
+### Added
+
+- Real Unity gameplay trailer embedded on the GitHub Pages home screen.
+- Two vertical gameplay shorts covering combat and traversal.
+- Original showcase soundtrack with percussion, drone, combat accents, and
+  objective chimes.
+- Responsive landscape and 9:16 video cards with generated poster images.
+- Reproducible internal Unity frame capture and FFmpeg showcase tooling.
+
+### Changed
+
+- The home-page cinematic now uses current Unity gameplay instead of the earlier
+  concept introduction.
+
 ## 0.5.0 - 2026-07-13
 
 ### Added

@@ -16,7 +16,10 @@ historical-content prototype.
 **Unity Windows:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.5.0/ChakravartiAction-v0.5.0-Windows.zip>
 **Unity Android:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.5.0/ChakravartiAction-v0.5.0.apk>
 
-![Mauryan Rise cinematic](public/media/maurya/intro-poster.jpg)
+![Unity gameplay](public/media/gameplay/unity-action-gameplay-poster.jpg)
+
+The GitHub Pages home screen now includes a real Unity gameplay trailer and two
+vertical shorts generated from a deterministic native capture sequence.
 
 The game never treats tactical invention as established history. Every chapter
 separates:
@@ -47,6 +50,8 @@ npm run lint
 
 ### The Fall of the Nandas: The Timber Gate
 
+- Open on a cinematic story intro (Sora-generated) that sets the chapter, then a
+  first-run tutorial teaching move, jump, strike, open, and heal before play.
 - Launch directly behind Chandragupta in the full-screen 3D mission; menus and
   strategy never block first play.
 - Use an articulated hero with running, jumping, and sword-swing motion from a

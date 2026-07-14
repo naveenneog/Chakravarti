@@ -18,12 +18,14 @@ import {
   Flag,
   Gamepad2,
   Heart,
+  HelpCircle,
   Home,
   Info,
   Map,
   Pause,
   Play,
   RotateCcw,
+  ScrollText,
   Shield,
   Sparkles,
   Swords,
@@ -59,6 +61,13 @@ import {
   type NandaMissionHud,
 } from './missionTypes'
 import { useNandaAudio } from './audio'
+import {
+  hasSeenStoryIntro,
+  hasSeenTutorial,
+  markStoryIntroSeen,
+  markTutorialSeen,
+} from './onboarding'
+import MissionTutorial from './MissionTutorial'
 import type {
   EvidenceRef,
   MissionModifiers,
@@ -71,6 +80,7 @@ import type {
 } from './types'
 
 const NandaMission = lazy(() => import('./NandaMission'))
+const StoryIntro = lazy(() => import('./StoryIntro'))
 
 type NandaCampaignProps = {
   onExit: () => void
@@ -672,17 +682,20 @@ function MissionPanel({
   dispatch,
   onExit,
   onPlan,
+  onReplayIntro,
 }: {
   state: NandaCampaignState
   dispatch: (command: NandaCommand) => void
   onExit: () => void
   onPlan: () => void
+  onReplayIntro: () => void
 }) {
   const modifiers = state.missionModifiers
   const webglAvailable = useMemo(supportsWebGL, [])
   const [reducedMode, setReducedMode] = useState(!webglAvailable)
   const [paused, setPaused] = useState(false)
   const [councilOpen, setCouncilOpen] = useState(false)
+  const [tutorialOpen, setTutorialOpen] = useState(() => !hasSeenTutorial())
   const [resetToken, setResetToken] = useState(0)
   const audio = useNandaAudio()
   const controlsRef = useRef<NandaMissionControls>(createMissionControls())
@@ -723,6 +736,11 @@ function MissionPanel({
     setResetToken((value) => value + 1)
   }
 
+  const dismissTutorial = () => {
+    markTutorialSeen()
+    setTutorialOpen(false)
+  }
+
   const activePlans = categoryOrder.flatMap((category) => {
     const planId = state.selectedPlans[category]
     return planId ? [nandaPlans[planId]] : []
@@ -750,7 +768,7 @@ function MissionPanel({
               <NandaMission
                 controlsRef={controlsRef}
                 modifiers={modifiers}
-                paused={paused || councilOpen}
+                paused={paused || councilOpen || tutorialOpen}
                 resetToken={resetToken}
                 onHudChange={setHud}
                 onComplete={complete}
@@ -786,6 +804,13 @@ function MissionPanel({
             aria-label={audio.muted ? 'Enable sound' : 'Mute sound'}
           >
             {audio.muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTutorialOpen(true)}
+            aria-label="How to play"
+          >
+            <HelpCircle size={17} />
           </button>
           <button
             type="button"
@@ -871,6 +896,13 @@ function MissionPanel({
           </>
         ) : null}
 
+        {tutorialOpen ? (
+          <MissionTutorial
+            onDismiss={dismissTutorial}
+            reducedMode={reducedMode}
+          />
+        ) : null}
+
         {paused && !reducedMode ? (
           <div className="nanda-pause-overlay">
             <Pause size={30} />
@@ -944,6 +976,28 @@ function MissionPanel({
                 >
                   <BookOpen size={17} />
                   {reducedMode ? 'Return to 3D mode' : 'Use command mode'}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setCouncilOpen(false)
+                    setTutorialOpen(true)
+                  }}
+                >
+                  <HelpCircle size={17} />
+                  How to play
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setCouncilOpen(false)
+                    onReplayIntro()
+                  }}
+                >
+                  <ScrollText size={17} />
+                  Replay story intro
                 </button>
                 <button
                   className="secondary-button"
@@ -1094,6 +1148,12 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
       : createActionFirstCampaign(loaded.state.seed + 1),
   )
   const [warning, setWarning] = useState(loaded.warning)
+  const [showStoryIntro, setShowStoryIntro] = useState(() => !hasSeenStoryIntro())
+
+  const dismissStoryIntro = () => {
+    markStoryIntroSeen()
+    setShowStoryIntro(false)
+  }
 
   useEffect(() => {
     saveNandaCampaign(state)
@@ -1160,12 +1220,26 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
         <PlanningPanel state={state} dispatch={dispatch} />
       ) : null}
       {state.phase === 'mission' ? (
-        <MissionPanel
-          state={state}
-          dispatch={dispatch}
-          onExit={onExit}
-          onPlan={planNewOperation}
-        />
+        showStoryIntro ? (
+          <Suspense
+            fallback={
+              <div className="nanda-mission-loading">
+                <Crown size={28} />
+                <p>Setting the scene...</p>
+              </div>
+            }
+          >
+            <StoryIntro onContinue={dismissStoryIntro} />
+          </Suspense>
+        ) : (
+          <MissionPanel
+            state={state}
+            dispatch={dispatch}
+            onExit={onExit}
+            onPlan={planNewOperation}
+            onReplayIntro={() => setShowStoryIntro(true)}
+          />
+        )
       ) : null}
       {state.phase === 'debrief' ? (
         <DebriefPanel state={state} dispatch={dispatch} />

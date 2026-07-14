@@ -130,6 +130,112 @@ function CampaignCard({
   )
 }
 
+function ShowcaseVideo({
+  src,
+  poster,
+  label,
+  className,
+}: {
+  src: string
+  poster: string
+  label: string
+  className?: string
+}) {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return (
+      <img
+        className={className}
+        src={poster}
+        alt={label}
+        loading="lazy"
+      />
+    )
+  }
+
+  return (
+    <video
+      className={className}
+      controls
+      playsInline
+      preload="metadata"
+      poster={poster}
+      onError={() => setFailed(true)}
+      aria-label={label}
+    >
+      <source src={src} type="video/mp4" />
+    </video>
+  )
+}
+
+function GameplayShowcase() {
+  return (
+    <section className="section gameplay-showcase" aria-labelledby="gameplay-heading">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">
+            <Gamepad2 size={14} />
+            Native Unity gameplay
+          </p>
+          <h2 id="gameplay-heading">Watch The Timber Gate in action</h2>
+          <p>
+            Real footage from the mobile-first Unity 6 vertical slice: traversal,
+            combat, guard pursuit, touch controls, lighting, and adaptive audio.
+          </p>
+        </div>
+      </div>
+
+      <article className="gameplay-feature-card">
+        <ShowcaseVideo
+          src="./media/gameplay/unity-action-gameplay.mp4"
+          poster="./media/gameplay/unity-action-gameplay-poster.jpg"
+          label="Gameplay trailer: Chandragupta enters the timber district"
+        />
+        <div>
+          <p className="eyebrow">
+            <Swords size={14} />
+            Gameplay trailer
+          </p>
+          <h3>Chandragupta enters the timber district</h3>
+          <p>
+            Move, jump, fight Nanda guards, secure dispatches, and push toward
+            Pataliputra&apos;s northern gate.
+          </p>
+        </div>
+      </article>
+
+      <div className="shorts-heading">
+        <p className="eyebrow">
+          <Sparkles size={14} />
+          Gameplay shorts
+        </p>
+        <h3>Built for a phone held sideways. Cut for a phone held upright.</h3>
+      </div>
+      <div className="gameplay-shorts-grid">
+        <article className="gameplay-short-card">
+          <ShowcaseVideo
+            src="./media/gameplay/unity-action-short-combat.mp4"
+            poster="./media/gameplay/unity-action-short-combat-poster.jpg"
+            label="Gameplay short: sword clash"
+          />
+          <h4>Sword clash</h4>
+          <p>Close-range combat, hit reactions, pursuit, and recovery.</p>
+        </article>
+        <article className="gameplay-short-card">
+          <ShowcaseVideo
+            src="./media/gameplay/unity-action-short-traversal.mp4"
+            poster="./media/gameplay/unity-action-short-traversal-poster.jpg"
+            label="Gameplay short: road to the gate"
+          />
+          <h4>Road to the gate</h4>
+          <p>Third-person movement through the reconstructed timber district.</p>
+        </article>
+      </div>
+    </section>
+  )
+}
+
 function HomeView({
   onNanda,
   onMaurya,
@@ -156,8 +262,8 @@ function HomeView({
         {!videoFailed ? (
           <video
             className="hero-video"
-            src="./media/maurya/intro.mp4"
-            poster="./media/maurya/intro-poster.jpg"
+            src="./media/gameplay/unity-action-gameplay.mp4"
+            poster="./media/gameplay/unity-action-gameplay-poster.jpg"
             autoPlay
             muted
             loop
@@ -200,6 +306,8 @@ function HomeView({
           </div>
         </div>
       </section>
+
+      <GameplayShowcase />
 
       <section className="section" aria-labelledby="chronicles-heading">
         <div className="section-heading">

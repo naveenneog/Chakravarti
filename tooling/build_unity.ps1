@@ -7,26 +7,20 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
 $project = Join-Path $root "unity\ChakravartiAction"
 $version = "6000.5.3f1"
-$candidates = @(
-  (Join-Path $env:USERPROFILE "Unity\Hub\Editor\$version\Editor\Unity.exe"),
-  "C:\Program Files\Unity\Hub\Editor\$version\Editor\Unity.exe"
-)
-$candidates += (
-  Join-Path $env:USERPROFILE "Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe"
-)
-$unity = $null
-foreach ($candidate in $candidates) {
-  if (!(Test-Path $candidate)) {
-    continue
-  }
-  & $candidate -version *> $null
-  if ($LASTEXITCODE -eq 0) {
-    $unity = $candidate
-    break
-  }
+$fallback = Join-Path $env:USERPROFILE "Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe"
+$current = Join-Path $env:USERPROFILE "Unity\Hub\Editor\$version\Editor\Unity.exe"
+$hubCurrent = "C:\Program Files\Unity\Hub\Editor\$version\Editor\Unity.exe"
+$candidates = if ($Target -eq "Windows") {
+  @($fallback, $current, $hubCurrent)
 }
+else {
+  @($current, $hubCurrent, $fallback)
+}
+$unity = $candidates |
+  Where-Object { (Test-Path $_ -PathType Leaf) -and ([System.IO.Path]::GetFileName($_) -ieq "Unity.exe") } |
+  Select-Object -First 1
 if (!$unity) {
-  throw "Unity $version was not found. Install it through Unity Hub first."
+  throw "A usable Unity $version editor executable was not found. Install it through Unity Hub first."
 }
 
 $buildProject = $project
@@ -54,19 +48,25 @@ if ($unity -like "*6000.3.19f1*") {
   $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
   $manifest.dependencies.PSObject.Properties.Remove("com.coplaydev.unity-mcp")
   $manifest.dependencies."com.unity.ugui" = "2.0.0"
-  $manifest |
-    ConvertTo-Json -Depth 20 |
-    Set-Content $manifestPath -Encoding utf8NoBOM
+  $manifestJson = $manifest | ConvertTo-Json -Depth 20
+  [System.IO.File]::WriteAllText(
+    $manifestPath,
+    $manifestJson,
+    (New-Object System.Text.UTF8Encoding($false))
+  )
   Remove-Item `
     (Join-Path $compatibilityProject "Packages\packages-lock.json") `
     -Force `
     -ErrorAction SilentlyContinue
-  @"
+  $projectVersion = @"
 m_EditorVersion: 6000.3.19f1
 m_EditorVersionWithRevision: 6000.3.19f1 (7689f4515d75)
-"@ | Set-Content `
-    (Join-Path $compatibilityProject "ProjectSettings\ProjectVersion.txt") `
-    -Encoding utf8NoBOM
+"@
+  [System.IO.File]::WriteAllText(
+    (Join-Path $compatibilityProject "ProjectSettings\ProjectVersion.txt"),
+    $projectVersion,
+    (New-Object System.Text.UTF8Encoding($false))
+  )
   $buildProject = $compatibilityProject
 }
 
@@ -79,17 +79,26 @@ else {
 $log = Join-Path $buildProject "Logs\build-$($Target.ToLowerInvariant()).log"
 New-Item -ItemType Directory -Path (Split-Path $log) -Force | Out-Null
 
-& $unity `
-  -batchmode `
-  -nographics `
-  -quit `
-  -projectPath $buildProject `
-  -executeMethod $method `
-  -logFile $log
+$arguments = @(
+  "-batchmode",
+  "-nographics",
+  "-quit",
+  "-projectPath", $buildProject,
+  "-executeMethod", $method,
+  "-logFile", $log
+)
+$process = Start-Process `
+  -FilePath $unity `
+  -WorkingDirectory (Split-Path $unity) `
+  -ArgumentList $arguments `
+  -Wait `
+  -PassThru
 
-if ($LASTEXITCODE -ne 0) {
-  Get-Content $log -Tail 160
-  throw "Unity $Target build failed with exit code $LASTEXITCODE."
+if ($process.ExitCode -ne 0) {
+  if (Test-Path $log) {
+    Get-Content $log -Tail 160
+  }
+  throw "Unity $Target build failed with exit code $($process.ExitCode)."
 }
 
 Get-Content $log -Tail 40
