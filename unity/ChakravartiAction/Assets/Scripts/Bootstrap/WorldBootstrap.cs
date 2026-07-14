@@ -36,6 +36,7 @@ namespace Chakravarti.Action
             Screen.autorotateToLandscapeLeft = true;
             Screen.autorotateToLandscapeRight = true;
             gameObject.AddComponent<AutomatedSmokeRunner>();
+            gameObject.AddComponent<ShowcaseCaptureRunner>();
             BuildMaterials();
             ConfigureRendering();
 
