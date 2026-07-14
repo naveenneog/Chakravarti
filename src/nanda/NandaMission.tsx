@@ -14,6 +14,15 @@ import {
   type NandaMissionHud,
 } from './missionTypes'
 import type { NandaSoundEffect } from './audio'
+import {
+  GUARD_PERCEPTION,
+  createGuardBrain,
+  playerNoiseLevel,
+  updateGuardBrain,
+  type GuardAlert,
+  type GuardBrain,
+  type Vec2,
+} from './guardAi'
 import type { MissionModifiers, MissionResult } from './types'
 
 type NandaMissionProps = {
@@ -48,9 +57,8 @@ type EnemyRuntime = {
   position: THREE.Vector3
   hp: number
   alive: boolean
-  attackCooldown: number
-  attackAnimation: number
   defeatTimer: number
+  brain: GuardBrain
 }
 
 type HeroMotion = {
@@ -64,6 +72,8 @@ type GuardMotion = {
   moving: boolean
   attacking: boolean
   defeated: boolean
+  alert: GuardAlert
+  windup: boolean
 }
 
 const readWorldColors = (): WorldColors => {
@@ -129,6 +139,20 @@ const objectivePositions = [
   new THREE.Vector3(-7.5, 2.65, 3.4),
   new THREE.Vector3(6.4, 0.25, -5.1),
 ]
+
+// Hand-tuned patrol loops near each guard's post, kept clear of the gate line
+// (|z| < 0.62) so patrolling guards never wedge themselves against the wall.
+const patrolRoutes: Vec2[][] = [
+  [{ x: 0, z: 6 }, { x: 3.2, z: 8.6 }, { x: -2.6, z: 8 }],
+  [{ x: 5.5, z: 3 }, { x: 7.6, z: 6.6 }, { x: 4, z: 1.4 }],
+  [{ x: -4, z: -3 }, { x: -6.6, z: -1.4 }, { x: -3, z: -6 }],
+  [{ x: 5.5, z: -6 }, { x: 7.6, z: -9 }, { x: 3.6, z: -4 }],
+  [{ x: -3, z: -10 }, { x: -6, z: -12 }, { x: -1.6, z: -8 }],
+  [{ x: 2.8, z: -12 }, { x: 5, z: -13.4 }, { x: 0.6, z: -10 }],
+]
+
+const patrolRouteFor = (index: number, start: THREE.Vector3): Vec2[] =>
+  patrolRoutes[index] ?? [{ x: start.x, z: start.z }]
 
 function useKeyboardControls(
   controlsRef: RefObject<NandaMissionControls>,
@@ -744,6 +768,9 @@ function GuardFigure({
     [gltf.animations, mixer],
   )
   const activeAction = useRef<THREE.AnimationAction | null>(null)
+  const indicatorRef = useRef<THREE.Mesh>(null)
+  const indicatorMaterial = useRef<THREE.MeshBasicMaterial>(null)
+  const pulse = useRef(0)
 
   useEffect(
     () => () => {
@@ -773,6 +800,24 @@ function GuardFigure({
       activeAction.current = next
     }
     mixer.update(delta)
+
+    const indicator = indicatorRef.current
+    if (indicator) {
+      if (motion.defeated || motion.alert === 'calm') {
+        indicator.visible = false
+      } else {
+        indicator.visible = true
+        pulse.current += delta * (motion.alert === 'alerted' ? 9 : 4)
+        const scale =
+          0.15 +
+          Math.sin(pulse.current) * 0.03 +
+          (motion.windup ? 0.06 : 0)
+        indicator.scale.setScalar(scale)
+        indicatorMaterial.current?.color.set(
+          motion.alert === 'alerted' ? colors.danger : colors.warning,
+        )
+      }
+    }
   })
 
   return (
@@ -786,6 +831,10 @@ function GuardFigure({
         object={actor}
         scale={0.65}
       />
+      <mesh ref={indicatorRef} position={[0, 2.78, 0]} visible={false}>
+        <octahedronGeometry args={[1, 0]} />
+        <meshBasicMaterial ref={indicatorMaterial} color={colors.danger} />
+      </mesh>
       <mesh position={[0, 2.35, 0]}>
         <boxGeometry args={[0.9, 0.1, 0.1]} />
         <meshStandardMaterial color={colors.wallDark} />
@@ -855,16 +904,26 @@ function MissionScene({
       position: position.clone(),
       hp: modifiers.enemyHealth,
       alive: true,
-      attackCooldown: 0.4 + index * 0.08,
-      attackAnimation: 0,
       defeatTimer: 0,
+      brain: createGuardBrain(
+        `nanda-guard-${index + 1}`,
+        { x: position.x, z: position.z },
+        patrolRouteFor(index, position),
+        index % 2 === 0 ? 1 : -1,
+      ),
     })),
   )
   const enemyMotions = useRef(
     new Map(
       enemies.current.map((enemy) => [
         enemy.id,
-        { moving: false, attacking: false, defeated: false },
+        {
+          moving: false,
+          attacking: false,
+          defeated: false,
+          alert: 'calm' as GuardAlert,
+          windup: false,
+        },
       ]),
     ),
   )
@@ -881,6 +940,7 @@ function MissionScene({
   const attackAnimation = useRef(0)
   const hurtAnimation = useRef(0)
   const footstepTimer = useRef(0)
+  const landedTimer = useRef(0)
   const healCooldown = useRef(0)
   const jumpLatch = useRef(false)
   const interactLatch = useRef(false)
@@ -930,6 +990,7 @@ function MissionScene({
     hurtAnimation.current = Math.max(0, hurtAnimation.current - step)
     healCooldown.current = Math.max(0, healCooldown.current - step)
     footstepTimer.current = Math.max(0, footstepTimer.current - step)
+    landedTimer.current = Math.max(0, landedTimer.current - step)
 
     moveDirection.set(
       Number(controls.right) - Number(controls.left),
@@ -991,6 +1052,7 @@ function MissionScene({
         playerPosition.current.y = floor + 0.85
         verticalVelocity.current = 0
         grounded.current = true
+        landedTimer.current = 0.2
       }
     } else {
       playerPosition.current.y = floor + 0.85
@@ -1038,6 +1100,15 @@ function MissionScene({
       onSound('heal')
     }
 
+    const heroNoise = playerNoiseLevel({
+      moving: heroMotion.current.moving,
+      attacking: attackAnimation.current > 0,
+      airborne: !grounded.current,
+      landed: landedTimer.current > 0,
+    })
+    let anyAlerted = false
+    let anySuspicious = false
+
     for (const enemy of enemies.current) {
       const group = enemyGroups.current.get(enemy.id)
       const healthBar = enemyHealthBars.current.get(enemy.id)
@@ -1045,53 +1116,140 @@ function MissionScene({
       if (!group) {
         continue
       }
-      enemy.attackAnimation = Math.max(0, enemy.attackAnimation - step)
-      if (motion) {
-        motion.attacking = enemy.attackAnimation > 0
-        motion.defeated = !enemy.alive
-      }
       group.visible = enemy.alive || enemy.defeatTimer > 0
       if (!enemy.alive) {
+        if (motion) {
+          motion.defeated = true
+          motion.attacking = false
+          motion.windup = false
+          motion.alert = 'calm'
+        }
         enemy.defeatTimer = Math.max(0, enemy.defeatTimer - step)
         continue
       }
-      enemy.attackCooldown = Math.max(0, enemy.attackCooldown - step)
-      toPlayer.copy(playerPosition.current).sub(enemy.position)
-      const distance = toPlayer.length()
-      if (distance < 8.2 && distance > 1.35) {
-        toPlayer.y = 0
-        toPlayer.normalize()
-        candidate.copy(enemy.position).addScaledVector(toPlayer, 2.05 * step)
-        if (
-          !isBlocked(
-            candidate.x,
-            candidate.z,
-            enemy.position.y + 0.85,
-            modifiers.sideGateOpen,
-          )
-        ) {
-          enemy.position.x = candidate.x
-          enemy.position.z = candidate.z
-        }
-      } else if (distance <= 1.55 && enemy.attackCooldown <= 0) {
-        enemy.attackCooldown = 0.95
-        enemy.attackAnimation = 0.45
-        hurtAnimation.current = 0.32
-        health.current = Math.max(0, health.current - 9)
-        onSound('hurt')
-        cameraShake.current = Math.max(cameraShake.current, 0.17)
-      }
-      enemy.position.y = floorHeightAt(enemy.position.x, enemy.position.z)
-      group.position.set(
-        enemy.position.x,
-        enemy.position.y,
-        enemy.position.z,
+
+      const wasWindup = motion?.windup ?? false
+      const intent = updateGuardBrain(
+        enemy.brain,
+        {
+          guard: { x: enemy.position.x, z: enemy.position.z },
+          facingYaw: group.rotation.y,
+          player: {
+            x: playerPosition.current.x,
+            z: playerPosition.current.z,
+          },
+          playerNoise: heroNoise,
+          healthFraction: clamp01(enemy.hp / modifiers.enemyHealth),
+        },
+        GUARD_PERCEPTION,
+        step,
       )
-      group.rotation.y = Math.atan2(toPlayer.x, toPlayer.z)
+
+      if (intent.alert === 'alerted') {
+        anyAlerted = true
+      } else if (intent.alert === 'suspicious') {
+        anySuspicious = true
+      }
+
+      let moved = false
+      if (intent.moveTarget && intent.speed > 0) {
+        toPlayer.set(
+          intent.moveTarget.x - enemy.position.x,
+          0,
+          intent.moveTarget.z - enemy.position.z,
+        )
+        const travel = toPlayer.length()
+        if (travel > 0.04) {
+          toPlayer.divideScalar(travel)
+          candidate
+            .copy(enemy.position)
+            .addScaledVector(toPlayer, intent.speed * step)
+          if (
+            !isBlocked(
+              candidate.x,
+              candidate.z,
+              enemy.position.y + 0.85,
+              modifiers.sideGateOpen,
+            )
+          ) {
+            enemy.position.x = candidate.x
+            enemy.position.z = candidate.z
+            moved = true
+          }
+        }
+      }
+
+      // A telegraphed strike only connects if the player is still in reach, so
+      // retreating during the wind-up dodges the blow.
+      if (intent.strike) {
+        const reach = Math.hypot(
+          playerPosition.current.x - enemy.position.x,
+          playerPosition.current.z - enemy.position.z,
+        )
+        if (reach <= GUARD_PERCEPTION.attackRange + 0.25) {
+          hurtAnimation.current = 0.32
+          health.current = Math.max(0, health.current - 9)
+          onSound('hurt')
+          cameraShake.current = Math.max(cameraShake.current, 0.17)
+        }
+      }
+      if (intent.windup && !wasWindup) {
+        onSound('sword')
+      }
+
+      if (intent.faceTarget) {
+        const faceX = intent.faceTarget.x - enemy.position.x
+        const faceZ = intent.faceTarget.z - enemy.position.z
+        if (Math.abs(faceX) + Math.abs(faceZ) > 0.001) {
+          group.rotation.y = Math.atan2(faceX, faceZ)
+        }
+      }
+
+      enemy.position.y = floorHeightAt(enemy.position.x, enemy.position.z)
+      group.position.set(enemy.position.x, enemy.position.y, enemy.position.z)
+
+      if (motion) {
+        motion.moving = moved
+        motion.attacking = intent.windup
+        motion.windup = intent.windup
+        motion.alert = intent.alert
+        motion.defeated = false
+      }
+
       if (healthBar) {
         const ratio = clamp01(enemy.hp / modifiers.enemyHealth)
         healthBar.scale.x = ratio
         healthBar.position.x = -0.41 + (ratio * 0.82) / 2
+      }
+    }
+
+    // Keep guards from stacking so flanking reads clearly on screen.
+    const living = enemies.current.filter((enemy) => enemy.alive)
+    for (let i = 0; i < living.length; i += 1) {
+      for (let j = i + 1; j < living.length; j += 1) {
+        const a = living[i]
+        const b = living[j]
+        const dx = b.position.x - a.position.x
+        const dz = b.position.z - a.position.z
+        const gap = Math.hypot(dx, dz)
+        const minGap = 1.15
+        if (gap > 0.0001 && gap < minGap) {
+          const push = ((minGap - gap) / 2) * 0.6
+          const nx = dx / gap
+          const nz = dz / gap
+          const ax = a.position.x - nx * push
+          const az = a.position.z - nz * push
+          const bx = b.position.x + nx * push
+          const bz = b.position.z + nz * push
+          if (!isBlocked(ax, az, a.position.y + 0.85, modifiers.sideGateOpen)) {
+            a.position.x = ax
+            a.position.z = az
+          }
+          if (!isBlocked(bx, bz, b.position.y + 0.85, modifiers.sideGateOpen)) {
+            b.position.x = bx
+            b.position.z = bz
+          }
+        }
       }
     }
 
@@ -1142,15 +1300,19 @@ function MissionScene({
     if (hudClock.current >= 0.12) {
       hudClock.current = 0
       const prompt =
-        gateDistance <= 2.4
-          ? objectivesSecured >= modifiers.requiredObjectives
-            ? 'Open the timber gate'
-            : 'Secure the dispatches before opening the gate'
-          : controls.heal &&
-              healingCharges.current === 0 &&
-              health.current < modifiers.maxHealth
-            ? 'No recovery charges remain'
-            : 'Reach the marked dispatches, then the northern gate'
+        anyAlerted
+          ? 'Spotted — break line of sight or fight through'
+          : anySuspicious
+            ? 'A guard heard something — stay out of sight'
+            : gateDistance <= 2.4
+              ? objectivesSecured >= modifiers.requiredObjectives
+                ? 'Open the timber gate'
+                : 'Secure the dispatches before opening the gate'
+              : controls.heal &&
+                  healingCharges.current === 0 &&
+                  health.current < modifiers.maxHealth
+                ? 'No recovery charges remain'
+                : 'Reach the marked dispatches, then the northern gate'
       onHudChange({
         health: health.current,
         maxHealth: modifiers.maxHealth,
@@ -1225,6 +1387,8 @@ function MissionScene({
               moving: false,
               attacking: false,
               defeated: false,
+              alert: 'calm',
+              windup: false,
             }
           }
         />
