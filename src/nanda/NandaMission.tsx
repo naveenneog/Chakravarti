@@ -288,7 +288,9 @@ function PataliputraDistrict({
   useEffect(() => {
     districtRef.current?.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.castShadow = true
+        // Flat ground/water planes only receive shadows; solid structures cast.
+        const isPlane = child.geometry instanceof THREE.PlaneGeometry
+        child.castShadow = !isPlane
         child.receiveShadow = true
       }
     })
@@ -372,7 +374,9 @@ const themedClone = (source: THREE.Object3D, color: string) => {
     if (!(child instanceof THREE.Mesh)) {
       return
     }
-    child.castShadow = true
+    // Decorative props receive shadows but do not cast them, to keep the
+    // shadow pass cheap on mobile.
+    child.castShadow = false
     child.receiveShadow = true
     const recolor = (material: THREE.Material) => {
       const themed = material.clone()
@@ -476,17 +480,20 @@ function OpenAssetProps({ colors }: { colors: WorldColors }) {
 }
 
 function TorchLights({ colors }: { colors: WorldColors }) {
-  const positions: readonly [number, number, number][] = [
-    [-8.6, 1.6, 1.2],
-    [8.6, 1.6, 1.2],
-    [-4.8, 1.5, -10.4],
-    [4.8, 1.5, -10.4],
+  // Only the two torches flanking the play area cast real (expensive) point
+  // lights; the rear pair keep a brighter emissive glow so they still read as
+  // lit without adding per-fragment lighting cost on mobile.
+  const torches: readonly { position: [number, number, number]; light: boolean }[] = [
+    { position: [-8.6, 1.6, 1.2], light: true },
+    { position: [8.6, 1.6, 1.2], light: true },
+    { position: [-4.8, 1.5, -10.4], light: false },
+    { position: [4.8, 1.5, -10.4], light: false },
   ]
   return (
     <group>
-      {positions.map((position, index) => (
-        <group key={index} position={position}>
-          <mesh castShadow>
+      {torches.map((torch, index) => (
+        <group key={index} position={torch.position}>
+          <mesh>
             <cylinderGeometry args={[0.07, 0.1, 1.2, 8]} />
             <meshStandardMaterial color={colors.wallDark} roughness={0.95} />
           </mesh>
@@ -495,16 +502,18 @@ function TorchLights({ colors }: { colors: WorldColors }) {
             <meshStandardMaterial
               color={colors.warning}
               emissive={colors.warning}
-              emissiveIntensity={1.8}
+              emissiveIntensity={torch.light ? 1.8 : 2.6}
             />
           </mesh>
-          <pointLight
-            color={colors.warning}
-            intensity={8}
-            distance={8}
-            decay={2}
-            position={[0, 0.85, 0]}
-          />
+          {torch.light ? (
+            <pointLight
+              color={colors.warning}
+              intensity={8}
+              distance={8}
+              decay={2}
+              position={[0, 0.85, 0]}
+            />
+          ) : null}
         </group>
       ))}
     </group>
@@ -1223,12 +1232,19 @@ function MissionScene({
       }
     }
 
-    // Keep guards from stacking so flanking reads clearly on screen.
-    const living = enemies.current.filter((enemy) => enemy.alive)
-    for (let i = 0; i < living.length; i += 1) {
-      for (let j = i + 1; j < living.length; j += 1) {
-        const a = living[i]
-        const b = living[j]
+    // Keep guards from stacking so flanking reads clearly on screen. Iterate
+    // the existing array directly (no per-frame allocation) and skip the dead.
+    const guards = enemies.current
+    for (let i = 0; i < guards.length; i += 1) {
+      const a = guards[i]
+      if (!a.alive) {
+        continue
+      }
+      for (let j = i + 1; j < guards.length; j += 1) {
+        const b = guards[j]
+        if (!b.alive) {
+          continue
+        }
         const dx = b.position.x - a.position.x
         const dz = b.position.z - a.position.z
         const gap = Math.hypot(dx, dz)
@@ -1333,13 +1349,12 @@ function MissionScene({
       <color attach="background" args={[colors.background]} />
       <fog attach="fog" args={[colors.background, 18, 45]} />
       <hemisphereLight
-        args={[colors.warning, colors.wallDark, 1.15]}
+        args={[colors.warning, colors.wallDark, 1.55]}
       />
-      <ambientLight intensity={0.72} />
       <directionalLight
         castShadow
         position={[9, 15, 11]}
-        intensity={2.8}
+        intensity={2.9}
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
         shadow-camera-left={-18}
@@ -1347,7 +1362,7 @@ function MissionScene({
         shadow-camera-top={20}
         shadow-camera-bottom={-20}
       />
-      <directionalLight position={[-8, 8, -12]} intensity={1.05} />
+      <directionalLight position={[-8, 8, -12]} intensity={1.15} />
       <mesh position={[0, 8, -28]}>
         <planeGeometry args={[62, 34]} />
         <meshStandardMaterial color={colors.groundSoft} roughness={1} />
