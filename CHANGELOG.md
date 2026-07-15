@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.4 - 2026-07-15
+
+### Changed
+
+- Mobile GPU performance pass on the 3D mission: reduced scene lights from eight
+  to five (dropped the redundant ambient light; only the two front torches cast
+  point lights while all four keep a brighter emissive glow).
+- Trimmed the shadow pass — decorative props (trees, bushes, jars), torch poles,
+  and flat ground/water planes no longer cast shadows; walls and characters
+  still do.
+- Removed a per-frame array allocation from the guard-separation loop.
+
 ## 0.5.3 - 2026-07-14
 
 ### Added
