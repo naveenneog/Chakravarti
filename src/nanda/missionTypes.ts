@@ -20,6 +20,11 @@ export type NandaMissionHud = {
   healingUsed: number
   elapsedSeconds: number
   prompt: string
+  bossActive: boolean
+  bossHealth: number
+  bossMaxHealth: number
+  bossPhase: number
+  bossDefeated: boolean
 }
 
 export const createMissionControls = (): NandaMissionControls => ({

@@ -535,6 +535,65 @@
   color: var(--cp-text);
 }
 
+.nanda-boss-bar {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  width: min(360px, 82%);
+  padding: 8px 12px;
+  border: 1px solid var(--cp-border-strong);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  box-shadow: var(--cp-shadow);
+}
+
+.nanda-boss-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cp-text);
+}
+
+.nanda-boss-bar-label svg {
+  color: var(--cp-danger);
+}
+
+.nanda-boss-phase {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cp-text-muted);
+}
+
+.nanda-boss-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--cp-surface-soft);
+  overflow: hidden;
+}
+
+.nanda-boss-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cp-warning);
+  transition: width 120ms linear, background-color 300ms ease;
+}
+
+.nanda-boss-bar-fill.phase-2 {
+  background: var(--cp-accent);
+}
+
+.nanda-boss-bar-fill.phase-3 {
+  background: var(--cp-danger);
+}
+
 .nanda-mission-frame {
   position: relative;
   min-height: 630px;

@@ -68,6 +68,7 @@ import {
   markTutorialSeen,
 } from './onboarding'
 import MissionTutorial from './MissionTutorial'
+import { BOSS_MAX_HEALTH } from './bossAi'
 import type {
   EvidenceRef,
   MissionModifiers,
@@ -193,6 +194,11 @@ const initialHud = (modifiers: MissionModifiers): NandaMissionHud => ({
   healingUsed: 0,
   elapsedSeconds: 0,
   prompt: 'Reach the marked dispatches, then the northern gate',
+  bossActive: false,
+  bossHealth: BOSS_MAX_HEALTH,
+  bossMaxHealth: BOSS_MAX_HEALTH,
+  bossPhase: 1,
+  bossDefeated: false,
 })
 
 function EvidenceBadge({ evidence }: { evidence: EvidenceRef }) {
@@ -840,6 +846,29 @@ function MissionPanel({
             <strong>{hud.healingCharges}</strong>
           </span>
         </section>
+
+        {hud.bossActive ? (
+          <section className="nanda-boss-bar" aria-live="polite">
+            <div className="nanda-boss-bar-label">
+              <Crown size={15} />
+              <span>Nanda Captain</span>
+              <span className="nanda-boss-phase">
+                Phase {hud.bossPhase}
+              </span>
+            </div>
+            <div className="nanda-boss-bar-track">
+              <div
+                className={`nanda-boss-bar-fill phase-${hud.bossPhase}`}
+                style={{
+                  width: `${Math.max(
+                    0,
+                    Math.min(100, (hud.bossHealth / hud.bossMaxHealth) * 100),
+                  )}%`,
+                }}
+              />
+            </div>
+          </section>
+        ) : null}
 
         {!reducedMode ? (
           <>

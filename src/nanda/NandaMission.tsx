@@ -23,6 +23,14 @@ import {
   type GuardBrain,
   type Vec2,
 } from './guardAi'
+import {
+  BOSS_CONFIG,
+  BOSS_MAX_HEALTH,
+  createBossBrain,
+  updateBossBrain,
+  type BossBrain,
+  type BossPhase,
+} from './bossAi'
 import type { MissionModifiers, MissionResult } from './types'
 
 type NandaMissionProps = {
@@ -74,6 +82,15 @@ type GuardMotion = {
   defeated: boolean
   alert: GuardAlert
   windup: boolean
+}
+
+type BossMotion = {
+  moving: boolean
+  windup: boolean
+  lunging: boolean
+  vulnerable: boolean
+  defeated: boolean
+  phase: BossPhase
 }
 
 const readWorldColors = (): WorldColors => {
@@ -153,6 +170,9 @@ const patrolRoutes: Vec2[][] = [
 
 const patrolRouteFor = (index: number, start: THREE.Vector3): Vec2[] =>
   patrolRoutes[index] ?? [{ x: start.x, z: start.z }]
+
+// The Nanda captain holds the ground between the wall and the northern gate.
+const bossStart = new THREE.Vector3(0, 0, -9)
 
 function useKeyboardControls(
   controlsRef: RefObject<NandaMissionControls>,
@@ -856,6 +876,137 @@ function GuardFigure({
   )
 }
 
+function BossFigure({
+  colors,
+  groupRef,
+  healthRef,
+  motion,
+}: {
+  colors: WorldColors
+  groupRef: (group: THREE.Group | null) => void
+  healthRef: (mesh: THREE.Mesh | null) => void
+  motion: BossMotion
+}) {
+  const localRef = useRef<THREE.Group>(null)
+  const lastPosition = useRef(new THREE.Vector3())
+  const auraRef = useRef<THREE.Mesh>(null)
+  const auraMaterial = useRef<THREE.MeshBasicMaterial>(null)
+  const telegraphRef = useRef<THREE.Mesh>(null)
+  const telegraphMaterial = useRef<THREE.MeshBasicMaterial>(null)
+  const pulse = useRef(0)
+  const gltf = useLoader(
+    GLTFLoader,
+    './models/cc0/quaternius-characters/Ninja_Sand.gltf',
+  )
+  const actor = useMemo(
+    () => themedCharacterClone(gltf.scene, colors, 'guard'),
+    [colors, gltf.scene],
+  )
+  const mixer = useMemo(() => new THREE.AnimationMixer(actor), [actor])
+  const actions = useMemo(
+    () => animationActions(mixer, gltf.animations),
+    [gltf.animations, mixer],
+  )
+  const activeAction = useRef<THREE.AnimationAction | null>(null)
+
+  useEffect(
+    () => () => {
+      mixer.stopAllAction()
+    },
+    [actor, mixer],
+  )
+
+  const phaseColor = (phase: BossPhase) =>
+    phase >= 3 ? colors.danger : phase === 2 ? colors.accentHover : colors.warning
+
+  useFrame((_, delta) => {
+    const group = localRef.current
+    if (!group) {
+      return
+    }
+    motion.moving =
+      group.position.distanceToSquared(lastPosition.current) > 0.0001
+    lastPosition.current.copy(group.position)
+    const clipName = motion.defeated
+      ? 'Defeat'
+      : motion.windup || motion.lunging
+        ? 'Punch'
+        : motion.moving
+          ? 'Run'
+          : 'Idle'
+    const next = actions[clipName] ?? actions.Idle
+    if (next && activeAction.current !== next) {
+      activeAction.current?.fadeOut(0.1)
+      next.reset().fadeIn(0.1).play()
+      activeAction.current = next
+    }
+    mixer.update(delta)
+
+    pulse.current += delta * (motion.phase >= 3 ? 8 : motion.phase === 2 ? 5.5 : 3.5)
+    const aura = auraRef.current
+    if (aura) {
+      aura.visible = !motion.defeated
+      const base = 1 + Math.sin(pulse.current) * 0.06
+      aura.scale.setScalar(base + (motion.vulnerable ? 0.18 : 0))
+      auraMaterial.current?.color.set(
+        motion.vulnerable ? colors.success : phaseColor(motion.phase),
+      )
+      if (auraMaterial.current) {
+        auraMaterial.current.opacity = motion.vulnerable ? 0.5 : 0.28
+      }
+    }
+    const telegraph = telegraphRef.current
+    if (telegraph) {
+      const active = (motion.windup || motion.lunging) && !motion.defeated
+      telegraph.visible = active
+      if (active) {
+        telegraph.scale.setScalar(0.2 + Math.sin(pulse.current * 2) * 0.05)
+        telegraphMaterial.current?.color.set(
+          motion.lunging ? colors.danger : colors.warning,
+        )
+      }
+    }
+  })
+
+  return (
+    <group
+      ref={(group) => {
+        localRef.current = group
+        groupRef(group)
+      }}
+    >
+      <primitive object={actor} scale={1.05} />
+      <mesh
+        ref={auraRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.06, 0]}
+        visible={false}
+      >
+        <ringGeometry args={[1.05, 1.35, 32]} />
+        <meshBasicMaterial
+          ref={auraMaterial}
+          color={colors.warning}
+          transparent
+          opacity={0.28}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh ref={telegraphRef} position={[0, 3.5, 0]} visible={false}>
+        <octahedronGeometry args={[1, 0]} />
+        <meshBasicMaterial ref={telegraphMaterial} color={colors.warning} />
+      </mesh>
+      <mesh position={[0, 3.05, 0]}>
+        <boxGeometry args={[1.5, 0.14, 0.12]} />
+        <meshStandardMaterial color={colors.wallDark} />
+      </mesh>
+      <mesh ref={healthRef} position={[-0.75, 3.05, 0.03]}>
+        <boxGeometry args={[1.5, 0.15, 0.14]} />
+        <meshBasicMaterial color={colors.danger} />
+      </mesh>
+    </group>
+  )
+}
+
 function ObjectiveMarker({
   colors,
   position,
@@ -937,6 +1088,22 @@ function MissionScene({
     ),
   )
   const playerPosition = useRef(new THREE.Vector3(0, 0.85, 13.4))
+  const bossGroup = useRef<THREE.Group | null>(null)
+  const bossHealthBar = useRef<THREE.Mesh | null>(null)
+  const bossBrain = useRef<BossBrain>(createBossBrain('nanda-captain'))
+  const bossPosition = useRef(bossStart.clone())
+  const bossHp = useRef(BOSS_MAX_HEALTH)
+  const bossAlive = useRef(true)
+  const bossDefeatTimer = useRef(0)
+  const bossHitFlash = useRef(0)
+  const bossMotion = useRef<BossMotion>({
+    moving: false,
+    windup: false,
+    lunging: false,
+    vulnerable: false,
+    defeated: false,
+    phase: 1,
+  })
   const verticalVelocity = useRef(0)
   const grounded = useRef(true)
   const health = useRef(modifiers.maxHealth)
@@ -1092,6 +1259,28 @@ function MissionScene({
           nearest.defeatTimer = 0.9
           guardsDefeated.current += 1
           onSound('defeat')
+        }
+      }
+
+      // The captain shares the same swing: hit it if it is in reach, with a
+      // damage bonus while it is in its post-lunge vulnerable recovery.
+      if (bossAlive.current) {
+        const bossReach = Math.hypot(
+          bossPosition.current.x - playerPosition.current.x,
+          bossPosition.current.z - playerPosition.current.z,
+        )
+        if (bossReach <= 2.6) {
+          const bonus = bossMotion.current.vulnerable ? 1.8 : 1
+          bossHp.current -= modifiers.attackDamage * bonus
+          bossHitFlash.current = 0.12
+          onSound('impact')
+          cameraShake.current = Math.max(cameraShake.current, 0.12)
+          if (bossHp.current <= 0) {
+            bossHp.current = 0
+            bossAlive.current = false
+            bossDefeatTimer.current = 1.4
+            onSound('defeat')
+          }
         }
       }
     }
@@ -1269,6 +1458,122 @@ function MissionScene({
       }
     }
 
+    // The Nanda captain: a phased arena boss between the wall and the gate.
+    const bossGroupObj = bossGroup.current
+    let bossEngagedNow = false
+    bossHitFlash.current = Math.max(0, bossHitFlash.current - step)
+    if (bossGroupObj) {
+      bossGroupObj.visible = bossAlive.current || bossDefeatTimer.current > 0
+      if (!bossAlive.current) {
+        bossMotion.current.defeated = true
+        bossMotion.current.windup = false
+        bossMotion.current.lunging = false
+        bossMotion.current.vulnerable = false
+        bossMotion.current.moving = false
+        bossDefeatTimer.current = Math.max(0, bossDefeatTimer.current - step)
+        bossGroupObj.position.set(
+          bossPosition.current.x,
+          bossPosition.current.y,
+          bossPosition.current.z,
+        )
+      } else {
+        const wasBossWindup =
+          bossMotion.current.windup || bossMotion.current.lunging
+        const bossIntent = updateBossBrain(
+          bossBrain.current,
+          {
+            boss: { x: bossPosition.current.x, z: bossPosition.current.z },
+            player: {
+              x: playerPosition.current.x,
+              z: playerPosition.current.z,
+            },
+            healthFraction: clamp01(bossHp.current / BOSS_MAX_HEALTH),
+            damaged: bossHitFlash.current > 0,
+          },
+          BOSS_CONFIG,
+          step,
+        )
+        bossEngagedNow = bossIntent.engaged
+
+        if (bossIntent.moveTarget && bossIntent.speed > 0) {
+          toPlayer.set(
+            bossIntent.moveTarget.x - bossPosition.current.x,
+            0,
+            bossIntent.moveTarget.z - bossPosition.current.z,
+          )
+          const travel = toPlayer.length()
+          if (travel > 0.04) {
+            toPlayer.divideScalar(travel)
+            candidate
+              .copy(bossPosition.current)
+              .addScaledVector(toPlayer, bossIntent.speed * step)
+            if (
+              !isBlocked(
+                candidate.x,
+                candidate.z,
+                bossPosition.current.y + 0.85,
+                modifiers.sideGateOpen,
+              )
+            ) {
+              bossPosition.current.x = candidate.x
+              bossPosition.current.z = candidate.z
+            }
+          }
+        }
+
+        if (bossIntent.strike && bossIntent.damage > 0) {
+          const reach = Math.hypot(
+            playerPosition.current.x - bossPosition.current.x,
+            playerPosition.current.z - bossPosition.current.z,
+          )
+          if (reach <= BOSS_CONFIG.lungeRange + 0.4) {
+            hurtAnimation.current = 0.36
+            health.current = Math.max(0, health.current - bossIntent.damage)
+            onSound('hurt')
+            cameraShake.current = Math.max(
+              cameraShake.current,
+              bossIntent.lunging ? 0.3 : 0.22,
+            )
+          }
+        }
+        const nowWindup = bossIntent.windup || bossIntent.lunging
+        if (nowWindup && !wasBossWindup) {
+          onSound('sword')
+        }
+
+        if (bossIntent.faceTarget) {
+          const fx = bossIntent.faceTarget.x - bossPosition.current.x
+          const fz = bossIntent.faceTarget.z - bossPosition.current.z
+          if (Math.abs(fx) + Math.abs(fz) > 0.001) {
+            bossGroupObj.rotation.y = Math.atan2(fx, fz)
+          }
+        }
+
+        bossPosition.current.y = floorHeightAt(
+          bossPosition.current.x,
+          bossPosition.current.z,
+        )
+        bossGroupObj.position.set(
+          bossPosition.current.x,
+          bossPosition.current.y,
+          bossPosition.current.z,
+        )
+
+        bossMotion.current.windup = bossIntent.windup
+        bossMotion.current.lunging = bossIntent.lunging
+        bossMotion.current.vulnerable = bossIntent.vulnerable
+        bossMotion.current.phase = bossIntent.phase
+        bossMotion.current.defeated = false
+      }
+
+      const bossBar = bossHealthBar.current
+      if (bossBar) {
+        const ratio = clamp01(bossHp.current / BOSS_MAX_HEALTH)
+        bossBar.scale.x = ratio
+        bossBar.position.x = -0.75 + (ratio * 1.5) / 2
+      }
+    }
+
     objectivePositions.forEach((position, index) => {
       if (collectedObjectives.current.has(index)) {
         return
@@ -1300,7 +1605,9 @@ function MissionScene({
       playerPosition.current.z + 12.4,
     )
     const readyAtGate =
-      objectivesSecured >= modifiers.requiredObjectives && gateDistance <= 2.4
+      objectivesSecured >= modifiers.requiredObjectives &&
+      !bossAlive.current &&
+      gateDistance <= 2.4
     if (controls.interact && !interactLatch.current && readyAtGate) {
       onSound('gate')
       cameraShake.current = 0.24
@@ -1315,20 +1622,28 @@ function MissionScene({
     hudClock.current += step
     if (hudClock.current >= 0.12) {
       hudClock.current = 0
+      const bossThreat = bossAlive.current && bossEngagedNow
       const prompt =
-        anyAlerted
-          ? 'Spotted — break line of sight or fight through'
-          : anySuspicious
-            ? 'A guard heard something — stay out of sight'
-            : gateDistance <= 2.4
-              ? objectivesSecured >= modifiers.requiredObjectives
-                ? 'Open the timber gate'
-                : 'Secure the dispatches before opening the gate'
-              : controls.heal &&
-                  healingCharges.current === 0 &&
-                  health.current < modifiers.maxHealth
-                ? 'No recovery charges remain'
-                : 'Reach the marked dispatches, then the northern gate'
+        bossThreat
+          ? bossMotion.current.vulnerable
+            ? 'The captain is off balance — strike now!'
+            : 'Fell the Nanda captain to reach the gate'
+          : anyAlerted
+            ? 'Spotted — break line of sight or fight through'
+            : anySuspicious
+              ? 'A guard heard something — stay out of sight'
+              : bossAlive.current &&
+                  objectivesSecured >= modifiers.requiredObjectives
+                ? 'Face the Nanda captain guarding the gate'
+                : gateDistance <= 2.4
+                  ? objectivesSecured >= modifiers.requiredObjectives
+                    ? 'Open the timber gate'
+                    : 'Secure the dispatches before opening the gate'
+                  : controls.heal &&
+                      healingCharges.current === 0 &&
+                      health.current < modifiers.maxHealth
+                    ? 'No recovery charges remain'
+                    : 'Reach the marked dispatches, then the northern gate'
       onHudChange({
         health: health.current,
         maxHealth: modifiers.maxHealth,
@@ -1340,6 +1655,11 @@ function MissionScene({
         healingUsed: healingUsed.current,
         elapsedSeconds: Math.round(elapsedSeconds.current),
         prompt,
+        bossActive: bossAlive.current && bossEngagedNow,
+        bossHealth: bossHp.current,
+        bossMaxHealth: BOSS_MAX_HEALTH,
+        bossPhase: bossMotion.current.phase,
+        bossDefeated: !bossAlive.current,
       })
     }
   })
@@ -1423,6 +1743,16 @@ function MissionScene({
           }}
         />
       ))}
+      <BossFigure
+        colors={colors}
+        groupRef={(group) => {
+          bossGroup.current = group
+        }}
+        healthRef={(mesh) => {
+          bossHealthBar.current = mesh
+        }}
+        motion={bossMotion.current}
+      />
       <mesh position={[0, 0.75, -12.4]}>
         <boxGeometry args={[0.55, 1.5, 0.55]} />
         <meshStandardMaterial color={colors.success} metalness={0.25} />
