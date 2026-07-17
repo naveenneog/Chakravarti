@@ -68,6 +68,9 @@ npm run lint
 - Evade stealth-aware guards: they patrol routes, spot you through a vision cone,
   hear running and fighting, investigate, flank, telegraph strikes, and retreat
   when wounded, so breaking line of sight and staying quiet matter.
+- Face the **Nanda Captain** boss at the gate: a three-phase fight with
+  telegraphed heavy strikes and lunges that escalate as it loses health, with
+  vulnerable recovery windows to punish. The gate opens only once it falls.
 - Every strategic choice changes guards, objective visibility, routes, health,
   mobility, damage, or recovery supplies.
 - Complete campaign command mode provides the same strategy-to-outcome loop

@@ -14,9 +14,9 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.5.4** (tag `v0.5.4`), `main` @ commit `c844c10`.
+- Latest release: **v0.6.0** (tag `v0.6.0`), on `main`.
 - Working tree clean; everything committed and pushed.
-- `package.json` version `0.5.4`. 36 unit tests pass (`npm run test`).
+- `package.json` version `0.6.0`. 46 unit tests pass (`npm run test`).
 
 ## Stack & commands
 
@@ -43,6 +43,10 @@ young Chandragupta infiltrates the timber district of Pataliputra.
    "Spotted" HUD prompt.
 4. **Mobile GPU perf pass** — scene lights 8→5, fewer shadow casters, removed a
    per-frame allocation in `NandaMission.tsx`.
+5. **Boss fight** (`src/nanda/bossAi.ts`, tested in `bossAi.test.ts`) — the Nanda
+   Captain holds the gate: pure health-phased FSM (measured/aggressive/
+   desperate) with telegraphed strikes, lunges + vulnerable recovery windows.
+   Gate opens only once the captain falls. Boss HP bar + phase readout in the HUD.
 
 ## Conventions
 
@@ -66,6 +70,6 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Next options (not started)
 
-- **Boss enemy + fight** (extend the `guardAi` brain with a boss state/phases).
 - **Sora victory/defeat cutscenes** (reuse the media pipeline).
 - Further mobile perf (Draco/KTX2 compression, instanced palisade posts, LOD).
+- More chapters / a second boss, building on `bossAi.ts`.

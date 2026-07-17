@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0 - 2026-07-17
+
+### Added
+
+- Boss fight: the **Nanda Captain** now holds the northern gate. The gate only
+  opens once the captain is defeated (in addition to securing the dispatches).
+- Health-based boss AI (`src/nanda/bossAi.ts`, unit-tested) with three phases —
+  measured, aggressive, and desperate — that escalate speed and shorten attack
+  cooldowns as the captain loses health.
+- Telegraphed heavy strikes and, from phase 2, longer-range lunges that leave a
+  brief vulnerable recovery window; landing a hit during that window deals bonus
+  damage.
+- A distinct, larger captain figure with a phase-coloured ground aura, attack
+  telegraph, and an on-screen boss health bar with phase readout.
+
 ## 0.5.4 - 2026-07-15
 
 ### Changed
