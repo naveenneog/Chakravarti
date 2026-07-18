@@ -68,7 +68,7 @@ import {
   markTutorialSeen,
 } from './onboarding'
 import MissionTutorial from './MissionTutorial'
-import { BOSS_MAX_HEALTH } from './bossAi'
+import { initialHud } from './initialHud'
 import { timberGateDefinition } from './timberGateDefinition'
 import type { CutsceneOutcome } from './OutcomeCutscene'
 import type {
@@ -185,24 +185,6 @@ const supportsWebGL = () => {
     return false
   }
 }
-
-const initialHud = (modifiers: MissionModifiers): NandaMissionHud => ({
-  health: modifiers.maxHealth,
-  maxHealth: modifiers.maxHealth,
-  guardsDefeated: 0,
-  enemyCount: modifiers.enemyCount,
-  objectivesSecured: modifiers.securedObjectives,
-  requiredObjectives: modifiers.requiredObjectives,
-  healingCharges: modifiers.healingCharges,
-  healingUsed: 0,
-  elapsedSeconds: 0,
-  prompt: timberGateDefinition.presentation.copy.initialPrompt,
-  bossActive: false,
-  bossHealth: BOSS_MAX_HEALTH,
-  bossMaxHealth: BOSS_MAX_HEALTH,
-  bossPhase: 1,
-  bossDefeated: false,
-})
 
 function EvidenceBadge({ evidence }: { evidence: EvidenceRef }) {
   const source = nandaSourceById(evidence.sourceId)

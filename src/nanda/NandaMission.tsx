@@ -15,7 +15,6 @@ import {
 } from './missionTypes'
 import type { NandaSoundEffect } from './audio'
 import {
-  GUARD_PERCEPTION,
   createGuardBrain,
   playerNoiseLevel,
   updateGuardBrain,
@@ -23,8 +22,6 @@ import {
   type GuardBrain,
 } from './guardAi'
 import {
-  BOSS_CONFIG,
-  BOSS_MAX_HEALTH,
   createBossBrain,
   updateBossBrain,
   type BossBrain,
@@ -47,6 +44,17 @@ const MISSION_PROMPTS = timberGateDefinition.presentation.copy.prompts
 const MISSION_BUDGETS = timberGateDefinition.budgets
 // Gate 10: objective items + collection policy from the definition.
 const MISSION_OBJECTIVES = timberGateDefinition.objectives
+// Gate 12: guard/boss AI configs come from the definition (single source of
+// truth). GUARD_PERCEPTION/BOSS_CONFIG/BOSS_MAX_HEALTH stay as AI-module
+// defaults; the runtime reads the mission's chosen values instead. The Timber
+// Gate is a boss encounter, so fail fast if the data ever omits it rather than
+// silently degrading to a bossless mission.
+const MISSION_GUARD_CONFIG = timberGateDefinition.encounters.guardAi.config
+const missionBossDef = timberGateDefinition.encounters.boss
+if (!missionBossDef) {
+  throw new Error('The Timber Gate mission requires a boss encounter definition')
+}
+const MISSION_BOSS = missionBossDef
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -136,7 +144,11 @@ const objectivePositions = timberGateDefinition.objectives.items.map(
 )
 
 // The Nanda captain holds the ground between the wall and the northern gate.
-const bossStart = new THREE.Vector3(0, 0, -9)
+const bossStart = new THREE.Vector3(
+  MISSION_BOSS.spawn.x,
+  MISSION_BOSS.spawn.y,
+  MISSION_BOSS.spawn.z,
+)
 
 function useKeyboardControls(
   controlsRef: RefObject<NandaMissionControls>,
@@ -1165,9 +1177,9 @@ function MissionScene({
   const playerPosition = useRef(new THREE.Vector3(0, 0.85, 13.4))
   const bossGroup = useRef<THREE.Group | null>(null)
   const bossHealthBar = useRef<THREE.Mesh | null>(null)
-  const bossBrain = useRef<BossBrain>(createBossBrain('nanda-captain'))
+  const bossBrain = useRef<BossBrain>(createBossBrain(MISSION_BOSS.id))
   const bossPosition = useRef(bossStart.clone())
-  const bossHp = useRef(BOSS_MAX_HEALTH)
+  const bossHp = useRef(MISSION_BOSS.maxHealth)
   const bossAlive = useRef(true)
   const bossDefeatTimer = useRef(0)
   const bossHitFlash = useRef(0)
@@ -1414,7 +1426,7 @@ function MissionScene({
           playerNoise: heroNoise,
           healthFraction: clamp01(enemy.hp / modifiers.enemyHealth),
         },
-        GUARD_PERCEPTION,
+        MISSION_GUARD_CONFIG,
         step,
       )
 
@@ -1459,7 +1471,7 @@ function MissionScene({
           playerPosition.current.x - enemy.position.x,
           playerPosition.current.z - enemy.position.z,
         )
-        if (reach <= GUARD_PERCEPTION.attackRange + 0.25) {
+        if (reach <= MISSION_GUARD_CONFIG.attackRange + 0.25) {
           hurtAnimation.current = 0.32
           health.current = Math.max(0, health.current - 9)
           onSound('hurt')
@@ -1562,10 +1574,10 @@ function MissionScene({
               x: playerPosition.current.x,
               z: playerPosition.current.z,
             },
-            healthFraction: clamp01(bossHp.current / BOSS_MAX_HEALTH),
+            healthFraction: clamp01(bossHp.current / MISSION_BOSS.maxHealth),
             damaged: bossHitFlash.current > 0,
           },
-          BOSS_CONFIG,
+          MISSION_BOSS.config,
           step,
         )
         bossEngagedNow = bossIntent.engaged
@@ -1601,7 +1613,7 @@ function MissionScene({
             playerPosition.current.x - bossPosition.current.x,
             playerPosition.current.z - bossPosition.current.z,
           )
-          if (reach <= BOSS_CONFIG.lungeRange + 0.4) {
+          if (reach <= MISSION_BOSS.config.lungeRange + 0.4) {
             hurtAnimation.current = 0.36
             health.current = Math.max(0, health.current - bossIntent.damage)
             onSound('hurt')
@@ -1643,7 +1655,7 @@ function MissionScene({
 
       const bossBar = bossHealthBar.current
       if (bossBar) {
-        const ratio = clamp01(bossHp.current / BOSS_MAX_HEALTH)
+        const ratio = clamp01(bossHp.current / MISSION_BOSS.maxHealth)
         bossBar.scale.x = ratio
         bossBar.position.x = -0.75 + (ratio * 1.5) / 2
       }
@@ -1737,7 +1749,7 @@ function MissionScene({
         prompt,
         bossActive: bossAlive.current && bossEngagedNow,
         bossHealth: bossHp.current,
-        bossMaxHealth: BOSS_MAX_HEALTH,
+        bossMaxHealth: MISSION_BOSS.maxHealth,
         bossPhase: bossMotion.current.phase,
         bossDefeated: !bossAlive.current,
       })
