@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.7 - 2026-07-18
+
+### Changed
+
+- Mission-definition migration gates 5–6 (Sol-approved, no behaviour change):
+  the hero/guard/boss models and tree/bush/jar props now read their paths from
+  the Timber Gate definition, and the HUD prompt strings, mission title, initial
+  prompt, and boss label are sourced from the definition's presentation copy
+  instead of hardcoded literals. Pinned by the existing 81 golden tests; 13/13
+  browser smoke.
+
 ## 0.7.6 - 2026-07-18
 
 ### Fixed
