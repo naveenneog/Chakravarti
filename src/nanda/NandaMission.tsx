@@ -104,20 +104,23 @@ type BossMotion = {
 const readWorldColors = (): WorldColors => {
   const styles = getComputedStyle(document.documentElement)
   const read = (name: string) => styles.getPropertyValue(name).trim()
+  // Gate 7: the world colour-role -> CSS-variable mapping comes from the mission
+  // definition (single source of truth); identical variables as before.
+  const wp = timberGateDefinition.presentation.worldPalette
   return {
-    background: read('--cp-bg'),
-    ground: read('--cp-surface'),
-    groundSoft: read('--cp-surface-soft'),
-    wall: read('--cp-border-strong'),
-    wallDark: read('--cp-text-muted'),
-    text: read('--cp-text'),
-    muted: read('--cp-text-soft'),
-    accent: read('--cp-accent'),
-    accentHover: read('--cp-accent-hover'),
-    success: read('--cp-success'),
-    danger: read('--cp-danger'),
-    warning: read('--cp-warning'),
-    water: read('--cp-link'),
+    background: read(wp.background),
+    ground: read(wp.ground),
+    groundSoft: read(wp.groundSoft),
+    wall: read(wp.wall),
+    wallDark: read(wp.wallDark),
+    text: read(wp.text),
+    muted: read(wp.muted),
+    accent: read(wp.accent),
+    accentHover: read(wp.accentHover),
+    success: read(wp.success),
+    danger: read(wp.danger),
+    warning: read(wp.warning),
+    water: read(wp.water),
   }
 }
 
@@ -520,30 +523,15 @@ function TorchLights({ colors }: { colors: WorldColors }) {
 
 type CharacterRole = 'hero' | 'guard' | 'captain'
 
-// Reviewed, human-referenced palette (not derived from the neon CSS theme) so
-// the cast reads as people in period dress rather than toy mannequins, while
-// keeping the art direction's deep-crimson accents.
+// Gate 7 of the migration: the reviewed character palette is sourced from the
+// mission definition (single source of truth). Aliased into the flat shape the
+// theming code already uses; values are identical (pinned by golden tests).
 const CHARACTER_PALETTE = {
-  skin: '#b3794f',
-  hair: '#231b15',
-  hero: {
-    cloth: '#8f1d33',
-    clothDark: '#5d1322',
-    metal: '#c9a24b',
-    leather: '#5a3b24',
-  },
-  guard: {
-    cloth: '#7a6038',
-    clothDark: '#463722',
-    metal: '#8a7444',
-    leather: '#463020',
-  },
-  captain: {
-    cloth: '#611427',
-    clothDark: '#360c17',
-    metal: '#d8b45c',
-    leather: '#3d281a',
-  },
+  skin: timberGateDefinition.presentation.characterPalette.skin,
+  hair: timberGateDefinition.presentation.characterPalette.hair,
+  hero: timberGateDefinition.presentation.characterPalette.roles.hero,
+  guard: timberGateDefinition.presentation.characterPalette.roles.guard,
+  captain: timberGateDefinition.presentation.characterPalette.roles.captain,
 } as const
 
 type MaterialCategory = 'skin' | 'hair' | 'metal' | 'leather' | 'cloth'
