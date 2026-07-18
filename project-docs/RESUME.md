@@ -61,7 +61,7 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 8. **Grandiose character pass** (v0.6.3) — reviewed human palette + PBR, role
    silhouettes (hero/guard/captain), captain helmet, rim light, in
    `NandaMission.tsx` (`themedCharacterClone`, `CHARACTER_PALETTE`).
-9. **Kalinga chapter envelope** (v0.7.0–v0.7.2) — `src/game/KalingaIntro.tsx`
+9. **Kalinga chapter envelope** (v0.7.0–v0.7.3) — `src/game/KalingaIntro.tsx`
    cinematic before the tactical battle, and a dedicated `KalingaDebrief` in
    `src/App.tsx` (view `'kalinga-debrief'`) after it that ties the player's
    result to Edict XIII, then links to the codex. Deterministic battle engine

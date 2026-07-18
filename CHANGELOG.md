@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.3 - 2026-07-18
+
+### Changed
+
+- Compressed the Mauryan Rise intro clip to the mobile budget (4.0 MB ->
+  ~0.4 MB, H.264 24 fps faststart), matching the other cinematics. No visual or
+  gameplay change; poster/narration still precache and the mp4 loads on demand.
+
+### Tests
+
+- Extended the browser smoke (`npm run test:smoke`) to cover the Kalinga chapter
+  flow — opening the battle shows the intro cinematic (with the poster fallback
+  when video is blocked) and leads into the tactical board — and split the
+  console-error assertion so the deliberately blocked-mp4 resource failures are
+  no longer counted as regressions (13 checks).
+
 ## 0.7.2 - 2026-07-18
 
 ### Added
