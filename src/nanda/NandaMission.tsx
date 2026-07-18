@@ -21,7 +21,6 @@ import {
   updateGuardBrain,
   type GuardAlert,
   type GuardBrain,
-  type Vec2,
 } from './guardAi'
 import {
   BOSS_CONFIG,
@@ -34,6 +33,7 @@ import {
 import type { MissionModifiers, MissionResult } from './types'
 import { floorHeightAt, isBlocked } from './missionGeometry'
 import { timberGateDefinition } from './timberGateDefinition'
+import { projectGuards } from '../action/missionRuntime'
 
 // Gate 5 of the mission-definition migration: model/prop asset paths come from
 // the definition (single source of truth) rather than hardcoded strings.
@@ -126,33 +126,10 @@ const readWorldColors = (): WorldColors => {
   }
 }
 
-const enemyStarts = [
-  new THREE.Vector3(0, 0, 6),
-  new THREE.Vector3(5.5, 0, 3),
-  new THREE.Vector3(-4, 0, -3),
-  new THREE.Vector3(5.5, 0, -6),
-  new THREE.Vector3(-3, 0, -10),
-  new THREE.Vector3(2.8, 0, -12),
-]
-
 const objectivePositions = [
   new THREE.Vector3(-7.5, 2.65, 3.4),
   new THREE.Vector3(6.4, 0.25, -5.1),
 ]
-
-// Hand-tuned patrol loops near each guard's post, kept clear of the gate line
-// (|z| < 0.62) so patrolling guards never wedge themselves against the wall.
-const patrolRoutes: Vec2[][] = [
-  [{ x: 0, z: 6 }, { x: 3.2, z: 8.6 }, { x: -2.6, z: 8 }],
-  [{ x: 5.5, z: 3 }, { x: 7.6, z: 6.6 }, { x: 4, z: 1.4 }],
-  [{ x: -4, z: -3 }, { x: -6.6, z: -1.4 }, { x: -3, z: -6 }],
-  [{ x: 5.5, z: -6 }, { x: 7.6, z: -9 }, { x: 3.6, z: -4 }],
-  [{ x: -3, z: -10 }, { x: -6, z: -12 }, { x: -1.6, z: -8 }],
-  [{ x: 2.8, z: -12 }, { x: 5, z: -13.4 }, { x: 0.6, z: -10 }],
-]
-
-const patrolRouteFor = (index: number, start: THREE.Vector3): Vec2[] =>
-  patrolRoutes[index] ?? [{ x: start.x, z: start.z }]
 
 // The Nanda captain holds the ground between the wall and the northern gate.
 const bossStart = new THREE.Vector3(0, 0, -9)
@@ -1149,17 +1126,21 @@ function MissionScene({
   const enemyHealthBars = useRef(new Map<string, THREE.Mesh>())
   const objectiveGroups = useRef(new Map<number, THREE.Group>())
   const enemies = useRef<EnemyRuntime[]>(
-    enemyStarts.slice(0, modifiers.enemyCount).map((position, index) => ({
-      id: `nanda-guard-${index + 1}`,
-      position: position.clone(),
+    projectGuards(timberGateDefinition, modifiers.enemyCount).map((guard) => ({
+      id: guard.id,
+      position: new THREE.Vector3(
+        guard.spawn.x,
+        guard.spawn.y,
+        guard.spawn.z,
+      ),
       hp: modifiers.enemyHealth,
       alive: true,
       defeatTimer: 0,
       brain: createGuardBrain(
-        `nanda-guard-${index + 1}`,
-        { x: position.x, z: position.z },
-        patrolRouteFor(index, position),
-        index % 2 === 0 ? 1 : -1,
+        guard.id,
+        { x: guard.spawn.x, z: guard.spawn.z },
+        guard.patrol,
+        guard.flankSign,
       ),
     })),
   )
