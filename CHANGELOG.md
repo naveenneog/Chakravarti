@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.4 - 2026-07-18
+
+### Changed
+
+- Refactor step 1 toward a data-driven mission (Sol-reviewed staged plan):
+  extracted the pure terrain-height and collision functions (`floorHeightAt`,
+  `isBlocked`) from `NandaMission.tsx` into `src/nanda/missionGeometry.ts` with
+  no behaviour change, and pinned them with 10 golden/characterization tests
+  (`missionGeometry.test.ts`) so the upcoming migration cannot silently alter
+  collision or terrain.
+
 ## 0.7.3 - 2026-07-18
 
 ### Changed
