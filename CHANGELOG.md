@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.2 - 2026-07-18
+
+### Added
+
+- Dedicated Cost of Kalinga historical debrief: after the battle, a "Historical
+  debrief" screen now shows the player's specific outcome (result, restraint
+  objective met or exceeded, cost of war vs target, turns) and ties it to
+  Ashoka's Major Rock Edict XIII, before linking to the full codex. Previously
+  the battle jumped straight to the generic codex, losing the result context.
+
 ## 0.7.1 - 2026-07-18
 
 ### Changed
