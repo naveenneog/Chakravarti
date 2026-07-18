@@ -29,7 +29,7 @@ import {
 } from './bossAi'
 import type { MissionModifiers, MissionResult } from './types'
 import { timberGateDefinition } from './timberGateDefinition'
-import { projectGuards, isObjectiveInRange } from '../action/missionRuntime'
+import { projectGuards, isObjectiveInRange, evaluateExitCompletion } from '../action/missionRuntime'
 
 // Gate 5 of the mission-definition migration: model/prop asset paths come from
 // the definition (single source of truth) rather than hardcoded strings.
@@ -55,6 +55,20 @@ if (!missionBossDef) {
   throw new Error('The Timber Gate mission requires a boss encounter definition')
 }
 const MISSION_BOSS = missionBossDef
+// Gate 13: the completion policy and its exit anchor come from the definition.
+// The rule references the exit by id, so fail fast if that ever dangles.
+const MISSION_COMPLETION = MISSION_OBJECTIVES.completion
+const MISSION_EXIT = timberGateDefinition.topology.anchors.exit
+if (MISSION_COMPLETION.kind !== 'interact-at-exit-v1') {
+  throw new Error(
+    `Timber Gate mission does not support completion kind "${MISSION_COMPLETION.kind}"`,
+  )
+}
+if (MISSION_COMPLETION.exitAnchorId !== MISSION_EXIT.id) {
+  throw new Error(
+    `Timber Gate completion references unknown exit anchor "${MISSION_COMPLETION.exitAnchorId}"`,
+  )
+}
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -1696,20 +1710,30 @@ function MissionScene({
       playerPosition.current.x,
       playerPosition.current.z + 12.4,
     )
-    const readyAtGate =
-      objectivesSecured >= modifiers.requiredObjectives &&
-      !bossAlive.current &&
-      gateDistance <= 2.4
-    if (controls.interact && !interactLatch.current && readyAtGate) {
+    // Gate 13: the completion decision is a pure predicate reading the
+    // definition's exit anchor + policy (see evaluateExitCompletion's truth
+    // table). It resolves a single frame; completionSent stays the once-only
+    // arbiter, and a same-frame success suppresses a same-frame death.
+    const completion = evaluateExitCompletion(MISSION_COMPLETION, MISSION_EXIT, {
+      objectivesSecured,
+      requiredObjectives: modifiers.requiredObjectives,
+      bossAlive: bossAlive.current,
+      player: {
+        x: playerPosition.current.x,
+        z: playerPosition.current.z,
+      },
+      interactPressed: controls.interact,
+      interactWasPressed: interactLatch.current,
+      zeroHealth: health.current <= 0,
+    })
+    if (completion === 'success') {
       onSound('gate')
       cameraShake.current = 0.24
       emitResult(true)
-    }
-    interactLatch.current = controls.interact
-
-    if (health.current <= 0) {
+    } else if (completion === 'failure') {
       emitResult(false)
     }
+    interactLatch.current = controls.interact
 
     hudClock.current += step
     if (hudClock.current >= 0.12) {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { isObjectiveInRange, projectGuards } from '../action/missionRuntime'
+import {
+  evaluateExitCompletion,
+  isObjectiveInRange,
+  projectGuards,
+  type ExitCompletionInput,
+} from '../action/missionRuntime'
 import { timberGateDefinition as def } from './timberGateDefinition'
 
 // Gate 9 characterization: pin the runtime guard projection against the legacy
@@ -106,5 +111,94 @@ describe('isObjectiveInRange (collection boundaries)', () => {
     expect(
       isObjectiveInRange(at(1.2, 1.8, 1.2 + 1e-6), at(0, 0, 0), collection),
     ).toBe(false)
+  })
+})
+
+// Gate 13 truth table (written BEFORE wiring, per Sol's NO-GO-for-blind-edits):
+// pin every branch of the completion decision so extracting the predicate from
+// NandaMission's useFrame cannot change when the mission ends in success/failure.
+describe('evaluateExitCompletion (Timber Gate completion truth table)', () => {
+  const rule = def.objectives.completion // interact-at-exit-v1, requireBossDefeated
+  const exit = def.topology.anchors.exit // { x: 0, z: -12.4 }, radius 2.4
+
+  // A fully-eligible rising-edge interact right on the exit.
+  const base: ExitCompletionInput = {
+    objectivesSecured: 2,
+    requiredObjectives: 2,
+    bossAlive: false,
+    player: { x: 0, z: -12.4 },
+    interactPressed: true,
+    interactWasPressed: false,
+    zeroHealth: false,
+  }
+  const evalWith = (patch: Partial<ExitCompletionInput>) =>
+    evaluateExitCompletion(rule, exit, { ...base, ...patch })
+
+  it('does not complete with insufficient objectives', () => {
+    expect(evalWith({ objectivesSecured: 1 })).toBeNull()
+  })
+
+  it('does not complete while the boss lives (objectives met)', () => {
+    expect(evalWith({ bossAlive: true })).toBeNull()
+  })
+
+  it('does not complete while the boss lives and objectives are unmet', () => {
+    expect(evalWith({ bossAlive: true, objectivesSecured: 1 })).toBeNull()
+  })
+
+  it('does not complete outside the exit radius', () => {
+    // distance 4.4 > 2.4
+    expect(evalWith({ player: { x: 0, z: -8 } })).toBeNull()
+  })
+
+  it('completes exactly on the exit radius (inclusive)', () => {
+    // Offset purely along x so the boundary distance is exactly 2.4 with no
+    // floating-point drift (-12.4 + 2.4 would land at 2.4000000000000004, which
+    // the legacy inline check also treats as just outside — verified below).
+    expect(evalWith({ player: { x: 2.4, z: -12.4 } })).toBe('success')
+  })
+
+  it('does not complete just past the exit radius', () => {
+    expect(evalWith({ player: { x: 2.4 + 1e-6, z: -12.4 } })).toBeNull()
+  })
+
+  it('does not complete when interact is not pressed', () => {
+    expect(evalWith({ interactPressed: false })).toBeNull()
+  })
+
+  it('does not complete when interact is held (no rising edge)', () => {
+    expect(evalWith({ interactPressed: true, interactWasPressed: true })).toBeNull()
+  })
+
+  it('completes on a valid rising-edge interact at the gate', () => {
+    expect(evalWith({})).toBe('success')
+  })
+
+  it('completes with the boss alive when the rule does not require its defeat', () => {
+    expect(
+      evaluateExitCompletion(
+        { kind: 'interact-at-exit-v1', exitAnchorId: exit.id, requireBossDefeated: false },
+        exit,
+        { ...base, bossAlive: true },
+      ),
+    ).toBe('success')
+  })
+
+  it('resolves success when a success and zero-health land on the same frame', () => {
+    expect(evalWith({ zeroHealth: true })).toBe('success')
+  })
+
+  it('resolves failure on zero health without an eligible success', () => {
+    expect(evalWith({ interactPressed: false, zeroHealth: true })).toBe('failure')
+  })
+
+  it('fails fast on an unsupported completion kind', () => {
+    expect(() =>
+      evaluateExitCompletion(
+        { kind: 'chapter-policy', policyId: 'x' },
+        exit,
+        base,
+      ),
+    ).toThrow(/unsupported completion kind/)
   })
 })

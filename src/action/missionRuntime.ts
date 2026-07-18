@@ -8,6 +8,8 @@
 
 import type {
   ActionMissionDefinition,
+  CompletionRule,
+  ExitAnchor,
   ObjectiveCollection,
   Vec2,
   Vec3,
@@ -59,4 +61,59 @@ export const isObjectiveInRange = (
     Math.abs(dy) <= collection.axisTolerance.y &&
     Math.abs(dz) <= collection.axisTolerance.z
   )
+}
+
+/** A single frame's completion outcome: emit success, emit failure, or nothing. */
+export type CompletionOutcome = 'success' | 'failure' | null
+
+export type ExitCompletionInput = {
+  readonly objectivesSecured: number
+  readonly requiredObjectives: number
+  readonly bossAlive: boolean
+  readonly player: Vec2
+  /** Interact pressed this frame. */
+  readonly interactPressed: boolean
+  /** Interact was already pressed last frame (for rising-edge detection). */
+  readonly interactWasPressed: boolean
+  /** Player health has reached zero this frame. */
+  readonly zeroHealth: boolean
+}
+
+/**
+ * Resolve a frame's mission completion for the `interact-at-exit-v1` rule,
+ * reading its parameters (exit anchor position/radius, `requireBossDefeated`)
+ * from the definition. Mirrors the legacy inline logic exactly:
+ *
+ * - Success requires a rising-edge interact press while enough objectives are
+ *   secured, the boss is cleared (when required), and the player is within the
+ *   exit's interaction radius (inclusive).
+ * - A same-frame success suppresses a same-frame death (success wins), matching
+ *   the once-only `emitResult` ordering in the runtime.
+ * - Otherwise, zero health resolves to failure.
+ *
+ * The caller keeps the once-only `completionSent` latch, so this only decides a
+ * single frame in isolation. Unsupported completion kinds fail fast rather than
+ * silently never completing.
+ */
+export const evaluateExitCompletion = (
+  rule: CompletionRule,
+  exit: ExitAnchor,
+  input: ExitCompletionInput,
+): CompletionOutcome => {
+  if (rule.kind !== 'interact-at-exit-v1') {
+    throw new Error(`unsupported completion kind "${rule.kind}"`)
+  }
+  const risingEdge = input.interactPressed && !input.interactWasPressed
+  const objectivesDone = input.objectivesSecured >= input.requiredObjectives
+  const bossCleared = !rule.requireBossDefeated || !input.bossAlive
+  const dx = input.player.x - exit.position.x
+  const dz = input.player.z - exit.position.z
+  const atExit = Math.hypot(dx, dz) <= exit.interactionRadius
+  if (risingEdge && objectivesDone && bossCleared && atExit) {
+    return 'success'
+  }
+  if (input.zeroHealth) {
+    return 'failure'
+  }
+  return null
 }
