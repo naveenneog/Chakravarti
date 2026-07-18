@@ -40,6 +40,8 @@ import { timberGateDefinition } from './timberGateDefinition'
 const MISSION_ASSETS = timberGateDefinition.presentation.assets
 // Gate 6: HUD prompt strings come from the definition's presentation copy.
 const MISSION_PROMPTS = timberGateDefinition.presentation.copy.prompts
+// Gate 8: mobile performance budgets (DPR, shadow-map size) from the definition.
+const MISSION_BUDGETS = timberGateDefinition.budgets
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -1763,8 +1765,8 @@ function MissionScene({
         castShadow
         position={[9, 15, 11]}
         intensity={2.9}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={MISSION_BUDGETS.shadowMapSize}
+        shadow-mapSize-height={MISSION_BUDGETS.shadowMapSize}
         shadow-camera-left={-18}
         shadow-camera-right={18}
         shadow-camera-top={20}
@@ -1868,7 +1870,7 @@ export default function NandaMission(props: NandaMissionProps) {
         key={props.resetToken}
         shadows
         camera={{ position: [0, 4.8, 19], fov: 58, near: 0.1, far: 80 }}
-        dpr={[1, 1.5]}
+        dpr={[MISSION_BUDGETS.dpr[0], MISSION_BUDGETS.dpr[1]]}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
       >
         <MissionScene {...props} />
