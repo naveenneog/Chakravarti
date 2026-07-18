@@ -14,9 +14,9 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.6.0** (tag `v0.6.0`), on `main`.
+- Latest release: **v0.6.1** (tag `v0.6.1`), on `main`.
 - Working tree clean; everything committed and pushed.
-- `package.json` version `0.6.0`. 46 unit tests pass (`npm run test`).
+- `package.json` version `0.6.1`. 46 unit tests pass (`npm run test`).
 
 ## Stack & commands
 
@@ -47,6 +47,11 @@ young Chandragupta infiltrates the timber district of Pataliputra.
    Captain holds the gate: pure health-phased FSM (measured/aggressive/
    desperate) with telegraphed strikes, lunges + vulnerable recovery windows.
    Gate opens only once the captain falls. Boss HP bar + phase readout in the HUD.
+6. **Aftermath cutscenes** (`src/nanda/OutcomeCutscene.tsx`) — victory/defeat
+   Sora cinematics before the debrief, once per completion, skippable. Defeat =
+   disciplined withdrawal (gate holds, no capture), matching the `withdrawal`
+   outcome. Manifests: `tooling/outcome-{victory,defeat}-manifest.json`. Chosen
+   from `state.outcome` (withdrawal→defeat). Reviewed by Sol before building.
 
 ## Conventions
 
@@ -70,6 +75,8 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Next options (not started)
 
-- **Sora victory/defeat cutscenes** (reuse the media pipeline).
-- Further mobile perf (Draco/KTX2 compression, instanced palisade posts, LOD).
+- Further mobile perf (Draco/KTX2 compression, instanced palisade posts, LOD;
+  also the intro mp4 is still ~5.8 MB uncompressed — could re-encode like the
+  outcome clips at ~0.3–0.7 MB).
 - More chapters / a second boss, building on `bossAi.ts`.
+- Second campaign chapter from the roadmap in `project-docs/GAME_DESIGN.md`.

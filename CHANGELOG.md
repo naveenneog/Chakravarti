@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.1 - 2026-07-18
+
+### Added
+
+- Victory and defeat **aftermath cutscenes** for The Timber Gate, played once per
+  completion before the strategic debrief and always skippable. Victory shows the
+  gate opening onto the waking city at dawn; defeat shows a disciplined
+  withdrawal into the night with the gate still barred (never a capture), so the
+  cinematic matches the campaign's `withdrawal` outcome.
+- New Sora-generated clips + Azure narration (`tooling/outcome-victory-manifest.json`,
+  `tooling/outcome-defeat-manifest.json`), compressed to a mobile budget
+  (victory ~0.65 MB, defeat ~0.27 MB); posters and narration are precached, the
+  mp4s load on demand with a poster fallback.
+- One reusable, lazy-loaded `OutcomeCutscene` with reduced-motion (poster-only),
+  a persisted mute preference, an explicit "Play narration" control when mobile
+  autoplay is blocked, and modal focus/keyboard dismissal.
+
 ## 0.6.0 - 2026-07-17
 
 ### Added
