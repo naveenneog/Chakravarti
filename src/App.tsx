@@ -40,6 +40,7 @@ type View = 'home' | 'nanda' | 'maurya' | 'battle' | 'codex'
 
 const MauryaCampaign = lazy(() => import('./maurya/MauryaCampaign'))
 const NandaCampaign = lazy(() => import('./nanda/NandaCampaign'))
+const KalingaIntro = lazy(() => import('./game/KalingaIntro'))
 
 const evidenceLabels: Record<EvidenceKind, string> = {
   'recorded-evidence': 'Recorded evidence',
@@ -691,6 +692,7 @@ function BattleView({
 function App() {
   const [view, setView] = useState<View>('nanda')
   const [battle, setBattle] = useState<BattleState>(() => createBattleState())
+  const [showKalingaIntro, setShowKalingaIntro] = useState(false)
   const [videoFailed, setVideoFailed] = useState(false)
   const [audioUnavailable, setAudioUnavailable] = useState(false)
   const [narrating, setNarrating] = useState(false)
@@ -702,6 +704,7 @@ function App() {
 
   const startBattle = () => {
     setBattle(createBattleState())
+    setShowKalingaIntro(true)
     setView('battle')
   }
 
@@ -860,12 +863,18 @@ function App() {
         </Suspense>
       ) : null}
       {view === 'battle' ? (
-        <BattleView
-          state={battle}
-          setState={(updater) => setBattle((current) => updater(current))}
-          onExit={() => setView('home')}
-          onDebrief={() => setView('codex')}
-        />
+        showKalingaIntro ? (
+          <Suspense fallback={null}>
+            <KalingaIntro onBegin={() => setShowKalingaIntro(false)} />
+          </Suspense>
+        ) : (
+          <BattleView
+            state={battle}
+            setState={(updater) => setBattle((current) => updater(current))}
+            onExit={() => setView('home')}
+            onDebrief={() => setView('codex')}
+          />
+        )
       ) : null}
       {view === 'codex' ? <CodexView /> : null}
 
