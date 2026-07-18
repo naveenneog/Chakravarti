@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.10 - 2026-07-19
+
+### Changed
+
+- Mission-definition migration gates 10–11 (Sol-approved, no behaviour change):
+  objective positions and the collection policy now come from the Timber Gate
+  definition via a pure, unit-tested `isObjectiveInRange` helper (collection
+  boundaries pinned), and `engine.ts` sources `requiredObjectives` from the
+  definition's `baseRequiredCount` so there is a single source of truth (asserted
+  by a new engine test). Terrain/collision queries route through
+  `definition.topology.geometry`, removing the direct `missionGeometry` import
+  bypass. 90 tests + 13/13 smoke green.
+
 ## 0.7.9 - 2026-07-19
 
 ### Changed
