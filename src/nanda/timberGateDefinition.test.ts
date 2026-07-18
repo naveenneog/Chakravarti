@@ -59,9 +59,15 @@ describe('timberGateDefinition golden values', () => {
       { x: -3, y: 0, z: -10 },
       { x: 2.8, y: 0, z: -12 },
     ])
-    // Patrol first waypoints match each guard's post.
-    expect(def.encounters.guards[0].patrol[0]).toEqual({ x: 0, z: 6 })
-    expect(def.encounters.guards[5].patrol[2]).toEqual({ x: 0.6, z: -10 })
+    // Full patrol-route equality so no waypoint can regress undetected.
+    expect(def.encounters.guards.map((g) => g.patrol)).toEqual([
+      [{ x: 0, z: 6 }, { x: 3.2, z: 8.6 }, { x: -2.6, z: 8 }],
+      [{ x: 5.5, z: 3 }, { x: 7.6, z: 6.6 }, { x: 4, z: 1.4 }],
+      [{ x: -4, z: -3 }, { x: -6.6, z: -1.4 }, { x: -3, z: -6 }],
+      [{ x: 5.5, z: -6 }, { x: 7.6, z: -9 }, { x: 3.6, z: -4 }],
+      [{ x: -3, z: -10 }, { x: -6, z: -12 }, { x: -1.6, z: -8 }],
+      [{ x: 2.8, z: -12 }, { x: 5, z: -13.4 }, { x: 0.6, z: -10 }],
+    ])
   })
 
   it('pins the guard perception driver to the shipped config', () => {
@@ -101,16 +107,89 @@ describe('timberGateDefinition golden values', () => {
   })
 
   it('pins asset paths and the reduced-mode failure policy', () => {
-    expect(def.presentation.assets.heroModel).toBe(
-      './models/cc0/quaternius-characters/BaseCharacter.gltf',
-    )
-    expect(def.presentation.assets.guardModel).toBe(
-      './models/cc0/quaternius-characters/Ninja_Sand.gltf',
-    )
-    expect(def.presentation.assets.bossModel).toBe(
-      './models/cc0/quaternius-characters/Ninja_Sand.gltf',
-    )
+    expect(def.presentation.assets).toEqual({
+      heroModel: './models/cc0/quaternius-characters/BaseCharacter.gltf',
+      guardModel: './models/cc0/quaternius-characters/Ninja_Sand.gltf',
+      bossModel: './models/cc0/quaternius-characters/Ninja_Sand.gltf',
+      props: {
+        tree: './models/cc0/kenney-nature/tree_oak.glb',
+        bush: './models/cc0/kenney-nature/plant_bushLarge.glb',
+        jar: './models/nanda/mauryan-storage-jar.glb',
+      },
+    })
     expect(def.presentation.assetFailurePolicy).toBe('reduced-mode')
+  })
+
+  it('pins the default route label to the engine base default (not a plan override)', () => {
+    expect(def.presentation.copy.defaultRouteLabel).toBe(
+      'Unprepared courtyard approach',
+    )
+  })
+
+  it('pins the full presentation copy', () => {
+    expect(def.presentation.copy).toEqual({
+      defaultRouteLabel: 'Unprepared courtyard approach',
+      initialPrompt: 'Reach the marked dispatches, then the northern gate',
+      prompts: {
+        spotted: 'Spotted — break line of sight or fight through',
+        heard: 'A guard heard something — stay out of sight',
+        atGateReady: 'Open the timber gate',
+        atGateLocked: 'Secure the dispatches before opening the gate',
+        noHeals: 'No recovery charges remain',
+        bossEngaged: 'Fell the Nanda captain to reach the gate',
+        bossVulnerable: 'The captain is off balance — strike now!',
+        bossGate: 'Face the Nanda captain guarding the gate',
+        default: 'Reach the marked dispatches, then the northern gate',
+      },
+      objectiveLabel: 'Dispatches',
+      bossLabel: 'Nanda Captain',
+      exitActionLabel: 'Open',
+    })
+  })
+
+  it('pins the character palette including global skin and hair', () => {
+    expect(def.presentation.characterPalette).toEqual({
+      skin: '#b3794f',
+      hair: '#231b15',
+      roles: {
+        hero: {
+          cloth: '#8f1d33',
+          clothDark: '#5d1322',
+          metal: '#c9a24b',
+          leather: '#5a3b24',
+        },
+        guard: {
+          cloth: '#7a6038',
+          clothDark: '#463722',
+          metal: '#8a7444',
+          leather: '#463020',
+        },
+        captain: {
+          cloth: '#611427',
+          clothDark: '#360c17',
+          metal: '#d8b45c',
+          leather: '#3d281a',
+        },
+      },
+    })
+  })
+
+  it('pins the world colour-role -> CSS variable mapping', () => {
+    expect(def.presentation.worldPalette).toEqual({
+      background: '--cp-bg',
+      ground: '--cp-surface',
+      groundSoft: '--cp-surface-soft',
+      wall: '--cp-border-strong',
+      wallDark: '--cp-text-muted',
+      text: '--cp-text',
+      muted: '--cp-text-soft',
+      accent: '--cp-accent',
+      accentHover: '--cp-accent-hover',
+      success: '--cp-success',
+      danger: '--cp-danger',
+      warning: '--cp-warning',
+      water: '--cp-link',
+    })
   })
 
   it('pins the mobile performance budgets', () => {
@@ -121,7 +200,7 @@ describe('timberGateDefinition golden values', () => {
       maxShadowCastingLights: 1,
       shadowMapSize: 1024,
       shadowCasterPolicy:
-        'walls-and-characters-cast; props, ground/water planes, and torch poles do not',
+        'District non-plane meshes and characters cast; decorative GLTF props, ground/water planes, torches, markers and indicators do not',
     })
   })
 })

@@ -116,28 +116,47 @@ export const timberGateDefinition: ActionMissionDefinition = {
       },
     },
     assetFailurePolicy: 'reduced-mode',
+    worldPalette: {
+      background: '--cp-bg',
+      ground: '--cp-surface',
+      groundSoft: '--cp-surface-soft',
+      wall: '--cp-border-strong',
+      wallDark: '--cp-text-muted',
+      text: '--cp-text',
+      muted: '--cp-text-soft',
+      accent: '--cp-accent',
+      accentHover: '--cp-accent-hover',
+      success: '--cp-success',
+      danger: '--cp-danger',
+      warning: '--cp-warning',
+      water: '--cp-link',
+    },
     characterPalette: {
-      hero: {
-        cloth: '#8f1d33',
-        clothDark: '#5d1322',
-        metal: '#c9a24b',
-        leather: '#5a3b24',
-      },
-      guard: {
-        cloth: '#7a6038',
-        clothDark: '#463722',
-        metal: '#8a7444',
-        leather: '#463020',
-      },
-      captain: {
-        cloth: '#611427',
-        clothDark: '#360c17',
-        metal: '#d8b45c',
-        leather: '#3d281a',
+      skin: '#b3794f',
+      hair: '#231b15',
+      roles: {
+        hero: {
+          cloth: '#8f1d33',
+          clothDark: '#5d1322',
+          metal: '#c9a24b',
+          leather: '#5a3b24',
+        },
+        guard: {
+          cloth: '#7a6038',
+          clothDark: '#463722',
+          metal: '#8a7444',
+          leather: '#463020',
+        },
+        captain: {
+          cloth: '#611427',
+          clothDark: '#360c17',
+          metal: '#d8b45c',
+          leather: '#3d281a',
+        },
       },
     },
     copy: {
-      defaultRouteLabel: 'Supplied courtyard route',
+      defaultRouteLabel: 'Unprepared courtyard approach',
       initialPrompt: 'Reach the marked dispatches, then the northern gate',
       prompts: {
         spotted: 'Spotted — break line of sight or fight through',
@@ -171,6 +190,6 @@ export const timberGateDefinition: ActionMissionDefinition = {
     maxShadowCastingLights: 1,
     shadowMapSize: 1024,
     shadowCasterPolicy:
-      'walls-and-characters-cast; props, ground/water planes, and torch poles do not',
+      'District non-plane meshes and characters cast; decorative GLTF props, ground/water planes, torches, markers and indicators do not',
   },
 }

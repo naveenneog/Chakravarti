@@ -26,11 +26,33 @@ export type CollisionQuery = (
 
 export type CharacterRole = 'hero' | 'guard' | 'captain'
 
+export type WorldColorRole =
+  | 'background'
+  | 'ground'
+  | 'groundSoft'
+  | 'wall'
+  | 'wallDark'
+  | 'text'
+  | 'muted'
+  | 'accent'
+  | 'accentHover'
+  | 'success'
+  | 'danger'
+  | 'warning'
+  | 'water'
+
 export type CharacterPalette = {
   readonly cloth: string
   readonly clothDark: string
   readonly metal: string
   readonly leather: string
+}
+
+/** Global skin/hair tones plus per-role cloth/metal/leather colours. */
+export type MissionCharacterPalette = {
+  readonly skin: string
+  readonly hair: string
+  readonly roles: Readonly<Record<CharacterRole, CharacterPalette>>
 }
 
 export type PromptState =
@@ -139,7 +161,8 @@ export type ActionMissionDefinition = Readonly<{
       readonly props: Readonly<Record<string, string>>
     }
     readonly assetFailurePolicy: 'reduced-mode'
-    readonly characterPalette: Readonly<Record<CharacterRole, CharacterPalette>>
+    readonly worldPalette: Readonly<Record<WorldColorRole, string>>
+    readonly characterPalette: MissionCharacterPalette
     readonly copy: {
       readonly defaultRouteLabel: string
       readonly initialPrompt: string

@@ -146,4 +146,20 @@ describe('floorHeightAt boundary probes (golden)', () => {
     expect(floorHeightAt(-4.75, 4 - eps)).toBe(0)
     expect(floorHeightAt(-4.75, 8 + eps)).toBe(0)
   })
+
+  it('applies ramp x-endpoints and roof outer edges precisely', () => {
+    // Ramp x in [-6,-3.5]; bottom (-3.5) is ground, just past it is ground.
+    expect(floorHeightAt(-3.5, 6)).toBeCloseTo(0, 6)
+    expect(floorHeightAt(-3.5 + eps, 6)).toBe(0)
+    // Just inside the ramp top region (roof takes precedence at exactly -6).
+    expect(floorHeightAt(-6 + eps, 6)).toBeGreaterThan(2.3)
+    // Roof outer edges: x=-9 inclusive, x just below -9 is out of bounds region.
+    expect(floorHeightAt(-9, -4)).toBe(2.4)
+    expect(floorHeightAt(-9 - eps, -4)).toBe(0)
+    // Roof z outer edges.
+    expect(floorHeightAt(-7.5, -8)).toBe(2.4)
+    expect(floorHeightAt(-7.5, -8 - eps)).toBe(0)
+    expect(floorHeightAt(-7.5, 8)).toBe(2.4)
+    expect(floorHeightAt(-7.5, 8 + eps)).toBe(0)
+  })
 })
