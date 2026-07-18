@@ -14,11 +14,17 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.7.0** (tag `v0.7.0`), on `main`.
-- Working tree clean; everything committed and pushed.
-- `package.json` version `0.7.0`. 46 unit tests pass (`npm run test`); browser
-  smoke via `npm run test:smoke` (build Pages first). Current mobile build:
-  `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
+- Latest release: **v0.7.6** (tag `v0.7.6`), on `main`.
+- Working tree clean; everything committed and pushed. **81 unit tests pass.**
+- `package.json` version `0.7.6`. Browser smoke via `npm run test:smoke` (13/13).
+  Current mobile build: `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
+- **In progress: mission-definition refactor** (Sol-approved 14-gate plan).
+  Gates 1–4 done: geometry extracted (`missionGeometry.ts` + golden tests);
+  `ActionMissionDefinition` schema (`src/action/missionDefinition.ts`) + Timber
+  Gate data (`src/nanda/timberGateDefinition.ts`) exist but are UNUSED by
+  production; Sol's gate-4 fixture review applied. **Next: gate 5** — wire model
+  + prop asset paths into the figures, one subsystem per green commit, no
+  behaviour change. Continuous schedule #2 drives this.
 - **Web/PWA is the authoritative product.** Unity (`unity/ChakravartiAction`) is
   a frozen v0.5.0 prototype — see `project-docs/UNITY_QA_REPORT.md`.
 
