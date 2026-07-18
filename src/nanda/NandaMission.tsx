@@ -540,45 +540,126 @@ function TorchLights({ colors }: { colors: WorldColors }) {
   )
 }
 
+type CharacterRole = 'hero' | 'guard' | 'captain'
+
+// Reviewed, human-referenced palette (not derived from the neon CSS theme) so
+// the cast reads as people in period dress rather than toy mannequins, while
+// keeping the art direction's deep-crimson accents.
+const CHARACTER_PALETTE = {
+  skin: '#b3794f',
+  hair: '#231b15',
+  hero: {
+    cloth: '#8f1d33',
+    clothDark: '#5d1322',
+    metal: '#c9a24b',
+    leather: '#5a3b24',
+  },
+  guard: {
+    cloth: '#7a6038',
+    clothDark: '#463722',
+    metal: '#8a7444',
+    leather: '#463020',
+  },
+  captain: {
+    cloth: '#611427',
+    clothDark: '#360c17',
+    metal: '#d8b45c',
+    leather: '#3d281a',
+  },
+} as const
+
+type MaterialCategory = 'skin' | 'hair' | 'metal' | 'leather' | 'cloth'
+
+const categorize = (name: string): MaterialCategory => {
+  if (name.includes('skin') || name.includes('face') || name.includes('body')) {
+    return 'skin'
+  }
+  if (name.includes('hair')) {
+    return 'hair'
+  }
+  if (
+    name.includes('band') ||
+    name.includes('detail') ||
+    name.includes('trim') ||
+    name.includes('gold') ||
+    name.includes('metal') ||
+    name.includes('belt') ||
+    name.includes('buckle')
+  ) {
+    return 'metal'
+  }
+  if (
+    name.includes('grey') ||
+    name.includes('gray') ||
+    name.includes('leather') ||
+    name.includes('strap') ||
+    name.includes('boot') ||
+    name.includes('glove')
+  ) {
+    return 'leather'
+  }
+  return 'cloth'
+}
+
 const themedCharacterClone = (
   source: THREE.Object3D,
-  colors: WorldColors,
-  role: 'hero' | 'guard',
+  _colors: WorldColors,
+  role: CharacterRole,
 ) => {
   const actor = cloneSkeleton(source)
+  const roleColors =
+    role === 'hero'
+      ? CHARACTER_PALETTE.hero
+      : role === 'captain'
+        ? CHARACTER_PALETTE.captain
+        : CHARACTER_PALETTE.guard
   actor.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) {
       return
     }
     child.castShadow = true
     child.receiveShadow = true
-    const recolor = (material: THREE.Material) => {
+    const restyle = (material: THREE.Material) => {
+      if (
+        !(material instanceof THREE.MeshStandardMaterial) ||
+        !(material.color instanceof THREE.Color)
+      ) {
+        return material
+      }
       const themed = material.clone()
-      if (!('color' in themed) || !(themed.color instanceof THREE.Color)) {
-        return themed
+      const category = categorize(material.name.toLowerCase())
+      switch (category) {
+        case 'skin':
+          themed.color.set(CHARACTER_PALETTE.skin)
+          themed.roughness = 0.7
+          themed.metalness = 0
+          break
+        case 'hair':
+          themed.color.set(CHARACTER_PALETTE.hair)
+          themed.roughness = 0.95
+          themed.metalness = 0
+          break
+        case 'metal':
+          themed.color.set(roleColors.metal)
+          themed.roughness = 0.32
+          themed.metalness = 0.62
+          break
+        case 'leather':
+          themed.color.set(roleColors.leather)
+          themed.roughness = 0.82
+          themed.metalness = 0.04
+          break
+        default:
+          themed.color.set(roleColors.cloth)
+          themed.roughness = 0.9
+          themed.metalness = 0
       }
-      const name = material.name.toLowerCase()
-      const color =
-        name.includes('skin') || name.includes('face')
-          ? colors.warning
-          : role === 'hero'
-            ? name.includes('band')
-              ? colors.warning
-              : colors.accent
-            : name.includes('details')
-              ? colors.warning
-              : name.includes('grey')
-                ? colors.wallDark
-                : colors.danger
-      themed.color.set(color)
-      if ('map' in themed) {
-        themed.map = null
-      }
+      themed.map = null
       return themed
     }
     child.material = Array.isArray(child.material)
-      ? child.material.map(recolor)
-      : recolor(child.material)
+      ? child.material.map(restyle)
+      : restyle(child.material)
   })
   return actor
 }
@@ -763,8 +844,8 @@ function HeroFigure({
     <group ref={heroRef} rotation={[0, Math.PI, 0]}>
       <primitive
         object={actor}
-        position={[0, -0.85, 0]}
-        scale={0.66}
+        position={[0, -0.92, 0]}
+        scale={0.72}
       />
     </group>
   )
@@ -858,7 +939,7 @@ function GuardFigure({
     >
       <primitive
         object={actor}
-        scale={0.65}
+        scale={0.6}
       />
       <mesh ref={indicatorRef} position={[0, 2.78, 0]} visible={false}>
         <octahedronGeometry args={[1, 0]} />
@@ -899,7 +980,7 @@ function BossFigure({
     './models/cc0/quaternius-characters/Ninja_Sand.gltf',
   )
   const actor = useMemo(
-    () => themedCharacterClone(gltf.scene, colors, 'guard'),
+    () => themedCharacterClone(gltf.scene, colors, 'captain'),
     [colors, gltf.scene],
   )
   const mixer = useMemo(() => new THREE.AnimationMixer(actor), [actor])
@@ -915,6 +996,47 @@ function BossFigure({
     },
     [actor, mixer],
   )
+
+  // Bone-attached captain's helmet + crest so the boss reads as a distinct
+  // commander rather than an enlarged guard. Fail-soft: if the rig lacks a Head
+  // bone the boss simply renders without the crest.
+  useEffect(() => {
+    const head = actor.getObjectByName('Head')
+    if (!head) {
+      return undefined
+    }
+    const metal = new THREE.MeshStandardMaterial({
+      color: CHARACTER_PALETTE.captain.metal,
+      metalness: 0.62,
+      roughness: 0.3,
+    })
+    const dark = new THREE.MeshStandardMaterial({
+      color: CHARACTER_PALETTE.captain.clothDark,
+      roughness: 0.8,
+    })
+    const helmet = new THREE.Mesh(
+      new THREE.SphereGeometry(0.3, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.6),
+      metal,
+    )
+    helmet.position.set(0, 0.12, 0)
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.04, 8, 18), metal)
+    rim.rotation.x = Math.PI / 2
+    rim.position.set(0, 0.12, 0)
+    const crest = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.32, 0.46), dark)
+    crest.position.set(0, 0.4, 0)
+    ;[helmet, rim, crest].forEach((mesh) => {
+      mesh.castShadow = true
+    })
+    head.add(helmet, rim, crest)
+    return () => {
+      head.remove(helmet, rim, crest)
+      helmet.geometry.dispose()
+      rim.geometry.dispose()
+      crest.geometry.dispose()
+      metal.dispose()
+      dark.dispose()
+    }
+  }, [actor])
 
   const phaseColor = (phase: BossPhase) =>
     phase >= 3 ? colors.danger : phase === 2 ? colors.accentHover : colors.warning
@@ -975,7 +1097,7 @@ function BossFigure({
         groupRef(group)
       }}
     >
-      <primitive object={actor} scale={1.05} />
+      <primitive object={actor} scale={1.12} />
       <mesh
         ref={auraRef}
         rotation={[-Math.PI / 2, 0, 0]}
@@ -1682,7 +1804,11 @@ function MissionScene({
         shadow-camera-top={20}
         shadow-camera-bottom={-20}
       />
-      <directionalLight position={[-8, 8, -12]} intensity={1.15} />
+      <directionalLight
+        position={[-2, 7, -15]}
+        intensity={1.7}
+        color="#a9c2ea"
+      />
       <mesh position={[0, 8, -28]}>
         <planeGeometry args={[62, 34]} />
         <meshStandardMaterial color={colors.groundSoft} roughness={1} />
