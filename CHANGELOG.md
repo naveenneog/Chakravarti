@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.6 - 2026-07-18
+
+### Fixed
+
+- Applied Sol's gate-4 fixture review to the (still unused) Timber Gate mission
+  definition: corrected the default route label to the engine base default
+  (`Unprepared courtyard approach`, not the hidden-caches plan override), added
+  the global skin/hair tones and the world colour-role → CSS-variable mapping to
+  the palette schema, and corrected the shadow-caster policy description.
+  Strengthened the golden tests with full patrol-route, asset, presentation-copy,
+  and palette equality plus roof/ramp epsilon probes (test count 76 → 81). Still
+  unused by production; unblocks the subsystem wiring gates.
+
 ## 0.7.5 - 2026-07-18
 
 ### Added
