@@ -36,7 +36,7 @@ import type {
   EvidenceKind,
 } from './game/types'
 
-type View = 'home' | 'nanda' | 'maurya' | 'battle' | 'codex'
+type View = 'home' | 'nanda' | 'maurya' | 'battle' | 'kalinga-debrief' | 'codex'
 
 const MauryaCampaign = lazy(() => import('./maurya/MauryaCampaign'))
 const NandaCampaign = lazy(() => import('./nanda/NandaCampaign'))
@@ -689,6 +689,107 @@ function BattleView({
   )
 }
 
+function KalingaDebrief({
+  state,
+  onReplay,
+  onCodex,
+  onHome,
+}: {
+  state: BattleState
+  onReplay: () => void
+  onCodex: () => void
+  onHome: () => void
+}) {
+  const result = state.result ? resultCopy[state.result] : null
+  const restraintMet = state.humanCost <= state.scenario.restraintTarget
+  return (
+    <main className="page">
+      <section className="kalinga-debrief-panel">
+        <p className="eyebrow">
+          <Flag size={14} />
+          Historical debrief &middot; The Cost of Kalinga
+        </p>
+        <h1>{result ? result.title : 'The reconstruction ends'}</h1>
+        <p>
+          {result
+            ? result.body
+            : 'The scenario closed without a tactical decision. The historical record below stands regardless of the reconstruction.'}
+        </p>
+
+        <div className="kalinga-debrief-grid">
+          <span>
+            Outcome
+            <strong>
+              {state.result === 'maurya-victory'
+                ? 'Mauryan advance'
+                : state.result === 'kalinga-victory'
+                  ? 'Advance halted'
+                  : 'Contested field'}
+            </strong>
+          </span>
+          <span>
+            Restraint
+            <strong>{restraintMet ? 'Objective met' : 'Heavy cost'}</strong>
+          </span>
+          <span>
+            Cost of war
+            <strong>
+              {state.humanCost} / {state.scenario.restraintTarget} target
+            </strong>
+          </span>
+          <span>
+            Turns
+            <strong>
+              {state.turn} / {state.scenario.maxTurns}
+            </strong>
+          </span>
+        </div>
+
+        <div className="kalinga-debrief-evidence">
+          <article>
+            <p className="source-label">
+              <ScrollText size={14} />
+              Recorded evidence
+            </p>
+            <p>
+              Ashoka&apos;s Major Rock Edict XIII records the conquest of Kalinga,
+              the suffering it caused, his remorse, and his turn toward conquest
+              through dhamma. Your tactical result changes this reconstruction
+              only — never the historical record.
+            </p>
+          </article>
+          <article>
+            <p className="source-label">
+              <Heart size={14} />
+              What restraint means here
+            </p>
+            <p>
+              {restraintMet
+                ? 'You kept the modelled cost of war at or below the restraint target. The edict itself frames the human toll of Kalinga as the reason Ashoka renounced war of conquest.'
+                : 'The modelled cost of war exceeded the restraint target. The edict states figures of 150,000 deported and 100,000 killed as Ashoka\u2019s own account of that toll.'}
+            </p>
+          </article>
+        </div>
+
+        <div className="result-actions">
+          <button className="primary-button" type="button" onClick={onCodex}>
+            <BookOpen size={18} />
+            Read the full codex
+          </button>
+          <button className="secondary-button" type="button" onClick={onReplay}>
+            <RotateCcw size={18} />
+            Replay the battle
+          </button>
+          <button className="secondary-button" type="button" onClick={onHome}>
+            <Home size={18} />
+            Return to chronicles
+          </button>
+        </div>
+      </section>
+    </main>
+  )
+}
+
 function App() {
   const [view, setView] = useState<View>('nanda')
   const [battle, setBattle] = useState<BattleState>(() => createBattleState())
@@ -872,9 +973,17 @@ function App() {
             state={battle}
             setState={(updater) => setBattle((current) => updater(current))}
             onExit={() => setView('home')}
-            onDebrief={() => setView('codex')}
+            onDebrief={() => setView('kalinga-debrief')}
           />
         )
+      ) : null}
+      {view === 'kalinga-debrief' ? (
+        <KalingaDebrief
+          state={battle}
+          onReplay={startBattle}
+          onCodex={() => setView('codex')}
+          onHome={() => setView('home')}
+        />
       ) : null}
       {view === 'codex' ? <CodexView /> : null}
 
