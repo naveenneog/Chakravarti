@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.1 - 2026-07-18
+
+### Changed
+
+- Compressed the Timber Gate story-intro clip to the mobile budget
+  (5.8 MB -> ~0.7 MB, H.264 24 fps faststart), matching the Kalinga and outcome
+  clips. No visual or gameplay change; the poster/narration still precache and
+  the mp4 loads on demand with a poster fallback.
+
 ## 0.7.0 - 2026-07-18
 
 ### Added
