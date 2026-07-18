@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.3 - 2026-07-18
+
+### Changed
+
+- Grandiose character presentation pass (no gameplay, collision, or animation
+  changes): replaced the neon-theme-derived recolouring with a reviewed, human
+  palette (proper skin, cloth, metal, leather tones) and distinct PBR
+  roughness/metalness per material category, so the cast reads as people in
+  period dress rather than toy mannequins.
+- Stronger silhouette differentiation between roles: the hero is taller and
+  broader, guards are smaller, and the Nanda Captain is larger with a
+  bone-attached helmet and crest instead of merely being a scaled-up guard.
+- Repurposed the existing fill light as a cool rim/back light for edge
+  separation on characters, without adding a new light to the mobile budget.
+
 ## 0.6.2 - 2026-07-18
 
 ### Added
