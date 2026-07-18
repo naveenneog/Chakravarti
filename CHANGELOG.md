@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.9 - 2026-07-19
+
+### Changed
+
+- Mission-definition migration gate 9 (Sol-approved, no behaviour change): guard
+  spawns, ids, patrol routes, and flank signs are now projected from the Timber
+  Gate definition via a pure, unit-tested `projectGuards` helper
+  (`src/action/missionRuntime.ts`) instead of the module-level `enemyStarts` /
+  `patrolRoutes` constants (now deleted). The "first N guards by `enemyCount`"
+  selection, ids, and alternating flank signs are pinned by a new
+  characterization test (counts 3/4/6). 85 tests + 13/13 smoke green.
+
 ## 0.7.8 - 2026-07-19
 
 ### Changed
