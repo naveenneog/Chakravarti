@@ -6,7 +6,12 @@
  * mission component then wraps each projected guard's spawn in a THREE.Vector3.
  */
 
-import type { ActionMissionDefinition, Vec2, Vec3 } from './missionDefinition'
+import type {
+  ActionMissionDefinition,
+  ObjectiveCollection,
+  Vec2,
+  Vec3,
+} from './missionDefinition'
 
 export type ProjectedGuard = {
   readonly id: string
@@ -31,3 +36,27 @@ export const projectGuards = (
     patrol: guard.patrol.map((point) => ({ x: point.x, z: point.z })),
     flankSign: guard.flankSign,
   }))
+
+/**
+ * Whether the player is close enough to collect an objective, using the
+ * definition's `proximity-or-axis-box-v1` policy: a full 3D Euclidean distance
+ * within `radius`, OR within the per-axis tolerances. Mirrors the legacy inline
+ * predicate exactly (radius 1.35; axis tolerances x/z 1.2, y 1.8).
+ */
+export const isObjectiveInRange = (
+  objective: Vec3,
+  player: Vec3,
+  collection: ObjectiveCollection,
+): boolean => {
+  const dx = objective.x - player.x
+  const dy = objective.y - player.y
+  const dz = objective.z - player.z
+  if (Math.hypot(dx, dy, dz) <= collection.radius) {
+    return true
+  }
+  return (
+    Math.abs(dx) <= collection.axisTolerance.x &&
+    Math.abs(dy) <= collection.axisTolerance.y &&
+    Math.abs(dz) <= collection.axisTolerance.z
+  )
+}

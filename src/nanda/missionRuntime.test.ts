@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { projectGuards } from '../action/missionRuntime'
+import { isObjectiveInRange, projectGuards } from '../action/missionRuntime'
 import { timberGateDefinition as def } from './timberGateDefinition'
 
 // Gate 9 characterization: pin the runtime guard projection against the legacy
@@ -61,5 +61,50 @@ describe('projectGuards', () => {
   it('clamps a negative or zero count to an empty list', () => {
     expect(projectGuards(def, 0)).toEqual([])
     expect(projectGuards(def, -2)).toEqual([])
+  })
+})
+
+describe('isObjectiveInRange (collection boundaries)', () => {
+  const collection = def.objectives.collection // radius 1.35, axis {1.2,1.8,1.2}
+  const at = (x: number, y: number, z: number) => ({ x, y, z })
+
+  it('collects exactly on the radius (inclusive), isolated from the axis box', () => {
+    const origin = at(0, 0, 0)
+    // dx beyond the axis limit (1.2) so only the radius test can collect it.
+    expect(isObjectiveInRange(at(1.3, 0, 0), origin, collection)).toBe(true)
+    // Exactly on the radius along that axis is inclusive.
+    expect(isObjectiveInRange(at(1.35, 0, 0), origin, collection)).toBe(true)
+    // Just past the radius and past the axis limit -> not collected.
+    expect(isObjectiveInRange(at(1.35 + 1e-4, 0, 0), origin, collection)).toBe(
+      false,
+    )
+  })
+
+  it('counts vertical distance in the radius test', () => {
+    // dx=1.3 alone is within radius; add dy so 3D distance exceeds 1.35 and the
+    // axis box (dy 1.85 > 1.8) also fails.
+    expect(isObjectiveInRange(at(1.3, 0, 0), at(0, 0, 0), collection)).toBe(true)
+    expect(isObjectiveInRange(at(0, 1.85, 0), at(0, 0, 0), collection)).toBe(
+      false,
+    )
+  })
+
+  it('collects outside the radius but exactly on all axis limits', () => {
+    // dx=1.2, dz=1.2, dy=1.8: 3D distance ~2.49 > radius, but on every axis edge.
+    expect(isObjectiveInRange(at(1.2, 1.8, 1.2), at(0, 0, 0), collection)).toBe(
+      true,
+    )
+  })
+
+  it('fails when any axis limit is exceeded and outside the radius', () => {
+    expect(
+      isObjectiveInRange(at(1.2 + 1e-6, 1.8, 1.2), at(0, 0, 0), collection),
+    ).toBe(false)
+    expect(
+      isObjectiveInRange(at(1.2, 1.8 + 1e-6, 1.2), at(0, 0, 0), collection),
+    ).toBe(false)
+    expect(
+      isObjectiveInRange(at(1.2, 1.8, 1.2 + 1e-6), at(0, 0, 0), collection),
+    ).toBe(false)
   })
 })

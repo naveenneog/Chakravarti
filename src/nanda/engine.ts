@@ -13,6 +13,7 @@ import type {
   StrategyDelta,
   StrategyValues,
 } from './types'
+import { timberGateDefinition } from './timberGateDefinition'
 
 const planCategories: readonly PlanCategory[] = [
   'intelligence',
@@ -168,7 +169,7 @@ export const missionModifiersFor = (
     jumpForce: 7.3,
     enemyCount: 6,
     enemyHealth: 68,
-    requiredObjectives: 2,
+    requiredObjectives: timberGateDefinition.objectives.baseRequiredCount,
     securedObjectives: 0,
     healingCharges: 0,
     revealObjectives: false,

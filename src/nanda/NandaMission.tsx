@@ -31,17 +31,22 @@ import {
   type BossPhase,
 } from './bossAi'
 import type { MissionModifiers, MissionResult } from './types'
-import { floorHeightAt, isBlocked } from './missionGeometry'
 import { timberGateDefinition } from './timberGateDefinition'
-import { projectGuards } from '../action/missionRuntime'
+import { projectGuards, isObjectiveInRange } from '../action/missionRuntime'
 
 // Gate 5 of the mission-definition migration: model/prop asset paths come from
 // the definition (single source of truth) rather than hardcoded strings.
 const MISSION_ASSETS = timberGateDefinition.presentation.assets
+// Gate 11: terrain/collision queries route through the definition's geometry
+// (the same pure functions from missionGeometry), closing the direct-import
+// bypass so a future mission definition can substitute its own geometry.
+const { floorHeightAt, isBlocked } = timberGateDefinition.topology.geometry
 // Gate 6: HUD prompt strings come from the definition's presentation copy.
 const MISSION_PROMPTS = timberGateDefinition.presentation.copy.prompts
 // Gate 8: mobile performance budgets (DPR, shadow-map size) from the definition.
 const MISSION_BUDGETS = timberGateDefinition.budgets
+// Gate 10: objective items + collection policy from the definition.
+const MISSION_OBJECTIVES = timberGateDefinition.objectives
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -126,10 +131,9 @@ const readWorldColors = (): WorldColors => {
   }
 }
 
-const objectivePositions = [
-  new THREE.Vector3(-7.5, 2.65, 3.4),
-  new THREE.Vector3(6.4, 0.25, -5.1),
-]
+const objectivePositions = timberGateDefinition.objectives.items.map(
+  (item) => new THREE.Vector3(item.position.x, item.position.y, item.position.z),
+)
 
 // The Nanda captain holds the ground between the wall and the northern gate.
 const bossStart = new THREE.Vector3(0, 0, -9)
@@ -1651,10 +1655,15 @@ function MissionScene({
       }
       const marker = objectiveGroups.current.get(index)
       if (
-        position.distanceTo(playerPosition.current) <= 1.35 ||
-        (Math.abs(position.x - playerPosition.current.x) <= 1.2 &&
-          Math.abs(position.z - playerPosition.current.z) <= 1.2 &&
-          Math.abs(position.y - playerPosition.current.y) <= 1.8)
+        isObjectiveInRange(
+          { x: position.x, y: position.y, z: position.z },
+          {
+            x: playerPosition.current.x,
+            y: playerPosition.current.y,
+            z: playerPosition.current.z,
+          },
+          MISSION_OBJECTIVES.collection,
+        )
       ) {
         collectedObjectives.current.add(index)
         onSound('objective')

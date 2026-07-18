@@ -15,6 +15,7 @@ import {
   NANDA_SAVE_KEY,
   saveNandaCampaign,
 } from './persistence'
+import { timberGateDefinition } from './timberGateDefinition'
 import type {
   MissionResult,
   NandaCampaignState,
@@ -85,6 +86,16 @@ describe('Fall of the Nandas campaign engine', () => {
     state = planOperation(createNandaCampaign(84))
     expect(missionLaunchForecast(state).allowed).toBe(true)
     expect(combinedPlanDelta(state).treasury).toBe(-3)
+  })
+
+  it('sources requiredObjectives from the Timber Gate definition (single source)', () => {
+    const base = timberGateDefinition.objectives.baseRequiredCount
+    // Both the forgiving default mission and a prepared run derive the required
+    // objective count from the definition, not an independent literal.
+    expect(missionModifiersFor(createActionFirstCampaign(7)).requiredObjectives).toBe(
+      base,
+    )
+    expect(missionModifiersFor(planOperation()).requiredObjectives).toBe(base)
   })
 
   it('turns strategy choices into materially different mission modifiers', () => {
