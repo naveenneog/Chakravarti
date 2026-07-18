@@ -77,3 +77,73 @@ describe('isBlocked (golden)', () => {
     expect(isBlocked(0, 0, 2.19, false)).toBe(true)
   })
 })
+
+// Boundary/epsilon probes (Sol-required): pin the exact inclusive/strict edges
+// so a data-driven migration cannot shift a threshold by an epsilon.
+describe('isBlocked boundary probes (golden)', () => {
+  const eps = 0.0001
+  it('treats world bounds as inclusive (exactly on the edge is allowed)', () => {
+    expect(isBlocked(-9.6, 5, 0.85, false)).toBe(false)
+    expect(isBlocked(9.6, 5, 0.85, false)).toBe(false)
+    expect(isBlocked(3, -15.2, 0.85, false)).toBe(false)
+    expect(isBlocked(3, 15.2, 0.85, false)).toBe(false)
+    expect(isBlocked(-9.6 - eps, 5, 0.85, false)).toBe(true)
+    expect(isBlocked(9.6 + eps, 5, 0.85, false)).toBe(true)
+    expect(isBlocked(3, -15.2 - eps, 0.85, false)).toBe(true)
+    expect(isBlocked(3, 15.2 + eps, 0.85, false)).toBe(true)
+  })
+
+  it('uses a strict gate line: exactly +-0.62 is open, just inside is blocked', () => {
+    expect(isBlocked(3, 0.62, 0.85, false)).toBe(false)
+    expect(isBlocked(3, -0.62, 0.85, false)).toBe(false)
+    expect(isBlocked(3, 0.62 - eps, 0.85, false)).toBe(true)
+    expect(isBlocked(3, -0.62 + eps, 0.85, false)).toBe(true)
+  })
+
+  it('uses a strict elevation threshold: exactly 2.2 passes', () => {
+    expect(isBlocked(3, 0, 2.2, false)).toBe(false)
+    expect(isBlocked(3, 0, 2.2 - eps, false)).toBe(true)
+  })
+
+  it('side-gate opening endpoints 5.9/8.1 are inclusive', () => {
+    expect(isBlocked(5.9, 0, 0.85, true)).toBe(false)
+    expect(isBlocked(8.1, 0, 0.85, true)).toBe(false)
+    expect(isBlocked(5.9 - eps, 0, 0.85, true)).toBe(true)
+    expect(isBlocked(8.1 + eps, 0, 0.85, true)).toBe(true)
+  })
+
+  it('roof opening endpoints -9.2/-5.8 are inclusive and gate-independent', () => {
+    expect(isBlocked(-9.2, 0, 0.85, false)).toBe(false)
+    expect(isBlocked(-5.8, 0, 0.85, false)).toBe(false)
+    expect(isBlocked(-9.2 - eps, 0, 0.85, false)).toBe(true)
+    expect(isBlocked(-5.8 + eps, 0, 0.85, false)).toBe(true)
+  })
+
+  it('never lets an open side gate bypass the world bounds', () => {
+    expect(isBlocked(9.7, 0, 0.85, true)).toBe(true)
+  })
+})
+
+describe('floorHeightAt boundary probes (golden)', () => {
+  const eps = 0.0001
+  it('applies roof endpoints inclusively', () => {
+    expect(floorHeightAt(-9, -8, )).toBe(2.4)
+    expect(floorHeightAt(-6, -1.1)).toBe(2.4)
+    expect(floorHeightAt(-6, 1.1)).toBe(2.4)
+    expect(floorHeightAt(-9, 8)).toBe(2.4)
+    expect(floorHeightAt(-6 + eps, -4)).toBe(0) // just past roof x
+    expect(floorHeightAt(-7.5, -1.1 + eps)).toBe(0) // in the gate gap
+  })
+
+  it('gives roof precedence over the ramp where they overlap', () => {
+    // x in [-6,-3.5] & z in [4,8] is the ramp, but x=-6,z=6 is also south roof.
+    expect(floorHeightAt(-6, 6)).toBeCloseTo(2.4, 6)
+  })
+
+  it('applies ramp z-boundaries 4/8 inclusively', () => {
+    expect(floorHeightAt(-4.75, 4)).toBeCloseTo(1.2, 6)
+    expect(floorHeightAt(-4.75, 8)).toBeCloseTo(1.2, 6)
+    expect(floorHeightAt(-4.75, 4 - eps)).toBe(0)
+    expect(floorHeightAt(-4.75, 8 + eps)).toBe(0)
+  })
+})
