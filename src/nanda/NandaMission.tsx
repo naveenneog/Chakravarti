@@ -32,6 +32,7 @@ import {
   type BossPhase,
 } from './bossAi'
 import type { MissionModifiers, MissionResult } from './types'
+import { floorHeightAt, isBlocked } from './missionGeometry'
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -111,36 +112,6 @@ const readWorldColors = (): WorldColors => {
     warning: read('--cp-warning'),
     water: read('--cp-link'),
   }
-}
-
-const floorHeightAt = (x: number, z: number) => {
-  const onNorthRoof = x >= -9 && x <= -6 && z >= -8 && z <= -1.1
-  const onSouthRoof = x >= -9 && x <= -6 && z >= 1.1 && z <= 8
-  if (onNorthRoof || onSouthRoof) {
-    return 2.4
-  }
-  const onRamp = x >= -6 && x <= -3.5 && z >= 4 && z <= 8
-  if (onRamp) {
-    return ((-x - 3.5) / 2.5) * 2.4
-  }
-  return 0
-}
-
-const isBlocked = (
-  x: number,
-  z: number,
-  playerY: number,
-  sideGateOpen: boolean,
-) => {
-  if (x < -9.6 || x > 9.6 || z < -15.2 || z > 15.2) {
-    return true
-  }
-  if (Math.abs(z) < 0.62 && playerY < 2.2) {
-    const throughSideGate = sideGateOpen && x >= 5.9 && x <= 8.1
-    const overRoof = x >= -9.2 && x <= -5.8
-    return !throughSideGate && !overRoof
-  }
-  return false
 }
 
 const enemyStarts = [
