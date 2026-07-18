@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.5 - 2026-07-18
+
+### Added
+
+- Refactor steps 2–3 toward a data-driven mission (Sol-approved): a generic,
+  immutable `ActionMissionDefinition` schema + validator
+  (`src/action/missionDefinition.ts`) and the complete Timber Gate encoded as a
+  parallel definition (`src/nanda/timberGateDefinition.ts`), both **unused by
+  production**, pinned by golden tests so the upcoming subsystem-by-subsystem
+  wiring cannot silently change spawns, patrols, objectives, boss, completion,
+  assets, or budgets. Strengthened the geometry golden tests with explicit
+  boundary/epsilon probes. Test count 46 → 76.
+
 ## 0.7.4 - 2026-07-18
 
 ### Changed
