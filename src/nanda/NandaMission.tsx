@@ -33,6 +33,11 @@ import {
 } from './bossAi'
 import type { MissionModifiers, MissionResult } from './types'
 import { floorHeightAt, isBlocked } from './missionGeometry'
+import { timberGateDefinition } from './timberGateDefinition'
+
+// Gate 5 of the mission-definition migration: model/prop asset paths come from
+// the definition (single source of truth) rather than hardcoded strings.
+const MISSION_ASSETS = timberGateDefinition.presentation.assets
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -389,15 +394,15 @@ const themedClone = (source: THREE.Object3D, color: string) => {
 function OpenAssetProps({ colors }: { colors: WorldColors }) {
   const treeSource = useLoader(
     GLTFLoader,
-    './models/cc0/kenney-nature/tree_oak.glb',
+    MISSION_ASSETS.props.tree,
   ).scene
   const bushSource = useLoader(
     GLTFLoader,
-    './models/cc0/kenney-nature/plant_bushLarge.glb',
+    MISSION_ASSETS.props.bush,
   ).scene
   const jarSource = useLoader(
     GLTFLoader,
-    './models/nanda/mauryan-storage-jar.glb',
+    MISSION_ASSETS.props.jar,
   ).scene
   const trees = useMemo(
     () =>
@@ -654,7 +659,7 @@ function HeroFigure({
 }) {
   const gltf = useLoader(
     GLTFLoader,
-    './models/cc0/quaternius-characters/BaseCharacter.gltf',
+    MISSION_ASSETS.heroModel,
   )
   const actor = useMemo(
     () => themedCharacterClone(gltf.scene, colors, 'hero'),
@@ -837,7 +842,7 @@ function GuardFigure({
   const lastPosition = useRef(new THREE.Vector3())
   const gltf = useLoader(
     GLTFLoader,
-    './models/cc0/quaternius-characters/Ninja_Sand.gltf',
+    MISSION_ASSETS.guardModel,
   )
   const actor = useMemo(
     () => themedCharacterClone(gltf.scene, colors, 'guard'),
@@ -948,7 +953,7 @@ function BossFigure({
   const pulse = useRef(0)
   const gltf = useLoader(
     GLTFLoader,
-    './models/cc0/quaternius-characters/Ninja_Sand.gltf',
+    MISSION_ASSETS.bossModel,
   )
   const actor = useMemo(
     () => themedCharacterClone(gltf.scene, colors, 'captain'),
