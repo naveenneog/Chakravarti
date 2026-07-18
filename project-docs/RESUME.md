@@ -14,9 +14,13 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.6.1** (tag `v0.6.1`), on `main`.
+- Latest release: **v0.7.0** (tag `v0.7.0`), on `main`.
 - Working tree clean; everything committed and pushed.
-- `package.json` version `0.6.1`. 46 unit tests pass (`npm run test`).
+- `package.json` version `0.7.0`. 46 unit tests pass (`npm run test`); browser
+  smoke via `npm run test:smoke` (build Pages first). Current mobile build:
+  `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
+- **Web/PWA is the authoritative product.** Unity (`unity/ChakravartiAction`) is
+  a frozen v0.5.0 prototype — see `project-docs/UNITY_QA_REPORT.md`.
 
 ## Stack & commands
 
@@ -52,6 +56,14 @@ young Chandragupta infiltrates the timber district of Pataliputra.
    disciplined withdrawal (gate holds, no capture), matching the `withdrawal`
    outcome. Manifests: `tooling/outcome-{victory,defeat}-manifest.json`. Chosen
    from `state.outcome` (withdrawal→defeat). Reviewed by Sol before building.
+7. **Browser smoke test** (`tests/smoke.mjs`, `npm run test:smoke`, v0.6.2) —
+   playwright-core + system Edge/Chrome against the built docs bundle.
+8. **Grandiose character pass** (v0.6.3) — reviewed human palette + PBR, role
+   silhouettes (hero/guard/captain), captain helmet, rim light, in
+   `NandaMission.tsx` (`themedCharacterClone`, `CHARACTER_PALETTE`).
+9. **Kalinga chapter envelope** (v0.7.0) — `src/game/KalingaIntro.tsx` cinematic
+   before the tactical battle (`src/App.tsx` `startBattle` gate). Deterministic
+   battle engine (`src/game/`) unchanged.
 
 ## Conventions
 

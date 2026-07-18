@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.0 - 2026-07-18
+
+### Added
+
+- Completed the Cost of Kalinga chapter envelope: the tactical battle now opens
+  with a cinematic chapter intro (the existing Sora Kalinga clip + Azure
+  narration) before the board, so the chapter flows intro -> battle -> outcome ->
+  historical debrief like the Timber Gate. Skippable, mute, reduced-motion
+  poster-only, autoplay-fallback "Play narration", and modal focus/keyboard
+  dismissal; shown on every battle start. The deterministic battle engine is
+  unchanged.
+
+### Changed
+
+- Compressed the Kalinga intro clip to a mobile budget (5.5 MB -> ~0.5 MB);
+  its poster and narration precache, the mp4 loads on demand with a poster
+  fallback.
+
 ## 0.6.3 - 2026-07-18
 
 ### Changed
