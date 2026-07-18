@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.12 - 2026-07-19
+
+### Changed
+
+- Mission-definition migration gate 13 (Sol-reviewed, no behaviour change): the
+  mission-completion decision is now a pure `evaluateExitCompletion` predicate
+  (`src/action/missionRuntime.ts`) that reads its parameters from the Timber Gate
+  definition — the exit anchor position/radius and the `interact-at-exit-v1`
+  policy's `requireBossDefeated` flag. It resolves a single frame to
+  `'success' | 'failure' | null`, narrows to the supported kind, and fails fast
+  otherwise. Behaviour is preserved exactly: a rising-edge interact within the
+  exit radius (inclusive) with objectives met and the boss cleared succeeds; a
+  same-frame success suppresses a same-frame death; otherwise zero health fails.
+  `completionSent` stays the once-only arbiter and the `useFrame` call site is
+  unchanged. NandaMission fails fast at load if the completion kind is
+  unsupported or its `exitAnchorId` does not resolve to the topology anchor. A
+  13-case truth table was written **before** the wiring (Sol's one NO-GO for
+  blind edits) and Sol reviewed the implemented diff. 104 tests + 13/13 smoke.
+
 ## 0.7.11 - 2026-07-19
 
 ### Changed
