@@ -18,18 +18,20 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 - Working tree clean; everything committed and pushed. **104 unit tests pass.**
 - `package.json` version `0.7.12`. Browser smoke via `npm run test:smoke` (13/13).
   Current mobile build: `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
-- **In progress: mission-definition refactor** (Sol-approved 14-gate plan).
-  Gates 1–13 done: geometry extracted (`missionGeometry.ts` + golden tests);
-  `ActionMissionDefinition` schema (`src/action/missionDefinition.ts`) + Timber
-  Gate data (`src/nanda/timberGateDefinition.ts`) now the production source of
-  truth for assets, prompts, palettes, budgets, guard projection, objectives,
-  geometry routing, guard/boss encounter configs (fail-fast if boss omitted), and
-  the completion predicate (`evaluateExitCompletion`, truth-table tested + Sol
-  reviewed). Pure runtime helpers in `src/action/missionRuntime.ts`; `initialHud`
-  extracted to `src/nanda/initialHud.ts`. **Next: gate 14** — final desktop +
-  mobile playthrough (screenshot verification) to close the migration, then the
-  Pratapgad chapter (Sol-approved brief + spend-capped Sora first). One subsystem
-  per green commit, no behaviour change. Continuous schedule #2 drives this.
+- **Mission-definition refactor: COMPLETE** (Sol-approved 14-gate plan, all
+  gates shipped v0.7.4–v0.7.12 + gate-14 playthrough verified at desktop 1280×800
+  and mobile 412×915, zero console errors). The `ActionMissionDefinition` schema
+  (`src/action/missionDefinition.ts`) + Timber Gate data
+  (`src/nanda/timberGateDefinition.ts`) are now the single production source of
+  truth for geometry, assets, prompts, palettes, budgets, guard projection,
+  objectives + collection policy, guard/boss encounter configs (fail-fast if boss
+  omitted), and the completion predicate (`evaluateExitCompletion`, truth-table
+  tested + Sol-reviewed). Pure runtime helpers live in
+  `src/action/missionRuntime.ts`; `initialHud` in `src/nanda/initialHud.ts`. The
+  `useFrame` scheduler, AI state machines, and scene renderer were deliberately
+  NOT data-driven (Sol's guardrail). **Next: the Pratapgad chapter** — consult
+  Sol for an approved brief + ONE preview Sora render before spend-capped final
+  renders.
 - **Web/PWA is the authoritative product.** Unity (`unity/ChakravartiAction`) is
   a frozen v0.5.0 prototype — see `project-docs/UNITY_QA_REPORT.md`.
 

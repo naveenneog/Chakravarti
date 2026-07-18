@@ -18,6 +18,14 @@
   unsupported or its `exitAnchorId` does not resolve to the topology anchor. A
   13-case truth table was written **before** the wiring (Sol's one NO-GO for
   blind edits) and Sol reviewed the implemented diff. 104 tests + 13/13 smoke.
+- Mission-definition migration **gate 14 (verification) — the 14-gate migration
+  is now complete.** Ran a desktop (1280×800) and mobile (412×915) playthrough:
+  the Timber Gate boots, renders the definition-driven title/prompt/HUD counts
+  and the `exitActionLabel` ("Open") touch control, responds to movement + attack
+  input, and reports zero console/page errors at both viewports. The
+  `ActionMissionDefinition` is the single production source of truth; the
+  `useFrame` scheduler, AI state machines, and scene renderer stay imperative per
+  Sol's guardrail.
 
 ## 0.7.11 - 2026-07-19
 
