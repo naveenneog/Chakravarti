@@ -38,6 +38,8 @@ import { timberGateDefinition } from './timberGateDefinition'
 // Gate 5 of the mission-definition migration: model/prop asset paths come from
 // the definition (single source of truth) rather than hardcoded strings.
 const MISSION_ASSETS = timberGateDefinition.presentation.assets
+// Gate 6: HUD prompt strings come from the definition's presentation copy.
+const MISSION_PROMPTS = timberGateDefinition.presentation.copy.prompts
 
 type NandaMissionProps = {
   controlsRef: RefObject<NandaMissionControls>
@@ -1724,24 +1726,24 @@ function MissionScene({
       const prompt =
         bossThreat
           ? bossMotion.current.vulnerable
-            ? 'The captain is off balance — strike now!'
-            : 'Fell the Nanda captain to reach the gate'
+            ? MISSION_PROMPTS.bossVulnerable
+            : MISSION_PROMPTS.bossEngaged
           : anyAlerted
-            ? 'Spotted — break line of sight or fight through'
+            ? MISSION_PROMPTS.spotted
             : anySuspicious
-              ? 'A guard heard something — stay out of sight'
+              ? MISSION_PROMPTS.heard
               : bossAlive.current &&
                   objectivesSecured >= modifiers.requiredObjectives
-                ? 'Face the Nanda captain guarding the gate'
+                ? MISSION_PROMPTS.bossGate
                 : gateDistance <= 2.4
                   ? objectivesSecured >= modifiers.requiredObjectives
-                    ? 'Open the timber gate'
-                    : 'Secure the dispatches before opening the gate'
+                    ? MISSION_PROMPTS.atGateReady
+                    : MISSION_PROMPTS.atGateLocked
                   : controls.heal &&
                       healingCharges.current === 0 &&
                       health.current < modifiers.maxHealth
-                    ? 'No recovery charges remain'
-                    : 'Reach the marked dispatches, then the northern gate'
+                    ? MISSION_PROMPTS.noHeals
+                    : MISSION_PROMPTS.default
       onHudChange({
         health: health.current,
         maxHealth: modifiers.maxHealth,

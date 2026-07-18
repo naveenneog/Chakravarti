@@ -69,6 +69,7 @@ import {
 } from './onboarding'
 import MissionTutorial from './MissionTutorial'
 import { BOSS_MAX_HEALTH } from './bossAi'
+import { timberGateDefinition } from './timberGateDefinition'
 import type { CutsceneOutcome } from './OutcomeCutscene'
 import type {
   EvidenceRef,
@@ -195,7 +196,7 @@ const initialHud = (modifiers: MissionModifiers): NandaMissionHud => ({
   healingCharges: modifiers.healingCharges,
   healingUsed: 0,
   elapsedSeconds: 0,
-  prompt: 'Reach the marked dispatches, then the northern gate',
+  prompt: timberGateDefinition.presentation.copy.initialPrompt,
   bossActive: false,
   bossHealth: BOSS_MAX_HEALTH,
   bossMaxHealth: BOSS_MAX_HEALTH,
@@ -305,7 +306,7 @@ function BriefingPanel({
           </p>
           <h1>
             The Fall of the Nandas
-            <span>The Timber Gate</span>
+            <span>{timberGateDefinition.identity.title}</span>
           </h1>
           <p>
             Plan with Kautilya, then control Chandragupta inside a reconstructed
@@ -792,7 +793,7 @@ function MissionPanel({
             <Gamepad2 size={14} />
             Single-player action
           </p>
-          <h1>The Timber Gate</h1>
+          <h1>{timberGateDefinition.identity.title}</h1>
           <p>{hud.prompt}</p>
         </div>
 
@@ -853,7 +854,7 @@ function MissionPanel({
           <section className="nanda-boss-bar" aria-live="polite">
             <div className="nanda-boss-bar-label">
               <Crown size={15} />
-              <span>Nanda Captain</span>
+              <span>{timberGateDefinition.presentation.copy.bossLabel}</span>
               <span className="nanda-boss-phase">
                 Phase {hud.bossPhase}
               </span>
