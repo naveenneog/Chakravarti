@@ -144,6 +144,18 @@ async function main() {
     )
 
     // 5. Media-failure resilience: block mp4s and confirm no crash on reload.
+    // First assert the normal-path run produced no errors at all.
+    check('no console/page errors on the normal path', errors.length === 0)
+    if (errors.length) {
+      console.log('PRE-BLOCK ERRORS:', JSON.stringify(errors.slice(0, 12), null, 2))
+    }
+    const errorsBeforeBlock = errors.length
+    // Ignore the deliberate aborted-mp4 resource failures our own route causes.
+    const isExpectedMediaError = (text) =>
+      text.includes('ERR_FAILED') ||
+      text.includes('Failed to load resource') ||
+      text.includes('.mp4')
+
     await ctx.route('**/*.mp4', (route) => route.abort())
     await page.goto(BASE, { waitUntil: 'networkidle' })
     await sleep(1200)
@@ -157,9 +169,39 @@ async function main() {
       (await page.locator('canvas').count()) > 0,
     )
 
-    check('no console/page errors during smoke', errors.length === 0)
-    if (errors.length) {
-      console.log('ERRORS:', JSON.stringify(errors.slice(0, 12), null, 2))
+    // 6. Kalinga chapter: exit to chronicles, open the battle, and confirm the
+    // intro cinematic (poster fallback here, since mp4s are blocked) leads into
+    // the tactical board.
+    await clickByRole(page, /Open War Council/i)
+    await sleep(400)
+    await clickByRole(page, /Open chronicles/i)
+    await sleep(900)
+    const kalingaStarted = await clickByRole(page, /Play the Kalinga battle/i)
+    await sleep(1400)
+    check(
+      'Kalinga intro offers "Begin the battle"',
+      kalingaStarted &&
+        (await page.getByRole('button', { name: /Begin the battle/i }).count()) >
+          0,
+    )
+    await clickByRole(page, /Begin the battle/i)
+    await sleep(1000)
+    check(
+      'Kalinga battle board renders after the intro',
+      (await page.locator('.battle-board-card').count()) > 0,
+    )
+
+    // With mp4s deliberately blocked, only uncaught page errors (not the
+    // expected aborted-media resource failures) should count as regressions.
+    const unexpectedAfterBlock = errors
+      .slice(errorsBeforeBlock)
+      .filter((text) => !isExpectedMediaError(text))
+    check(
+      'no unexpected errors with video blocked (poster fallback path)',
+      unexpectedAfterBlock.length === 0,
+    )
+    if (unexpectedAfterBlock.length) {
+      console.log('ERRORS:', JSON.stringify(unexpectedAfterBlock.slice(0, 12), null, 2))
     }
 
     await browser.close()
