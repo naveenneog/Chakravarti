@@ -87,10 +87,28 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 `npx skills add <owner/repo> --skill <name> --agent github-copilot --copy -y`
 (browse <https://www.skills.sh/topic>).
 
-## Next options (not started)
+## Next options — needs human approval (Sol NO-GO for unattended)
 
-- Further mobile perf (Draco/KTX2 compression, instanced palisade posts, LOD;
-  also the intro mp4 is still ~5.8 MB uncompressed — could re-encode like the
-  outcome clips at ~0.3–0.7 MB).
-- More chapters / a second boss, building on `bossAi.ts`.
-- Second campaign chapter from the roadmap in `project-docs/GAME_DESIGN.md`.
+The autonomous build loop was paused here after a bounded safety pass. Sol
+(GPT-5.6) reviewed the two remaining roadmap items and ruled both **NO-GO for
+fully unattended execution**; they need human oversight:
+
+- **`mission-definition`** — extract Timber Gate's hardcoded config from
+  `NandaMission.tsx` into a data-driven `ActionMissionDefinition`. Safe staged
+  plan: (1) add the typed schema + runtime validation, unused by production;
+  (2) encode Timber Gate as a parallel definition, not wired in; (3) add
+  golden/characterization tests (spawn/patrol coords, sampled floor/collision,
+  objective + gate eligibility, boss params + completion result, labels/assets/
+  budgets); (4) **human reviews schema + fixtures**; (5) migrate one subsystem
+  per green commit (assets → labels → spawns/patrols → objectives →
+  terrain/collision → boss/completion); (6) final human mobile+desktop
+  playthrough. Do not build a "god config" — separate topology, encounters,
+  presentation, historical metadata, budgets.
+- **`chapter-pratapgad`** (Shivaji hill-fort stealth chapter) — needs an
+  approved evidence/claim matrix, greybox mechanics (elevation/visibility/noise/
+  scouting/withdrawal), an account-comparison presentation, and **spend-capped
+  paid Sora media (one preview render + human approval before final renders)**.
+  Climax = detection/escape/command decision, not a health-sponge boss.
+
+Other safe, unblocked ideas: Draco/KTX2 mesh compression, instanced palisade
+posts, LOD; a dedicated Kalinga battle unit tutorial.
