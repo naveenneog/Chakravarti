@@ -1,6 +1,14 @@
 # Unity Action Architecture
 
-## Decision
+> **Status (2026-07-18): FROZEN v0.5.0 prototype.** Development direction changed
+> after this document was written. The **web / React-Three-Fiber client is now
+> authoritative** and has advanced to v0.6.3 with guard AI, a boss fight, a Sora
+> story intro, a tutorial, a mobile perf pass, and victory/defeat cutscenes —
+> none of which exist in this Unity project. This client is retained as a native
+> vertical-slice prototype/showcase only. Do not port web features here without
+> an explicit realignment decision. See `UNITY_QA_REPORT.md`.
+
+## Decision (original, superseded)
 
 Chakravarti now has two clients with explicit responsibilities:
 

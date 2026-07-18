@@ -6,12 +6,17 @@ Kautilya's strategic planning to a playable third-person Chandragupta mission.
 The six-season **Mauryan Rise** kingdom campaign and earlier **Cost of Kalinga**
 tactical chapter remain playable.
 
-The production action client is now being rebuilt in **Unity 6** under
-`unity/ChakravartiAction`. The web build remains available as the strategy and
-historical-content prototype.
+The **web / PWA client** (React 19 + React-Three-Fiber, under `src/`) is the
+authoritative, actively developed product, deployed to GitHub Pages and packaged
+for Android with Capacitor. A separate **Unity 6** native client under
+`unity/ChakravartiAction` is a **frozen v0.5.0 vertical-slice prototype**: it
+does not have the guard AI, boss fight, story intro, tutorial, or cutscenes
+added to the web client since v0.5.0. See
+[`project-docs/UNITY_QA_REPORT.md`](project-docs/UNITY_QA_REPORT.md) for the QA
+status and divergence matrix.
 
 **Play:** <https://naveenneog.github.io/Chakravarti/>  
-**Android APK:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.4.2/Chakravarti-v0.4.2.apk>
+**Android APK (current, Capacitor):** build locally with `npm run apk` (produces `Chakravarti-vX.Y.Z.apk`)
 
 **Unity Windows:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.5.0/ChakravartiAction-v0.5.0-Windows.zip>
 **Unity Android:** <https://github.com/naveenneog/Chakravarti/releases/download/v0.5.0/ChakravartiAction-v0.5.0.apk>
