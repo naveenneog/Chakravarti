@@ -1,0 +1,17 @@
+{
+  "chapter": "timber-gate-defeat",
+  "audio": {
+    "output": "public/media/story/timber-gate-defeat-en-IN.mp3",
+    "voice": "en-IN-ArjunNeural",
+    "language": "en-IN",
+    "rate": "-6%",
+    "pitch": "-3%",
+    "text": "The gate holds. Chandragupta slips back into the dark, the coalition intact, the reckoning only delayed. He will return."
+  },
+  "video": {
+    "output": "public/media/story/timber-gate-defeat.mp4",
+    "seconds": "8",
+    "size": "720x1280",
+    "prompt": "Eight-second vertical cinematic withdrawal scene for a historically grounded mobile action game set in Magadha in the late fourth century BCE. Night over the outer timber district of an ancient riverside capital inspired by Pataliputra: a heavy timber gate firmly shut and barred, torches burning on the palisade, alert guards holding the wall at a respectful distance. A lone hooded young figure, seen from behind and in silhouette, turns away from the closed gate and retreats quietly into the dark treeline and mist beyond the moat, unhurried and disciplined, not captured and not harmed. The camera holds low and still as the figure withdraws into shadow while the shut gate and lit wall remain behind. Somber, restrained, resolute rather than defeated. Grounded historical realism, archaeological restraint, deep crimson cloth accents, period-appropriate plain textiles and simple iron fittings. No named-person facial portrait, no gore, no violence, no capture, no fantasy armor, no modern flags, no text, no logos, no deity imagery, no anachronistic stone-palace skyline. Mobile portrait composition with the retreating figure centered."
+  }
+}

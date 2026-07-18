@@ -1,0 +1,17 @@
+{
+  "chapter": "timber-gate-victory",
+  "audio": {
+    "output": "public/media/story/timber-gate-victory-en-IN.mp3",
+    "voice": "en-IN-ArjunNeural",
+    "language": "en-IN",
+    "rate": "-6%",
+    "pitch": "-2%",
+    "text": "The timber gate gives way. Chandragupta walks through into the waking city, the first gate of many on the long road to an empire."
+  },
+  "video": {
+    "output": "public/media/story/timber-gate-victory.mp4",
+    "seconds": "8",
+    "size": "720x1280",
+    "prompt": "Eight-second vertical cinematic victory scene for a historically grounded mobile action game set in Magadha in the late fourth century BCE, on the eve of the fall of the Nanda dynasty. Dawn breaks over the outer timber district of an ancient riverside capital inspired by Pataliputra: tall wooden palisades, a heavy timber gate now swinging open, torch smoke thinning in the pale morning light, the waking city and river beyond. A lone hooded young figure, seen from behind and in silhouette, walks forward through the opened gate toward the city, calm and resolute, not triumphant spectacle. The camera rises slowly behind the figure as warm dawn light spreads over the rooftops and the Ganges corridor. Grounded historical realism, archaeological restraint, deep crimson cloth accents, period-appropriate plain textiles and simple iron fittings. No named-person facial portrait, no gore, no fantasy armor, no modern flags, no text, no logos, no deity imagery, no anachronistic stone-palace skyline. Mobile portrait composition with the figure and open gate centered."
+  }
+}

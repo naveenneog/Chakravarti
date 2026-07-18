@@ -1436,6 +1436,14 @@
   color: rgba(244, 241, 234, 0.62);
 }
 
+.nanda-story-narration {
+  margin-bottom: 10px;
+}
+
+.nanda-outcome-defeat .nanda-story-copy .eyebrow {
+  color: var(--cp-warning);
+}
+
 @keyframes nanda-story-rise {
   from {
     opacity: 0;

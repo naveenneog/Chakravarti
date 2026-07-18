@@ -69,6 +69,7 @@ import {
 } from './onboarding'
 import MissionTutorial from './MissionTutorial'
 import { BOSS_MAX_HEALTH } from './bossAi'
+import type { CutsceneOutcome } from './OutcomeCutscene'
 import type {
   EvidenceRef,
   MissionModifiers,
@@ -82,6 +83,7 @@ import type {
 
 const NandaMission = lazy(() => import('./NandaMission'))
 const StoryIntro = lazy(() => import('./StoryIntro'))
+const OutcomeCutscene = lazy(() => import('./OutcomeCutscene'))
 
 type NandaCampaignProps = {
   onExit: () => void
@@ -1178,11 +1180,23 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
   )
   const [warning, setWarning] = useState(loaded.warning)
   const [showStoryIntro, setShowStoryIntro] = useState(() => !hasSeenStoryIntro())
+  // Keyed by campaign seed: the aftermath cinematic shows once per completion,
+  // and a replay (which increments the seed) naturally shows it again.
+  const [dismissedOutcomeSeed, setDismissedOutcomeSeed] = useState<number | null>(
+    null,
+  )
 
   const dismissStoryIntro = () => {
     markStoryIntroSeen()
     setShowStoryIntro(false)
   }
+
+  const outcomeCutscene: CutsceneOutcome =
+    state.outcome === 'withdrawal' ? 'defeat' : 'victory'
+  const showOutcomeCutscene =
+    state.phase === 'debrief' &&
+    state.outcome !== null &&
+    dismissedOutcomeSeed !== state.seed
 
   useEffect(() => {
     saveNandaCampaign(state)
@@ -1213,7 +1227,7 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
         state.phase === 'mission' ? 'action-live' : ''
       }`}
     >
-      {state.phase !== 'mission' ? (
+      {state.phase !== 'mission' && !showOutcomeCutscene ? (
       <header className="nanda-chapter-header">
         <button className="text-button" type="button" onClick={onExit}>
           <Home size={17} />
@@ -1271,7 +1285,23 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
         )
       ) : null}
       {state.phase === 'debrief' ? (
-        <DebriefPanel state={state} dispatch={dispatch} />
+        showOutcomeCutscene ? (
+          <Suspense
+            fallback={
+              <div className="nanda-mission-loading">
+                <Crown size={28} />
+                <p>The dust settles...</p>
+              </div>
+            }
+          >
+            <OutcomeCutscene
+              outcome={outcomeCutscene}
+              onContinue={() => setDismissedOutcomeSeed(state.seed)}
+            />
+          </Suspense>
+        ) : (
+          <DebriefPanel state={state} dispatch={dispatch} />
+        )
       ) : null}
       {state.phase === 'complete' ? (
         <CompletePanel
@@ -1282,7 +1312,7 @@ export default function NandaCampaign({ onExit }: NandaCampaignProps) {
         />
       ) : null}
 
-      {state.phase !== 'mission' ? (
+      {state.phase !== 'mission' && !showOutcomeCutscene ? (
       <footer className="nanda-disclosure">
         <Info size={16} />
         <span>
