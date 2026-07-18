@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.8 - 2026-07-19
+
+### Changed
+
+- Mission-definition migration gates 7–8 (Sol-approved, no behaviour change):
+  the character palette (skin/hair + hero/guard/captain roles), the world
+  colour-role → CSS-variable mapping, the Canvas DPR, and the shadow-map size now
+  read from the Timber Gate definition instead of hardcoded literals. Identical
+  values (pinned by golden tests); 81 tests + 13/13 smoke green.
+
 ## 0.7.7 - 2026-07-18
 
 ### Changed
