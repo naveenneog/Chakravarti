@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.2 - 2026-07-18
+
+### Added
+
+- Repeatable browser smoke test (`npm run test:smoke`, `tests/smoke.mjs`): boots
+  the built Pages bundle in a real browser and asserts the critical path — home
+  renders, the action mission mounts a WebGL canvas with touch controls, pause
+  opens/closes, the War Council toggles repeatedly, and the game still boots with
+  video blocked (poster fallback) — all with zero console/page errors. Uses
+  `playwright-core` + a system Chromium/Edge, no heavy browser download.
+
 ## 0.6.1 - 2026-07-18
 
 ### Added

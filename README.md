@@ -42,8 +42,12 @@ npm run dev
 
 ```powershell
 npm test
-npm run build
 npm run lint
+npm run build
+
+# Browser smoke test (build the Pages bundle first)
+npm run build:pages
+npm run test:smoke
 ```
 
 ## Playable campaigns
