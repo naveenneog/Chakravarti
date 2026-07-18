@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.11 - 2026-07-19
+
+### Changed
+
+- Mission-definition migration gate 12 (Sol-approved, no behaviour change): the
+  guard perception config and the entire boss encounter (id, spawn, AI config,
+  max health) now come from the Timber Gate definition's `encounters` block
+  instead of the `GUARD_PERCEPTION` / `BOSS_CONFIG` / `BOSS_MAX_HEALTH` AI-module
+  constants. The runtime reads the mission's chosen values at every call site
+  (guard brain + landed-strike range, boss brain + lunge range, health
+  fractions, HUD `bossMaxHealth`) and **fails fast** if the definition ever omits
+  the boss rather than silently degrading to a bossless mission. The initial HUD
+  boss-health readout moved to a testable `initialHud` module sourcing both
+  fields from `encounters.boss.maxHealth` (new pinning test). The AI-module
+  constants remain as the driver defaults. 91 tests + 13/13 smoke green.
+
 ## 0.7.10 - 2026-07-19
 
 ### Changed

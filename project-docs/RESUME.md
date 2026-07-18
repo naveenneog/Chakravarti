@@ -14,17 +14,21 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.7.6** (tag `v0.7.6`), on `main`.
-- Working tree clean; everything committed and pushed. **81 unit tests pass.**
-- `package.json` version `0.7.6`. Browser smoke via `npm run test:smoke` (13/13).
+- Latest release: **v0.7.11** (tag `v0.7.11`), on `main`.
+- Working tree clean; everything committed and pushed. **91 unit tests pass.**
+- `package.json` version `0.7.11`. Browser smoke via `npm run test:smoke` (13/13).
   Current mobile build: `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
 - **In progress: mission-definition refactor** (Sol-approved 14-gate plan).
-  Gates 1–4 done: geometry extracted (`missionGeometry.ts` + golden tests);
+  Gates 1–12 done: geometry extracted (`missionGeometry.ts` + golden tests);
   `ActionMissionDefinition` schema (`src/action/missionDefinition.ts`) + Timber
-  Gate data (`src/nanda/timberGateDefinition.ts`) exist but are UNUSED by
-  production; Sol's gate-4 fixture review applied. **Next: gate 5** — wire model
-  + prop asset paths into the figures, one subsystem per green commit, no
-  behaviour change. Continuous schedule #2 drives this.
+  Gate data (`src/nanda/timberGateDefinition.ts`) now the production source of
+  truth for assets, prompts, palettes, budgets, guard projection, objectives,
+  geometry routing, and guard/boss encounter configs (fail-fast if boss omitted).
+  Pure runtime helpers in `src/action/missionRuntime.ts`; `initialHud` extracted
+  to `src/nanda/initialHud.ts`. **Next: gate 13** — extract the completion
+  predicate (write the truth-table test FIRST; Sol's one NO-GO for blind edits),
+  then gate 14 playthrough, then the Pratapgad chapter. One subsystem per green
+  commit, no behaviour change. Continuous schedule #2 drives this.
 - **Web/PWA is the authoritative product.** Unity (`unity/ChakravartiAction`) is
   a frozen v0.5.0 prototype — see `project-docs/UNITY_QA_REPORT.md`.
 
