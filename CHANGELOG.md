@@ -1,5 +1,67 @@
 # Changelog
 
+## 0.8.0 - 2026-07-26
+
+### Added
+
+- **Close combat: the Guard verb.** The guards and the captain already
+  telegraphed every attack — a guard holds a 0.45s wind-up, the captain winds up
+  strikes and charges lunges — but the player had no verb to answer a telegraph
+  with, so retreating was the only counterplay. Chandragupta now has a single
+  defensive verb, graded entirely by timing (`Q` / `Shift`, or the new Guard
+  touch control):
+  - **Parry** — raise the guard as the blow lands: no damage, the attacker is
+    staggered, and a riposte window opens.
+  - **Perfect parry** — raise it inside the leading 0.13s: longer stagger, a
+    bigger riposte, and against the captain it forces the vulnerable recovery
+    window that previously only followed a lunge.
+  - **Block** — hold the guard early and the blow is reduced but paid for out of
+    **Resolve**; empty it and the guard **breaks**, locking the verb for 1.15s.
+    Turtling is not a strategy, and neither is mashing: opening a parry window
+    locks the next one behind a cooldown whether it was spent, dropped, or
+    expired.
+  - **Arc** — a blow from outside the frontal arc lands in full, so the guards'
+    existing flanking behaviour finally has teeth. While the guard is up
+    Chandragupta soft-locks onto the nearest threat so a stationary parry is
+    aimed at what is actually swinging.
+  All of it lives in a new pure, engine-agnostic `src/nanda/combat.ts` (36 unit
+  tests) alongside `guardAi`/`bossAi`, with the tuning sourced from the Timber
+  Gate definition's new optional `encounters.playerCombat` block.
+- **Game feel.** Impacts now carry: hit-stop (a hard slow of the mission clock
+  and every character's animation, weighted so a perfect parry is the heaviest
+  beat in the fight), a camera dolly punch on top of the existing shake,
+  knockback, a pooled additive spark system (128 preallocated particles, no
+  per-frame allocation), a parry/riposte banner, a Resolve meter, a run parry
+  counter, and staggered enemies that visibly reel out of their clip.
+- **Combat audio** — layered transient/body/tail synthesis for block, parry,
+  perfect parry, guard break and riposte, each detuned per trigger so trading
+  blows never turns into machine-gun repeats.
+
+### Changed
+
+- **Honest melee.** A swing used to hit the nearest living guard within 2.25
+  units *regardless of facing* — including one directly behind the player. It
+  now only hits what is within reach **and** inside the swing arc, and the hero
+  turns onto whatever the swing actually lands on.
+- The player's vulnerability bonus against a recovering captain (1.8x) moved
+  into `combat.ts`, and riposte and vulnerability no longer stack — the larger
+  bonus wins.
+- The first-run tutorial teaches Guard, and the keyboard hint lists it.
+
+### Fixed
+
+- The mission's top-left readout is now one flow column, so the HUD chips can no
+  longer ride up over the title panel and clip the prompt line at desktop widths
+  (pre-existing; verified against the 0.7.12 build). The Resolve meter joins the
+  same column instead of using fixed offsets that broke at 360px.
+
+### Validation
+
+- 146 unit tests (up from 104) and 18/18 browser smoke checks (up from 13/13).
+  The smoke test now drives a real exchange and asserts that combat resolves on
+  the guard, that the readout stacks without collisions, and that there is no
+  horizontal overflow.
+
 ## 0.7.12 - 2026-07-19
 
 ### Changed
