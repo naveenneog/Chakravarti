@@ -1318,6 +1318,215 @@
   }
 }
 
+/* Close combat: Resolve meter, outcome banner and the Guard control. */
+
+/* The top-left readout is one absolutely positioned flow column. Its children
+   stack naturally, so a long prompt grows the title panel instead of being
+   overlapped by the HUD chips below it. */
+.nanda-mission-page.action-first .nanda-hud-stack {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 8px;
+  max-width: min(420px, calc(100% - 190px));
+  pointer-events: none;
+}
+
+.nanda-mission-page.action-first .nanda-hud-stack > * {
+  position: static;
+  top: auto;
+  left: auto;
+  max-width: 100%;
+  margin: 0;
+  pointer-events: auto;
+}
+
+/* With the parry counter the chip row can outgrow the column on a phone. */
+.nanda-mission-page.action-first .nanda-hud-stack .nanda-mission-hud {
+  flex-wrap: wrap;
+}
+
+.nanda-mission-page.action-first .nanda-resolve {
+  width: min(224px, 100%);
+  padding: 6px 9px 7px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  transition: border-color 180ms ease;
+}
+
+.nanda-resolve-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--cp-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nanda-resolve-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--cp-surface-soft);
+  overflow: hidden;
+}
+
+.nanda-resolve-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cp-link);
+  transition: width 120ms linear, background-color 200ms ease;
+}
+
+.nanda-resolve.is-guarding {
+  border-color: var(--cp-link);
+}
+
+.nanda-resolve.is-riposte {
+  border-color: var(--cp-success);
+}
+
+.nanda-resolve.is-riposte .nanda-resolve-label {
+  color: var(--cp-success);
+}
+
+.nanda-resolve.is-riposte .nanda-resolve-fill {
+  background: var(--cp-success);
+}
+
+.nanda-resolve.is-broken {
+  border-color: var(--cp-danger);
+}
+
+.nanda-resolve.is-broken .nanda-resolve-label {
+  color: var(--cp-danger);
+}
+
+.nanda-resolve.is-broken .nanda-resolve-fill {
+  background: var(--cp-danger);
+}
+
+.nanda-perfect-count {
+  color: var(--cp-success);
+  font-weight: 700;
+}
+
+.nanda-combat-banner {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  z-index: 6;
+  padding: 6px 16px;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  background: var(--cp-panel-strong);
+  font-size: clamp(13px, 3.4vw, 18px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: nanda-combat-pop 900ms ease-out forwards;
+}
+
+.nanda-combat-banner.tone-perfect {
+  color: var(--cp-success);
+}
+
+.nanda-combat-banner.tone-parry {
+  color: var(--cp-link);
+}
+
+.nanda-combat-banner.tone-riposte {
+  color: var(--cp-warning);
+}
+
+.nanda-combat-banner.tone-block {
+  color: var(--cp-text-muted);
+}
+
+.nanda-combat-banner.tone-broken {
+  color: var(--cp-danger);
+}
+
+/* Overshoot on the way in, drift up and out: the beat should feel struck. */
+@keyframes nanda-combat-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.72);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -2px) scale(1.14);
+  }
+
+  32% {
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -22px) scale(0.96);
+  }
+}
+
+/* Guard spans the action pad: it is a hold control and wants a big thumb target. */
+.nanda-action-pad button:nth-child(3) {
+  grid-column: 1 / -1;
+  border-color: var(--cp-link);
+  color: var(--cp-link);
+}
+
+.nanda-action-pad button:nth-child(3).is-broken {
+  border-color: var(--cp-danger);
+  color: var(--cp-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nanda-combat-banner {
+    animation: nanda-combat-fade 900ms linear forwards;
+  }
+
+  @keyframes nanda-combat-fade {
+    0%,
+    72% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    100% {
+      opacity: 0;
+      transform: translate(-50%, 0);
+    }
+  }
+}
+
+/* Responsive placement for the top-left readout column. These follow the base
+   rules above so they win on source order at equal specificity. */
+@media (max-width: 560px) {
+  .nanda-mission-page.action-first .nanda-hud-stack {
+    top: calc(8px + env(safe-area-inset-top));
+    left: 8px;
+    gap: 6px;
+    max-width: calc(100% - 150px);
+  }
+
+  .nanda-mission-page.action-first .nanda-resolve {
+    width: min(200px, 100%);
+  }
+}
+
 /* Story intro (Sora cinematic) */
 .nanda-story-intro {
   position: fixed;

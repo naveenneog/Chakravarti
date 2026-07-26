@@ -31,5 +31,12 @@ export const initialHud = (modifiers: MissionModifiers): NandaMissionHud => {
     bossMaxHealth: bossDef.maxHealth,
     bossPhase: 1,
     bossDefeated: false,
+    resolve: 1,
+    guarding: false,
+    guardBroken: false,
+    riposteReady: false,
+    parries: 0,
+    perfectParries: 0,
+    feedback: { id: 0, kind: null },
   }
 }

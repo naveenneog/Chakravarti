@@ -12,6 +12,7 @@
 
 import type { GuardPerception } from '../nanda/guardAi'
 import type { BossConfig } from '../nanda/bossAi'
+import type { CombatConfig } from '../nanda/combat'
 
 export type Vec2 = { readonly x: number; readonly z: number }
 export type Vec3 = { readonly x: number; readonly y: number; readonly z: number }
@@ -64,6 +65,8 @@ export type PromptState =
   | 'bossEngaged'
   | 'bossVulnerable'
   | 'bossGate'
+  | 'riposte'
+  | 'guardBroken'
   | 'default'
 
 export type WorldBounds = {
@@ -144,6 +147,12 @@ export type ActionMissionDefinition = Readonly<{
     }
     readonly guards: readonly GuardSpawn[]
     readonly boss: null | BossDefinition
+    /**
+     * Player-side close-combat tuning. Optional: chapters that omit it fall back
+     * to COMBAT_CONFIG, the same way guard/boss configs default to their
+     * module-level presets.
+     */
+    readonly playerCombat?: Readonly<CombatConfig>
   }
 
   objectives: {
@@ -256,6 +265,41 @@ export const validateMissionDefinition = (
   }
   if (def.budgets.maxPointLights > def.budgets.maxTotalLights) {
     errors.push('maxPointLights cannot exceed maxTotalLights')
+  }
+  const combat = def.encounters.playerCombat
+  if (combat) {
+    if (combat.perfectWindow > combat.parryWindow) {
+      errors.push('playerCombat.perfectWindow cannot exceed parryWindow')
+    }
+    if (combat.parryWindow <= 0) {
+      errors.push('playerCombat.parryWindow must be positive')
+    }
+    if (combat.blockDamageFraction < 0 || combat.blockDamageFraction > 1) {
+      errors.push('playerCombat.blockDamageFraction must be between 0 and 1')
+    }
+    if (combat.guardBreakDamageFraction < combat.blockDamageFraction) {
+      errors.push(
+        'playerCombat.guardBreakDamageFraction must be at least blockDamageFraction',
+      )
+    }
+    if (combat.referenceDamage <= 0) {
+      errors.push('playerCombat.referenceDamage must be positive')
+    }
+    if (combat.perfectParryStagger < combat.parryStagger) {
+      errors.push(
+        'playerCombat.perfectParryStagger must be at least parryStagger',
+      )
+    }
+    if (
+      combat.perfectRiposteDamageMultiplier < combat.riposteDamageMultiplier
+    ) {
+      errors.push(
+        'playerCombat.perfectRiposteDamageMultiplier must be at least riposteDamageMultiplier',
+      )
+    }
+    if (combat.guardMoveScale <= 0 || combat.guardMoveScale > 1) {
+      errors.push('playerCombat.guardMoveScale must be within (0, 1]')
+    }
   }
   return errors
 }

@@ -57,6 +57,7 @@ import {
 } from './persistence'
 import {
   createMissionControls,
+  type CombatFeedback,
   type NandaMissionControls,
   type NandaMissionHud,
 } from './missionTypes'
@@ -668,6 +669,57 @@ function AccessibleMission({
   )
 }
 
+/** Copy and severity for each close-combat beat worth calling out on screen. */
+const COMBAT_BANNERS: Partial<
+  Record<NonNullable<CombatFeedback['kind']>, { label: string; tone: string }>
+> = {
+  'perfect-parry': { label: 'Perfect parry', tone: 'perfect' },
+  parry: { label: 'Parry', tone: 'parry' },
+  block: { label: 'Blocked', tone: 'block' },
+  'guard-break': { label: 'Guard broken', tone: 'broken' },
+  riposte: { label: 'Riposte', tone: 'riposte' },
+  'perfect-riposte': { label: 'Perfect riposte', tone: 'perfect' },
+  punish: { label: 'Punish', tone: 'riposte' },
+}
+
+/**
+ * Flashes the last combat outcome. Keyed on the monotonic feedback id so two
+ * identical outcomes in a row still replay the animation — and reading id/kind
+ * as separate deps so the HUD's ~8Hz refresh (a fresh object every tick) cannot
+ * keep restarting the dismissal timer and pin the banner on screen forever.
+ */
+function CombatBanner({ feedback }: { feedback: CombatFeedback }) {
+  const [shown, setShown] = useState<CombatFeedback>({ id: 0, kind: null })
+  const { id, kind } = feedback
+
+  useEffect(() => {
+    if (id === 0 || !kind) {
+      return undefined
+    }
+    setShown({ id, kind })
+    const timer = window.setTimeout(() => {
+      setShown((current) =>
+        current.id === id ? { id: current.id, kind: null } : current,
+      )
+    }, 900)
+    return () => window.clearTimeout(timer)
+  }, [id, kind])
+
+  const banner = shown.kind ? COMBAT_BANNERS[shown.kind] : undefined
+  if (!banner) {
+    return null
+  }
+  return (
+    <div
+      key={shown.id}
+      className={`nanda-combat-banner tone-${banner.tone}`}
+      role="status"
+    >
+      {banner.label}
+    </div>
+  )
+}
+
 function MissionPanel({
   state,
   dispatch,
@@ -770,15 +822,6 @@ function MissionPanel({
           </MissionErrorBoundary>
         )}
 
-        <div className="nanda-action-title">
-          <p className="eyebrow">
-            <Gamepad2 size={14} />
-            Single-player action
-          </p>
-          <h1>{timberGateDefinition.identity.title}</h1>
-          <p>{hud.prompt}</p>
-        </div>
-
         <div className="nanda-action-menu">
           {!reducedMode ? (
             <button
@@ -812,7 +855,20 @@ function MissionPanel({
           </button>
         </div>
 
-        <section className="nanda-mission-hud" aria-live="polite">
+        {/* One flow column for the whole top-left readout: the title panel grows
+            with the prompt text, so the HUD and Resolve meter can never ride up
+            over it the way fixed offsets did. */}
+        <div className="nanda-hud-stack">
+          <div className="nanda-action-title">
+            <p className="eyebrow">
+              <Gamepad2 size={14} />
+              Single-player action
+            </p>
+            <h1>{timberGateDefinition.identity.title}</h1>
+            <p>{hud.prompt}</p>
+          </div>
+
+          <section className="nanda-mission-hud" aria-live="polite">
           <span>
             <Heart size={16} />
             <strong>{Math.ceil(hud.health)}</strong>
@@ -830,7 +886,42 @@ function MissionPanel({
             <Shield size={16} />
             <strong>{hud.healingCharges}</strong>
           </span>
+          {hud.parries > 0 ? (
+            <span title="Parries landed (perfect)">
+              <Sparkles size={16} />
+              <strong>{hud.parries}</strong>
+              {hud.perfectParries > 0 ? (
+                <span className="nanda-perfect-count">
+                  ({hud.perfectParries})
+                </span>
+              ) : null}
+            </span>
+          ) : null}
         </section>
+
+          <section
+            className={`nanda-resolve${hud.guarding ? ' is-guarding' : ''}${
+              hud.guardBroken ? ' is-broken' : ''
+            }${hud.riposteReady ? ' is-riposte' : ''}`}
+            aria-label="Guard resolve"
+          >
+            <span className="nanda-resolve-label">
+              {hud.guardBroken
+                ? 'Guard broken'
+                : hud.riposteReady
+                  ? 'Riposte ready'
+                  : 'Resolve'}
+            </span>
+            <div className="nanda-resolve-track">
+              <div
+                className="nanda-resolve-fill"
+                style={{ width: `${Math.round(hud.resolve * 100)}%` }}
+              />
+            </div>
+          </section>
+        </div>
+
+        <CombatBanner feedback={hud.feedback} />
 
         {hud.bossActive ? (
           <section className="nanda-boss-bar" aria-live="polite">
@@ -894,6 +985,16 @@ function MissionPanel({
                 </button>
                 <button type="button" {...holdHandlers('attack')}>
                   Strike
+                </button>
+                <button
+                  type="button"
+                  className={`nanda-guard-button${
+                    hud.guardBroken ? ' is-broken' : ''
+                  }`}
+                  disabled={hud.guardBroken}
+                  {...holdHandlers('guard')}
+                >
+                  Guard
                 </button>
                 <button type="button" {...holdHandlers('interact')}>
                   Open

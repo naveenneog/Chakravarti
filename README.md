@@ -74,12 +74,22 @@ npm run test:smoke
 - Control Chandragupta in a mobile third-person mission with movement, jumping,
   elevated routes, close combat, enemy pursuit, recovery, dispatch objectives,
   and a final gate interaction.
+- **Answer every telegraph.** Guards and the captain wind up before they swing.
+  Raise **Guard** as the blow lands to **parry** it — the attacker staggers and
+  your next strike is a riposte; raise it in the first sliver of the window for a
+  **perfect parry**. Hold it early and you only **block**, paid for out of
+  **Resolve**; empty that and your guard **breaks**. A blow from outside your
+  frontal arc lands in full, so being flanked is a real threat.
+- Swings are honest: you hit what is in reach *and* in front of you, and you turn
+  onto whatever you hit.
 - Evade stealth-aware guards: they patrol routes, spot you through a vision cone,
   hear running and fighting, investigate, flank, telegraph strikes, and retreat
   when wounded, so breaking line of sight and staying quiet matter.
 - Face the **Nanda Captain** boss at the gate: a three-phase fight with
   telegraphed heavy strikes and lunges that escalate as it loses health, with
-  vulnerable recovery windows to punish. The gate opens only once it falls.
+  vulnerable recovery windows to punish. A perfect parry forces that window open
+  on demand instead of waiting for a lunge to end. The gate opens only once it
+  falls.
 - Every strategic choice changes guards, objective visibility, routes, health,
   mobility, damage, or recovery supplies.
 - Complete campaign command mode provides the same strategy-to-outcome loop

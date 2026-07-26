@@ -10,6 +10,11 @@ export type NandaSoundEffect =
   | 'heal'
   | 'gate'
   | 'defeat'
+  | 'block'
+  | 'parry'
+  | 'perfect-parry'
+  | 'guard-break'
+  | 'riposte'
 
 const AUDIO_MUTED_KEY = 'chakravarti.nanda-audio-muted'
 
@@ -90,6 +95,58 @@ class NandaAudioDirector {
       this.combatUntil = performance.now() + 2600
       this.tone(now, 210, 0.2, 0.11, 'sawtooth', 82)
       this.noiseBurst(now, 0.12, 0.1, 380)
+      return
+    }
+    // Close-combat set. Each is layered transient + body + tail and detuned per
+    // trigger, so trading blow-for-blow does not turn into machine-gun repeats.
+    if (effect === 'block') {
+      this.combatUntil = performance.now() + 2600
+      const drift = this.drift(0.08)
+      this.noiseBurst(now, 0.07, 0.15, 420 * drift)
+      this.tone(now, 168 * drift, 0.13, 0.11, 'square', 74)
+      this.tone(now + 0.02, 92 * drift, 0.19, 0.06, 'sine', 58)
+      return
+    }
+    if (effect === 'parry') {
+      this.combatUntil = performance.now() + 3200
+      const drift = this.drift(0.06)
+      // Transient: the two blades meeting.
+      this.noiseBurst(now, 0.05, 0.2, 3100 * drift)
+      // Body: a detuned pair rings out a fifth apart.
+      this.tone(now, 1180 * drift, 0.34, 0.085, 'triangle', 690 * drift)
+      this.tone(now + 0.008, 1772 * drift, 0.28, 0.05, 'sine', 1040 * drift)
+      // Tail: a low shove that gives the parry weight.
+      this.tone(now, 128, 0.16, 0.09, 'sine', 62)
+      return
+    }
+    if (effect === 'perfect-parry') {
+      this.combatUntil = performance.now() + 3600
+      const drift = this.drift(0.04)
+      this.noiseBurst(now, 0.045, 0.24, 4200 * drift)
+      this.tone(now, 1568 * drift, 0.52, 0.1, 'triangle', 784 * drift)
+      this.tone(now + 0.01, 2349 * drift, 0.44, 0.06, 'sine', 1175 * drift)
+      this.tone(now + 0.02, 3136 * drift, 0.34, 0.032, 'sine', 1568 * drift)
+      this.tone(now, 96, 0.26, 0.13, 'sine', 44)
+      // Tail: a rising confirmation under the ring.
+      this.tone(now + 0.09, 523, 0.36, 0.045, 'sine', 1046)
+      return
+    }
+    if (effect === 'guard-break') {
+      this.combatUntil = performance.now() + 3200
+      const drift = this.drift(0.05)
+      this.noiseBurst(now, 0.16, 0.24, 1500 * drift)
+      this.tone(now, 420 * drift, 0.42, 0.12, 'sawtooth', 58)
+      this.tone(now + 0.05, 74, 0.5, 0.11, 'sine', 36)
+      return
+    }
+    if (effect === 'riposte') {
+      this.combatUntil = performance.now() + 3200
+      const drift = this.drift(0.05)
+      // Whoosh into a heavy landing.
+      this.noiseBurst(now, 0.09, 0.12, 2200 * drift)
+      this.noiseBurst(now + 0.05, 0.14, 0.24, 460 * drift)
+      this.tone(now + 0.05, 146 * drift, 0.3, 0.16, 'square', 58)
+      this.tone(now + 0.05, 880 * drift, 0.16, 0.055, 'triangle', 330)
       return
     }
     if (effect === 'objective') {
@@ -258,6 +315,11 @@ class NandaAudioDirector {
     oscillator.stop(start + 0.26)
   }
 
+  /** A small random frequency multiplier so repeated hits never sound identical. */
+  private drift(amount: number) {
+    return 1 + (Math.random() * 2 - 1) * amount
+  }
+
   private tone(
     start: number,
     frequency: number,
@@ -265,8 +327,7 @@ class NandaAudioDirector {
     volume: number,
     type: OscillatorType,
     endFrequency: number,
-  ) {
-    if (!this.context || !this.effects) {
+  ) {    if (!this.context || !this.effects) {
       return
     }
     const oscillator = this.context.createOscillator()

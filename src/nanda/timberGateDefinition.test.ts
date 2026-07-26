@@ -3,6 +3,7 @@ import { validateMissionDefinition } from '../action/missionDefinition'
 import { timberGateDefinition as def } from './timberGateDefinition'
 import { GUARD_PERCEPTION } from './guardAi'
 import { BOSS_CONFIG, BOSS_MAX_HEALTH } from './bossAi'
+import { COMBAT_CONFIG } from './combat'
 import { floorHeightAt, isBlocked } from './missionGeometry'
 
 // Golden fixture review gate (Sol): these pin the Timber Gate definition to the
@@ -85,6 +86,21 @@ describe('timberGateDefinition golden values', () => {
     expect(BOSS_MAX_HEALTH).toBe(240)
   })
 
+  it('sources player close combat from the shipped config', () => {
+    expect(def.encounters.playerCombat).toBe(COMBAT_CONFIG)
+  })
+
+  it('keeps the parry window reactable against the guard wind-up', () => {
+    // A guard telegraphs for windupTime before the blow lands. The parry window
+    // must be a meaningful slice of that or the mechanic is unreadable.
+    const combat = def.encounters.playerCombat
+    expect(combat).toBeDefined()
+    expect(combat!.parryWindow).toBeLessThan(GUARD_PERCEPTION.windupTime)
+    expect(combat!.parryWindow).toBeGreaterThan(
+      GUARD_PERCEPTION.windupTime * 0.5,
+    )
+  })
+
   it('pins objectives, required count, and collection predicate', () => {
     expect(def.objectives.items).toEqual([
       { id: 'objective-1', position: { x: -7.5, y: 2.65, z: 3.4 } },
@@ -139,6 +155,8 @@ describe('timberGateDefinition golden values', () => {
         bossEngaged: 'Fell the Nanda captain to reach the gate',
         bossVulnerable: 'The captain is off balance — strike now!',
         bossGate: 'Face the Nanda captain guarding the gate',
+        riposte: 'Parried — strike back now!',
+        guardBroken: 'Guard broken — give ground until you recover',
         default: 'Reach the marked dispatches, then the northern gate',
       },
       objectiveLabel: 'Dispatches',
@@ -224,5 +242,55 @@ describe('validateMissionDefinition catches problems', () => {
     expect(validateMissionDefinition(broken)).toContain(
       'completion requires a boss but no boss is defined',
     )
+  })
+
+  it('flags a perfect-parry window wider than the parry window', () => {
+    const broken = {
+      ...def,
+      encounters: {
+        ...def.encounters,
+        playerCombat: { ...COMBAT_CONFIG, perfectWindow: 0.9 },
+      },
+    }
+    expect(validateMissionDefinition(broken)).toContain(
+      'playerCombat.perfectWindow cannot exceed parryWindow',
+    )
+  })
+
+  it('flags a perfect riposte weaker than a normal riposte', () => {
+    const broken = {
+      ...def,
+      encounters: {
+        ...def.encounters,
+        playerCombat: {
+          ...COMBAT_CONFIG,
+          perfectRiposteDamageMultiplier: 1.1,
+        },
+      },
+    }
+    expect(validateMissionDefinition(broken)).toContain(
+      'playerCombat.perfectRiposteDamageMultiplier must be at least riposteDamageMultiplier',
+    )
+  })
+
+  it('flags a guard move scale outside (0, 1]', () => {
+    const broken = {
+      ...def,
+      encounters: {
+        ...def.encounters,
+        playerCombat: { ...COMBAT_CONFIG, guardMoveScale: 1.4 },
+      },
+    }
+    expect(validateMissionDefinition(broken)).toContain(
+      'playerCombat.guardMoveScale must be within (0, 1]',
+    )
+  })
+
+  it('accepts a definition with no playerCombat block at all', () => {
+    const withoutCombat = {
+      ...def,
+      encounters: { ...def.encounters, playerCombat: undefined },
+    }
+    expect(validateMissionDefinition(withoutCombat)).toEqual([])
   })
 })

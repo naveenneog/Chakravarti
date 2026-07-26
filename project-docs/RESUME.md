@@ -1,6 +1,6 @@
 # Resume Context — Chakravarti: Chronicles of Bharat
 
-Last updated: 2026-07-17. Read this first to resume work.
+Last updated: 2026-07-26. Read this first to resume work.
 
 ## What this is
 
@@ -14,10 +14,23 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.7.12** (tag `v0.7.12`), on `main`.
-- Working tree clean; everything committed and pushed. **104 unit tests pass.**
-- `package.json` version `0.7.12`. Browser smoke via `npm run test:smoke` (13/13).
+- Latest release: **v0.8.0** (tag `v0.8.0`), on `main`.
+- Working tree clean; everything committed and pushed. **146 unit tests pass.**
+- `package.json` version `0.8.0`. Browser smoke via `npm run test:smoke` (18/18).
   Current mobile build: `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
+- **Close combat (v0.8.0): the Guard verb.** `src/nanda/combat.ts` is a pure,
+  engine-agnostic module (36 tests) in the same family as `guardAi`/`bossAi`:
+  parry / perfect parry / block / guard break, a Resolve meter, riposte windows,
+  a frontal guard arc, honest melee target selection by arc, and a hit-stop
+  budget. Tuning is data on the mission definition
+  (`encounters.playerCombat`, optional, defaults to `COMBAT_CONFIG`). The
+  runtime wiring in `NandaMission.tsx` adds hit-stop time dilation (the figures
+  read a shared `timeScale` ref so skeletons freeze with the sim), a camera
+  dolly punch, knockback, and a pooled 128-particle additive spark system. New
+  UI: Resolve meter, combat banner, Guard touch control, tutorial step.
+  Reduced-motion scales shake/punch down.
+  Two bugs fixed along the way: swings used to hit the nearest guard **behind**
+  the player, and the HUD chips clipped the prompt line at desktop widths.
 - **Mission-definition refactor: COMPLETE** (Sol-approved 14-gate plan, all
   gates shipped v0.7.4–v0.7.12 + gate-14 playthrough verified at desktop 1280×800
   and mobile 412×915, zero console errors). The `ActionMissionDefinition` schema
@@ -25,13 +38,13 @@ young Chandragupta infiltrates the timber district of Pataliputra.
   (`src/nanda/timberGateDefinition.ts`) are now the single production source of
   truth for geometry, assets, prompts, palettes, budgets, guard projection,
   objectives + collection policy, guard/boss encounter configs (fail-fast if boss
-  omitted), and the completion predicate (`evaluateExitCompletion`, truth-table
-  tested + Sol-reviewed). Pure runtime helpers live in
-  `src/action/missionRuntime.ts`; `initialHud` in `src/nanda/initialHud.ts`. The
-  `useFrame` scheduler, AI state machines, and scene renderer were deliberately
-  NOT data-driven (Sol's guardrail). **Next: the Pratapgad chapter** — consult
-  Sol for an approved brief + ONE preview Sora render before spend-capped final
-  renders.
+  omitted), the player's close-combat tuning, and the completion predicate
+  (`evaluateExitCompletion`, truth-table tested + Sol-reviewed). Pure runtime
+  helpers live in `src/action/missionRuntime.ts`; `initialHud` in
+  `src/nanda/initialHud.ts`. The `useFrame` scheduler, AI state machines, and
+  scene renderer were deliberately NOT data-driven (Sol's guardrail).
+  **Next: the Pratapgad chapter** — consult Sol for an approved brief + ONE
+  preview Sora render before spend-capped final renders.
 - **Web/PWA is the authoritative product.** Unity (`unity/ChakravartiAction`) is
   a frozen v0.5.0 prototype — see `project-docs/UNITY_QA_REPORT.md`.
 
@@ -70,7 +83,9 @@ young Chandragupta infiltrates the timber district of Pataliputra.
    outcome. Manifests: `tooling/outcome-{victory,defeat}-manifest.json`. Chosen
    from `state.outcome` (withdrawal→defeat). Reviewed by Sol before building.
 7. **Browser smoke test** (`tests/smoke.mjs`, `npm run test:smoke`, v0.6.2) —
-   playwright-core + system Edge/Chrome against the built docs bundle.
+   playwright-core + system Edge/Chrome against the built docs bundle. Extended
+   in v0.8.0 to drive a real close-combat exchange (walk in, hold/tap Guard) and
+   assert a resolved outcome plus a collision-free, overflow-free readout.
 8. **Grandiose character pass** (v0.6.3) — reviewed human palette + PBR, role
    silhouettes (hero/guard/captain), captain helmet, rim light, in
    `NandaMission.tsx` (`themedCharacterClone`, `CHARACTER_PALETTE`).

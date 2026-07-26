@@ -48,6 +48,32 @@ Terrain changes movement and defense:
 The combat model is deterministic. Players can understand the result before
 committing instead of depending on opaque random rolls.
 
+## Close-combat model (action missions)
+
+Close combat is a conversation, not a damage race. Every enemy attack is
+telegraphed, and the player has exactly one defensive verb — **Guard** — whose
+timing decides the outcome:
+
+| Input | Outcome |
+| --- | --- |
+| Guard raised as the blow lands | **Parry** — no damage, attacker staggered, riposte window opens |
+| Guard raised inside the leading slice of that window | **Perfect parry** — longer stagger, larger riposte |
+| Guard already up when the blow lands | **Block** — reduced damage, paid for out of Resolve |
+| Resolve exhausted | **Guard break** — extra damage and the verb is locked briefly |
+| Blow from outside the frontal arc | Lands in full |
+
+Three rules keep it a skill: Resolve makes turtling lose, a re-raise cooldown
+makes mashing lose, and the frontal arc makes positioning matter — which is what
+gives the guards' flanking behaviour its consequence. Riposte and
+target-vulnerability bonuses never stack; the larger one wins.
+
+The logic is a pure, engine-agnostic, unit-tested module (`src/nanda/combat.ts`)
+in the same family as `guardAi.ts` and `bossAi.ts`. Per-chapter tuning is data on
+the mission definition (`encounters.playerCombat`), defaulting to the shipped
+config. Feedback is driven from the resolution itself — hit-stop, camera punch,
+sparks, audio and the on-screen banner all read the same outcome, so the juice
+can never drift out of sync with the rules.
+
 ## Strategic layers planned after the vertical slice
 
 - **Supply:** food, animals, river access, and road networks.

@@ -4,6 +4,7 @@ import {
   Gamepad2,
   Heart,
   Shield,
+  ShieldCheck,
   Sparkles,
   Swords,
   Target,
@@ -34,7 +35,12 @@ const touchSteps: TutorialStep[] = [
   {
     icon: Swords,
     title: 'Strike when cornered',
-    body: 'Tap Strike to fight a Nanda guard. Time it as they lunge; retreat to recover between clashes.',
+    body: 'Tap Strike to fight a Nanda guard. You only hit what is in front of you, so square up before you swing.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Guard on the wind-up',
+    body: 'Every guard telegraphs before it swings. Raise Guard as the blow comes and you parry it: the guard reels, and your next Strike hits far harder. Raise it early and you only block, which drains Resolve — empty it and your guard breaks.',
   },
   {
     icon: Target,
@@ -48,7 +54,8 @@ const touchSteps: TutorialStep[] = [
   },
 ]
 
-const keyboardHint = 'WASD / arrows move · Space jumps · F strikes · E opens · H heals'
+const keyboardHint =
+  'WASD / arrows move · Space jumps · F strikes · Q or Shift guards · E opens · H heals'
 
 export default function MissionTutorial({
   onDismiss,

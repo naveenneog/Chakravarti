@@ -20,6 +20,7 @@ import {
   updateGuardBrain,
   type GuardAlert,
   type GuardBrain,
+  type GuardIntent,
 } from './guardAi'
 import {
   createBossBrain,
@@ -27,6 +28,22 @@ import {
   type BossBrain,
   type BossPhase,
 } from './bossAi'
+import {
+  COMBAT_CONFIG,
+  HITSTOP,
+  HITSTOP_TIME_SCALE,
+  createGuardStance,
+  isWithinArc,
+  resolveIncomingAttack,
+  resolveOutgoingStrike,
+  selectMeleeTarget,
+  updateGuardStance,
+  type GuardOutcome,
+  type GuardStance,
+  type MeleeTarget,
+  type StrikeKind,
+} from './combat'
+import type { Vec2 } from './guardAi'
 import type { MissionModifiers, MissionResult } from './types'
 import { timberGateDefinition } from './timberGateDefinition'
 import { projectGuards, isObjectiveInRange, evaluateExitCompletion } from '../action/missionRuntime'
@@ -59,6 +76,28 @@ const MISSION_BOSS = missionBossDef
 // The rule references the exit by id, so fail fast if that ever dangles.
 const MISSION_COMPLETION = MISSION_OBJECTIVES.completion
 const MISSION_EXIT = timberGateDefinition.topology.anchors.exit
+// The player's close-combat tuning is chapter data with a module-level default,
+// matching how the guard and boss AI configs are sourced.
+const MISSION_COMBAT =
+  timberGateDefinition.encounters.playerCombat ?? COMBAT_CONFIG
+/** The captain's longer silhouette is reachable slightly further out. */
+const BOSS_STRIKE_REACH = 2.6
+
+/**
+ * What a parried guard "wants" while it is reeling: nothing. Frozen in place,
+ * no facing change, no strike. Shared and immutable — the loop never writes to it.
+ */
+const STAGGERED_GUARD_INTENT: GuardIntent = {
+  state: 'attack',
+  alert: 'alerted',
+  awareness: 1,
+  moveTarget: null,
+  faceTarget: null,
+  speed: 0,
+  strike: false,
+  windup: false,
+  senses: true,
+}
 if (MISSION_COMPLETION.kind !== 'interact-at-exit-v1') {
   throw new Error(
     `Timber Gate mission does not support completion kind "${MISSION_COMPLETION.kind}"`,
@@ -103,6 +142,8 @@ type EnemyRuntime = {
   hp: number
   alive: boolean
   defeatTimer: number
+  /** Seconds of parry-induced stagger left; the brain is frozen while it runs. */
+  stagger: number
   brain: GuardBrain
 }
 
@@ -111,6 +152,7 @@ type HeroMotion = {
   attacking: boolean
   airborne: boolean
   hurt: boolean
+  guarding: boolean
 }
 
 type GuardMotion = {
@@ -119,6 +161,7 @@ type GuardMotion = {
   defeated: boolean
   alert: GuardAlert
   windup: boolean
+  staggered: boolean
 }
 
 type BossMotion = {
@@ -127,6 +170,7 @@ type BossMotion = {
   lunging: boolean
   vulnerable: boolean
   defeated: boolean
+  staggered: boolean
   phase: BossPhase
 }
 
@@ -182,6 +226,9 @@ function useKeyboardControls(
       KeyF: 'attack',
       KeyE: 'interact',
       KeyH: 'heal',
+      KeyQ: 'guard',
+      ShiftLeft: 'guard',
+      ShiftRight: 'guard',
     }
     const update = (event: KeyboardEvent, pressed: boolean) => {
       const control = keyMap[event.code]
@@ -208,9 +255,11 @@ function useKeyboardControls(
 function CameraRig({
   target,
   shakeRef,
+  punchRef,
 }: {
   target: RefObject<THREE.Group | null>
   shakeRef: RefObject<number>
+  punchRef: RefObject<number>
 }) {
   const { camera } = useThree()
   const desired = useMemo(() => new THREE.Vector3(), [])
@@ -221,17 +270,23 @@ function CameraRig({
     if (!player) {
       return
     }
+    // A punch dollies the rig in toward the hero for a beat. Combined with the
+    // shake it reads as recoil rather than as a wobble.
+    const punch = punchRef.current ?? 0
     desired.set(
       player.position.x +
         Math.sin(performance.now() * 0.055) * (shakeRef.current ?? 0),
       player.position.y +
-        4.15 +
+        4.15 -
+        punch * 0.75 +
         Math.cos(performance.now() * 0.07) * (shakeRef.current ?? 0) * 0.45,
       player.position.z +
-        6.25 +
+        6.25 -
+        punch * 1.15 +
         Math.sin(performance.now() * 0.045) * (shakeRef.current ?? 0) * 0.65,
     )
-    camera.position.lerp(desired, 1 - Math.exp(-6 * delta))
+    // Snap in fast on a punch, ease out slowly, so the recoil has attack.
+    camera.position.lerp(desired, 1 - Math.exp(-(6 + punch * 22) * delta))
     lookAt.set(
       player.position.x,
       player.position.y + 1.05,
@@ -241,6 +296,156 @@ function CameraRig({
   })
 
   return null
+}
+
+const SPARK_POOL = 128
+
+export type SparkApi = {
+  burst: (
+    x: number,
+    y: number,
+    z: number,
+    color: THREE.Color,
+    count: number,
+    power: number,
+  ) => void
+}
+
+/**
+ * Pooled impact sparks. Every buffer is preallocated and dead particles are
+ * simply faded to black under additive blending, so a burst costs no allocation
+ * and no draw-call churn on a phone.
+ */
+function ImpactSparks({ apiRef }: { apiRef: RefObject<SparkApi | null> }) {
+  const pointsRef = useRef<THREE.Points>(null)
+  const state = useMemo(() => {
+    const positions = new Float32Array(SPARK_POOL * 3)
+    // `colors` is the render buffer; `tint` keeps each particle's seed colour so
+    // fading never compounds on itself.
+    const colors = new Float32Array(SPARK_POOL * 3)
+    const tint = new Float32Array(SPARK_POOL * 3)
+    const velocities = new Float32Array(SPARK_POOL * 3)
+    const life = new Float32Array(SPARK_POOL)
+    const maxLife = new Float32Array(SPARK_POOL)
+    const geometry = new THREE.BufferGeometry()
+    const positionAttr = new THREE.BufferAttribute(positions, 3)
+    const colorAttr = new THREE.BufferAttribute(colors, 3)
+    geometry.setAttribute('position', positionAttr)
+    geometry.setAttribute('color', colorAttr)
+    return {
+      positions,
+      colors,
+      tint,
+      velocities,
+      life,
+      maxLife,
+      geometry,
+      positionAttr,
+      colorAttr,
+      cursor: 0,
+    }
+  }, [])
+
+  useEffect(() => {
+    const geometry = state.geometry
+    return () => {
+      geometry.dispose()
+    }
+  }, [state])
+
+  useEffect(() => {
+    apiRef.current = {
+      burst: (x, y, z, color, count, power) => {
+        for (let i = 0; i < count; i += 1) {
+          const index = state.cursor
+          state.cursor = (state.cursor + 1) % SPARK_POOL
+          const p = index * 3
+          state.positions[p] = x
+          state.positions[p + 1] = y
+          state.positions[p + 2] = z
+          // Cone of debris biased upward, so sparks arc instead of spraying flat.
+          const theta = Math.random() * Math.PI * 2
+          const lift = 0.35 + Math.random() * 0.9
+          const speed = power * (0.55 + Math.random() * 0.85)
+          state.velocities[p] = Math.cos(theta) * speed
+          state.velocities[p + 1] = lift * power
+          state.velocities[p + 2] = Math.sin(theta) * speed
+          state.tint[p] = color.r
+          state.tint[p + 1] = color.g
+          state.tint[p + 2] = color.b
+          state.colors[p] = color.r
+          state.colors[p + 1] = color.g
+          state.colors[p + 2] = color.b
+          const span = 0.24 + Math.random() * 0.34
+          state.life[index] = span
+          state.maxLife[index] = span
+        }
+        state.positionAttr.needsUpdate = true
+        state.colorAttr.needsUpdate = true
+      },
+    }
+    return () => {
+      apiRef.current = null
+    }
+  }, [apiRef, state])
+
+  useFrame((_, delta) => {
+    const points = pointsRef.current
+    if (!points) {
+      return
+    }
+    const step = Math.min(delta, 0.05)
+    let anyAlive = false
+    for (let index = 0; index < SPARK_POOL; index += 1) {
+      if (state.life[index] <= 0) {
+        continue
+      }
+      state.life[index] -= step
+      const p = index * 3
+      if (state.life[index] <= 0) {
+        // Additive blending: black is invisible, so a dead particle just goes dark.
+        state.colors[p] = 0
+        state.colors[p + 1] = 0
+        state.colors[p + 2] = 0
+        anyAlive = true
+        continue
+      }
+      anyAlive = true
+      state.velocities[p + 1] -= 14 * step
+      const drag = Math.exp(-3.4 * step)
+      state.velocities[p] *= drag
+      state.velocities[p + 2] *= drag
+      state.positions[p] += state.velocities[p] * step
+      state.positions[p + 1] += state.velocities[p + 1] * step
+      state.positions[p + 2] += state.velocities[p + 2] * step
+      const fade = state.life[index] / state.maxLife[index]
+      const eased = fade * fade
+      state.colors[p] = state.tint[p] * eased
+      state.colors[p + 1] = state.tint[p + 1] * eased
+      state.colors[p + 2] = state.tint[p + 2] * eased
+    }
+    if (anyAlive) {
+      state.positionAttr.needsUpdate = true
+      state.colorAttr.needsUpdate = true
+      points.visible = true
+    } else {
+      points.visible = false
+    }
+  })
+
+  return (
+    <points ref={pointsRef} frustumCulled={false} visible={false}>
+      <primitive object={state.geometry} attach="geometry" />
+      <pointsMaterial
+        size={0.11}
+        sizeAttenuation
+        vertexColors
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  )
 }
 
 function TimberWall({
@@ -651,10 +856,12 @@ function HeroFigure({
   colors,
   heroRef,
   motionRef,
+  timeScaleRef,
 }: {
   colors: WorldColors
   heroRef: RefObject<THREE.Group | null>
   motionRef: RefObject<HeroMotion>
+  timeScaleRef: RefObject<number>
 }) {
   const gltf = useLoader(
     GLTFLoader,
@@ -812,7 +1019,9 @@ function HeroFigure({
       next.reset().fadeIn(0.12).play()
       activeAction.current = next
     }
-    mixer.update(delta)
+    // Hit-stop dilates the mission clock; the skeleton has to freeze with it or
+    // the frozen impact reads as a stutter instead of a punch.
+    mixer.update(delta * (timeScaleRef.current ?? 1))
   })
 
   return (
@@ -831,11 +1040,13 @@ function GuardFigure({
   groupRef,
   healthRef,
   motion,
+  timeScaleRef,
 }: {
   colors: WorldColors
   groupRef: (group: THREE.Group | null) => void
   healthRef: (mesh: THREE.Mesh | null) => void
   motion: GuardMotion
+  timeScaleRef: RefObject<number>
 }) {
   const localRef = useRef<THREE.Group>(null)
   const lastPosition = useRef(new THREE.Vector3())
@@ -855,6 +1066,7 @@ function GuardFigure({
   const activeAction = useRef<THREE.AnimationAction | null>(null)
   const indicatorRef = useRef<THREE.Mesh>(null)
   const indicatorMaterial = useRef<THREE.MeshBasicMaterial>(null)
+  const leanRef = useRef<THREE.Group>(null)
   const pulse = useRef(0)
 
   useEffect(
@@ -873,33 +1085,50 @@ function GuardFigure({
     lastPosition.current.copy(group.position)
     const clipName = motion.defeated
       ? 'Defeat'
-      : motion.attacking
-        ? 'Punch'
-        : motion.moving
-          ? 'Run'
-          : 'Idle'
+      : motion.staggered
+        ? 'Idle'
+        : motion.attacking
+          ? 'Punch'
+          : motion.moving
+            ? 'Run'
+            : 'Idle'
     const next = actions[clipName] ?? actions.Idle
     if (next && activeAction.current !== next) {
       activeAction.current?.fadeOut(0.12)
       next.reset().fadeIn(0.12).play()
       activeAction.current = next
     }
-    mixer.update(delta)
+    // A parried guard is knocked off balance: freeze the clip and reel backwards.
+    mixer.update(
+      delta * (timeScaleRef.current ?? 1) * (motion.staggered ? 0.15 : 1),
+    )
+
+    const lean = leanRef.current
+    if (lean) {
+      const target = motion.staggered && !motion.defeated ? -0.42 : 0
+      lean.rotation.x += (target - lean.rotation.x) * (1 - Math.exp(-11 * delta))
+    }
 
     const indicator = indicatorRef.current
     if (indicator) {
-      if (motion.defeated || motion.alert === 'calm') {
+      if (motion.defeated || (motion.alert === 'calm' && !motion.staggered)) {
         indicator.visible = false
       } else {
         indicator.visible = true
-        pulse.current += delta * (motion.alert === 'alerted' ? 9 : 4)
+        pulse.current +=
+          delta * (motion.staggered ? 13 : motion.alert === 'alerted' ? 9 : 4)
         const scale =
           0.15 +
           Math.sin(pulse.current) * 0.03 +
-          (motion.windup ? 0.06 : 0)
+          (motion.windup ? 0.06 : 0) +
+          (motion.staggered ? 0.09 : 0)
         indicator.scale.setScalar(scale)
         indicatorMaterial.current?.color.set(
-          motion.alert === 'alerted' ? colors.danger : colors.warning,
+          motion.staggered
+            ? colors.success
+            : motion.alert === 'alerted'
+              ? colors.danger
+              : colors.warning,
         )
       }
     }
@@ -912,10 +1141,12 @@ function GuardFigure({
         groupRef(group)
       }}
     >
-      <primitive
-        object={actor}
-        scale={0.6}
-      />
+      <group ref={leanRef}>
+        <primitive
+          object={actor}
+          scale={0.6}
+        />
+      </group>
       <mesh ref={indicatorRef} position={[0, 2.78, 0]} visible={false}>
         <octahedronGeometry args={[1, 0]} />
         <meshBasicMaterial ref={indicatorMaterial} color={colors.danger} />
@@ -937,11 +1168,13 @@ function BossFigure({
   groupRef,
   healthRef,
   motion,
+  timeScaleRef,
 }: {
   colors: WorldColors
   groupRef: (group: THREE.Group | null) => void
   healthRef: (mesh: THREE.Mesh | null) => void
   motion: BossMotion
+  timeScaleRef: RefObject<number>
 }) {
   const localRef = useRef<THREE.Group>(null)
   const lastPosition = useRef(new THREE.Vector3())
@@ -949,6 +1182,7 @@ function BossFigure({
   const auraMaterial = useRef<THREE.MeshBasicMaterial>(null)
   const telegraphRef = useRef<THREE.Mesh>(null)
   const telegraphMaterial = useRef<THREE.MeshBasicMaterial>(null)
+  const leanRef = useRef<THREE.Group>(null)
   const pulse = useRef(0)
   const gltf = useLoader(
     GLTFLoader,
@@ -1026,35 +1260,52 @@ function BossFigure({
     lastPosition.current.copy(group.position)
     const clipName = motion.defeated
       ? 'Defeat'
-      : motion.windup || motion.lunging
-        ? 'Punch'
-        : motion.moving
-          ? 'Run'
-          : 'Idle'
+      : motion.staggered
+        ? 'Idle'
+        : motion.windup || motion.lunging
+          ? 'Punch'
+          : motion.moving
+            ? 'Run'
+            : 'Idle'
     const next = actions[clipName] ?? actions.Idle
     if (next && activeAction.current !== next) {
       activeAction.current?.fadeOut(0.1)
       next.reset().fadeIn(0.1).play()
       activeAction.current = next
     }
-    mixer.update(delta)
+    // Hit-stop and a parry stagger both slow the captain's clip.
+    mixer.update(
+      delta * (timeScaleRef.current ?? 1) * (motion.staggered ? 0.15 : 1),
+    )
+
+    const lean = leanRef.current
+    if (lean) {
+      const target = motion.staggered && !motion.defeated ? -0.36 : 0
+      lean.rotation.x += (target - lean.rotation.x) * (1 - Math.exp(-10 * delta))
+    }
 
     pulse.current += delta * (motion.phase >= 3 ? 8 : motion.phase === 2 ? 5.5 : 3.5)
     const aura = auraRef.current
     if (aura) {
       aura.visible = !motion.defeated
       const base = 1 + Math.sin(pulse.current) * 0.06
-      aura.scale.setScalar(base + (motion.vulnerable ? 0.18 : 0))
+      aura.scale.setScalar(
+        base + (motion.vulnerable ? 0.18 : 0) + (motion.staggered ? 0.12 : 0),
+      )
       auraMaterial.current?.color.set(
-        motion.vulnerable ? colors.success : phaseColor(motion.phase),
+        motion.vulnerable || motion.staggered
+          ? colors.success
+          : phaseColor(motion.phase),
       )
       if (auraMaterial.current) {
-        auraMaterial.current.opacity = motion.vulnerable ? 0.5 : 0.28
+        auraMaterial.current.opacity =
+          motion.staggered ? 0.66 : motion.vulnerable ? 0.5 : 0.28
       }
     }
     const telegraph = telegraphRef.current
     if (telegraph) {
-      const active = (motion.windup || motion.lunging) && !motion.defeated
+      const active =
+        (motion.windup || motion.lunging) && !motion.defeated && !motion.staggered
       telegraph.visible = active
       if (active) {
         telegraph.scale.setScalar(0.2 + Math.sin(pulse.current * 2) * 0.05)
@@ -1072,7 +1323,9 @@ function BossFigure({
         groupRef(group)
       }}
     >
-      <primitive object={actor} scale={1.12} />
+      <group ref={leanRef}>
+        <primitive object={actor} scale={1.12} />
+      </group>
       <mesh
         ref={auraRef}
         rotation={[-Math.PI / 2, 0, 0]}
@@ -1150,8 +1403,34 @@ function MissionScene({
     attacking: false,
     airborne: false,
     hurt: false,
+    guarding: false,
   })
   const cameraShake = useRef(0)
+  const cameraPunch = useRef(0)
+  const hitstop = useRef(0)
+  /** 1 normally, HITSTOP_TIME_SCALE during a hit-stop. Read by the figures. */
+  const timeScale = useRef(1)
+  // Respect the platform motion preference for the camera work specifically:
+  // hit-stop is timing, but shake and punch are vestibular motion.
+  const motionScale = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        ? 0.2
+        : 1,
+    [],
+  )
+  const sparks = useRef<SparkApi | null>(null)
+  const sparkColors = useMemo(
+    () => ({
+      steel: new THREE.Color('#ffe9b0'),
+      perfect: new THREE.Color('#bfe9ff'),
+      blood: new THREE.Color('#d1543f'),
+      block: new THREE.Color('#9aa7b8'),
+      broken: new THREE.Color('#ff8a4c'),
+    }),
+    [],
+  )
   const enemyGroups = useRef(new Map<string, THREE.Group>())
   const enemyHealthBars = useRef(new Map<string, THREE.Mesh>())
   const objectiveGroups = useRef(new Map<number, THREE.Group>())
@@ -1166,6 +1445,7 @@ function MissionScene({
       hp: modifiers.enemyHealth,
       alive: true,
       defeatTimer: 0,
+      stagger: 0,
       brain: createGuardBrain(
         guard.id,
         { x: guard.spawn.x, z: guard.spawn.z },
@@ -1184,6 +1464,7 @@ function MissionScene({
           defeated: false,
           alert: 'calm' as GuardAlert,
           windup: false,
+          staggered: false,
         },
       ]),
     ),
@@ -1203,8 +1484,16 @@ function MissionScene({
     lunging: false,
     vulnerable: false,
     defeated: false,
+    staggered: false,
     phase: 1,
   })
+  const bossStagger = useRef(0)
+  const stance = useRef<GuardStance>(createGuardStance())
+  const parries = useRef(0)
+  const perfectParries = useRef(0)
+  const feedbackId = useRef(0)
+  const feedbackKind = useRef<GuardOutcome | StrikeKind | null>(null)
+  const riposteHint = useRef(0)
   const verticalVelocity = useRef(0)
   const grounded = useRef(true)
   const health = useRef(modifiers.maxHealth)
@@ -1226,6 +1515,72 @@ function MissionScene({
   const moveDirection = useMemo(() => new THREE.Vector3(), [])
   const toPlayer = useMemo(() => new THREE.Vector3(), [])
   const candidate = useMemo(() => new THREE.Vector3(), [])
+  // Reusable flat (x, z) scratch objects so per-frame combat maths allocates
+  // nothing. `meleeSlots` holds one slot per guard plus one for the captain.
+  const heroFlat = useMemo<Vec2>(() => ({ x: 0, z: 0 }), [])
+  const scratchFlat = useMemo<Vec2>(() => ({ x: 0, z: 0 }), [])
+  const meleeSlots = useMemo(
+    () => enemies.current.map(() => ({ x: 0, z: 0 })),
+    [],
+  )
+  const meleeCandidates = useMemo<(Vec2 | null)[]>(
+    () => enemies.current.map(() => null),
+    [],
+  )
+  const bossCandidates = useMemo<(Vec2 | null)[]>(() => [null], [])
+  const bossSlot = useMemo<Vec2>(() => ({ x: 0, z: 0 }), [])
+
+  /**
+   * Fire every feedback channel for one combat beat: shake, camera punch,
+   * hit-stop, sparks and the HUD banner. Keeping it in one place is what stops
+   * the juice drifting out of sync with the resolution that caused it.
+   */
+  const registerImpact = useCallback(
+    (
+      kind: GuardOutcome | StrikeKind | 'kill',
+      x: number,
+      y: number,
+      z: number,
+      impact: number,
+      color: THREE.Color,
+      count: number,
+    ) => {
+      cameraShake.current = Math.max(
+        cameraShake.current,
+        (0.08 + impact * 0.22) * motionScale,
+      )
+      cameraPunch.current = Math.max(
+        cameraPunch.current,
+        impact * 0.32 * motionScale,
+      )
+      hitstop.current = Math.max(hitstop.current, HITSTOP[kind])
+      sparks.current?.burst(x, y, z, color, count, 1.4 + impact * 3.4)
+      if (kind !== 'kill' && kind !== 'normal') {
+        feedbackId.current += 1
+        feedbackKind.current = kind
+      }
+    },
+    [motionScale],
+  )
+
+  /** Shove `position` directly away from the hero, respecting world collision. */
+  const knockBack = useCallback(
+    (position: THREE.Vector3, distance: number) => {
+      const dx = position.x - heroFlat.x
+      const dz = position.z - heroFlat.z
+      const length = Math.hypot(dx, dz)
+      if (length < 1e-4) {
+        return
+      }
+      const nx = position.x + (dx / length) * distance
+      const nz = position.z + (dz / length) * distance
+      if (!isBlocked(nx, nz, position.y + 0.85, modifiers.sideGateOpen)) {
+        position.x = nx
+        position.z = nz
+      }
+    },
+    [heroFlat, modifiers.sideGateOpen],
+  )
 
   const emitResult = useCallback(
     (success: boolean) => {
@@ -1259,8 +1614,16 @@ function MissionScene({
       return
     }
 
-    const step = Math.min(delta, 0.05)
-    cameraShake.current = Math.max(0, cameraShake.current - step * 1.8)
+    // Hit-stop: a heavy beat drops the whole simulation into a hard slow for a
+    // fraction of a second so impacts land with weight. It is measured in real
+    // time (rawStep); `step` is the dilated clock every other system reads.
+    const rawStep = Math.min(delta, 0.05)
+    hitstop.current = Math.max(0, hitstop.current - rawStep)
+    const step = hitstop.current > 0 ? rawStep * HITSTOP_TIME_SCALE : rawStep
+    timeScale.current = hitstop.current > 0 ? HITSTOP_TIME_SCALE : 1
+    cameraShake.current = Math.max(0, cameraShake.current - rawStep * 1.8)
+    cameraPunch.current = Math.max(0, cameraPunch.current - rawStep * 3.4)
+    riposteHint.current = Math.max(0, riposteHint.current - rawStep)
     elapsedSeconds.current += step
     attackCooldown.current = Math.max(0, attackCooldown.current - step)
     attackAnimation.current = Math.max(0, attackAnimation.current - step)
@@ -1268,6 +1631,13 @@ function MissionScene({
     healCooldown.current = Math.max(0, healCooldown.current - step)
     footstepTimer.current = Math.max(0, footstepTimer.current - step)
     landedTimer.current = Math.max(0, landedTimer.current - step)
+
+    // The guard runs on the real clock: a timing mechanic must never be
+    // stretched by the hit-stop it just caused.
+    updateGuardStance(stance.current, controls.guard, MISSION_COMBAT, rawStep)
+    heroMotion.current.guarding = stance.current.raised
+    heroFlat.x = playerPosition.current.x
+    heroFlat.z = playerPosition.current.z
 
     moveDirection.set(
       Number(controls.right) - Number(controls.left),
@@ -1282,7 +1652,9 @@ function MissionScene({
       )
       candidate.copy(playerPosition.current).addScaledVector(
         moveDirection,
-        modifiers.moveSpeed * step,
+        modifiers.moveSpeed *
+          (stance.current.raised ? MISSION_COMBAT.guardMoveScale : 1) *
+          step,
       )
       const candidateFloor = floorHeightAt(candidate.x, candidate.z)
       const climbingTooHigh =
@@ -1307,6 +1679,51 @@ function MissionScene({
       }
     }
     heroMotion.current.moving = moveDirection.lengthSq() > 0
+
+    // Soft lock-on: with the guard up Chandragupta squares onto the nearest
+    // live threat, so a stationary block or parry is aimed at what is actually
+    // swinging — and the guard's frontal arc stays a real, readable decision.
+    if (stance.current.raised) {
+      let lockX = 0
+      let lockZ = 0
+      let lockDistance = Number.POSITIVE_INFINITY
+      for (const enemy of enemies.current) {
+        if (!enemy.alive) {
+          continue
+        }
+        const distance = Math.hypot(
+          enemy.position.x - heroFlat.x,
+          enemy.position.z - heroFlat.z,
+        )
+        if (distance < lockDistance && distance <= 6.5) {
+          lockDistance = distance
+          lockX = enemy.position.x
+          lockZ = enemy.position.z
+        }
+      }
+      if (bossAlive.current) {
+        const distance = Math.hypot(
+          bossPosition.current.x - heroFlat.x,
+          bossPosition.current.z - heroFlat.z,
+        )
+        if (distance < lockDistance && distance <= 8) {
+          lockDistance = distance
+          lockX = bossPosition.current.x
+          lockZ = bossPosition.current.z
+        }
+      }
+      if (lockDistance < Number.POSITIVE_INFINITY) {
+        const target = Math.atan2(lockX - heroFlat.x, lockZ - heroFlat.z)
+        let deltaYaw = target - hero.rotation.y
+        while (deltaYaw > Math.PI) {
+          deltaYaw -= Math.PI * 2
+        }
+        while (deltaYaw < -Math.PI) {
+          deltaYaw += Math.PI * 2
+        }
+        hero.rotation.y += deltaYaw * (1 - Math.exp(-13 * rawStep))
+      }
+    }
 
     if (controls.jump && grounded.current && !jumpLatch.current) {
       verticalVelocity.current = modifiers.jumpForce
@@ -1339,50 +1756,146 @@ function MissionScene({
       attackCooldown.current = 0.42
       attackAnimation.current = 0.34
       onSound('sword')
-      let nearest: EnemyRuntime | undefined
-      let nearestDistance = Number.POSITIVE_INFINITY
-      for (const enemy of enemies.current) {
-        if (!enemy.alive) {
-          continue
-        }
-        const distance = enemy.position.distanceTo(playerPosition.current)
-        if (distance < nearestDistance) {
-          nearest = enemy
-          nearestDistance = distance
+
+      // Honest targeting: only what is in reach AND inside the swing arc can be
+      // hit, and the hero turns onto whatever the swing actually lands on.
+      for (let index = 0; index < enemies.current.length; index += 1) {
+        const enemy = enemies.current[index]
+        if (enemy.alive) {
+          meleeSlots[index].x = enemy.position.x
+          meleeSlots[index].z = enemy.position.z
+          meleeCandidates[index] = meleeSlots[index]
+        } else {
+          meleeCandidates[index] = null
         }
       }
-      if (nearest && nearestDistance <= 2.25) {
-        nearest.hp -= modifiers.attackDamage
-        onSound('impact')
-        cameraShake.current = Math.max(cameraShake.current, 0.1)
-        if (nearest.hp <= 0) {
-          nearest.alive = false
-          nearest.defeatTimer = 0.9
+      const guardTarget = selectMeleeTarget(
+        hero.rotation.y,
+        heroFlat,
+        meleeCandidates,
+        MISSION_COMBAT,
+      )
+
+      let bossTarget: MeleeTarget | null = null
+      if (bossAlive.current) {
+        bossSlot.x = bossPosition.current.x
+        bossSlot.z = bossPosition.current.z
+        bossCandidates[0] = bossSlot
+        bossTarget = selectMeleeTarget(
+          hero.rotation.y,
+          heroFlat,
+          bossCandidates,
+          MISSION_COMBAT,
+          BOSS_STRIKE_REACH,
+        )
+      }
+
+      const bossFirst =
+        bossTarget !== null &&
+        (guardTarget === null || bossTarget.distance < guardTarget.distance)
+      if (bossFirst && bossTarget) {
+        hero.rotation.y = bossTarget.yaw
+      } else if (guardTarget) {
+        hero.rotation.y = guardTarget.yaw
+      }
+
+      const swingGuard = () => {
+        if (!guardTarget) {
+          return
+        }
+        const enemy = enemies.current[guardTarget.index]
+        if (!enemy?.alive) {
+          return
+        }
+        const strike = resolveOutgoingStrike(
+          stance.current,
+          {
+            baseDamage: modifiers.attackDamage,
+            targetVulnerable: enemy.stagger > 0,
+          },
+          MISSION_COMBAT,
+        )
+        enemy.hp -= strike.damage
+        knockBack(enemy.position, 0.18 + strike.impact * 0.3)
+        onSound(strike.consumedRiposte ? 'riposte' : 'impact')
+        registerImpact(
+          strike.kind,
+          enemy.position.x,
+          enemy.position.y + 1.2,
+          enemy.position.z,
+          strike.impact,
+          sparkColors.blood,
+          strike.consumedRiposte ? 16 : 9,
+        )
+        if (enemy.hp <= 0) {
+          enemy.alive = false
+          enemy.defeatTimer = 0.9
+          enemy.stagger = 0
           guardsDefeated.current += 1
           onSound('defeat')
+          registerImpact(
+            'kill',
+            enemy.position.x,
+            enemy.position.y + 1.1,
+            enemy.position.z,
+            0.7,
+            sparkColors.blood,
+            18,
+          )
         }
       }
 
       // The captain shares the same swing: hit it if it is in reach, with a
       // damage bonus while it is in its post-lunge vulnerable recovery.
-      if (bossAlive.current) {
-        const bossReach = Math.hypot(
-          bossPosition.current.x - playerPosition.current.x,
-          bossPosition.current.z - playerPosition.current.z,
-        )
-        if (bossReach <= 2.6) {
-          const bonus = bossMotion.current.vulnerable ? 1.8 : 1
-          bossHp.current -= modifiers.attackDamage * bonus
-          bossHitFlash.current = 0.12
-          onSound('impact')
-          cameraShake.current = Math.max(cameraShake.current, 0.12)
-          if (bossHp.current <= 0) {
-            bossHp.current = 0
-            bossAlive.current = false
-            bossDefeatTimer.current = 1.4
-            onSound('defeat')
-          }
+      const swingBoss = () => {
+        if (!bossTarget || !bossAlive.current) {
+          return
         }
+        const strike = resolveOutgoingStrike(
+          stance.current,
+          {
+            baseDamage: modifiers.attackDamage,
+            targetVulnerable:
+              bossMotion.current.vulnerable || bossStagger.current > 0,
+          },
+          MISSION_COMBAT,
+        )
+        bossHp.current -= strike.damage
+        bossHitFlash.current = 0.12
+        onSound(strike.consumedRiposte ? 'riposte' : 'impact')
+        registerImpact(
+          strike.kind,
+          bossPosition.current.x,
+          bossPosition.current.y + 1.6,
+          bossPosition.current.z,
+          strike.impact,
+          sparkColors.blood,
+          strike.consumedRiposte ? 20 : 11,
+        )
+        if (bossHp.current <= 0) {
+          bossHp.current = 0
+          bossAlive.current = false
+          bossDefeatTimer.current = 1.4
+          bossStagger.current = 0
+          onSound('defeat')
+          registerImpact(
+            'kill',
+            bossPosition.current.x,
+            bossPosition.current.y + 1.5,
+            bossPosition.current.z,
+            1,
+            sparkColors.steel,
+            26,
+          )
+        }
+      }
+
+      if (bossFirst) {
+        swingBoss()
+        swingGuard()
+      } else {
+        swingGuard()
+        swingBoss()
       }
     }
 
@@ -1428,26 +1941,43 @@ function MissionScene({
       }
 
       const wasWindup = motion?.windup ?? false
-      const intent = updateGuardBrain(
-        enemy.brain,
-        {
-          guard: { x: enemy.position.x, z: enemy.position.z },
-          facingYaw: group.rotation.y,
-          player: {
-            x: playerPosition.current.x,
-            z: playerPosition.current.z,
-          },
-          playerNoise: heroNoise,
-          healthFraction: clamp01(enemy.hp / modifiers.enemyHealth),
-        },
-        MISSION_GUARD_CONFIG,
-        step,
-      )
+      const staggered = enemy.stagger > 0
+      if (staggered) {
+        enemy.stagger = Math.max(0, enemy.stagger - step)
+        // A parried guard is frozen mid-recovery: no perception, no swing, and
+        // it cannot immediately re-attack when it recovers.
+        enemy.brain.windupTimer = 0
+        enemy.brain.cooldownTimer = Math.max(
+          enemy.brain.cooldownTimer,
+          MISSION_GUARD_CONFIG.attackCooldown * 0.5,
+        )
+      }
+      const intent = staggered
+        ? STAGGERED_GUARD_INTENT
+        : updateGuardBrain(
+            enemy.brain,
+            {
+              guard: { x: enemy.position.x, z: enemy.position.z },
+              facingYaw: group.rotation.y,
+              player: {
+                x: playerPosition.current.x,
+                z: playerPosition.current.z,
+              },
+              playerNoise: heroNoise,
+              healthFraction: clamp01(enemy.hp / modifiers.enemyHealth),
+            },
+            MISSION_GUARD_CONFIG,
+            step,
+          )
 
-      if (intent.alert === 'alerted') {
+      if (!staggered) {
+        if (intent.alert === 'alerted') {
+          anyAlerted = true
+        } else if (intent.alert === 'suspicious') {
+          anySuspicious = true
+        }
+      } else {
         anyAlerted = true
-      } else if (intent.alert === 'suspicious') {
-        anySuspicious = true
       }
 
       let moved = false
@@ -1479,17 +2009,73 @@ function MissionScene({
       }
 
       // A telegraphed strike only connects if the player is still in reach, so
-      // retreating during the wind-up dodges the blow.
+      // retreating during the wind-up dodges the blow. Anything that does reach
+      // is then answered by the guard stance: parry, block, or take it in full.
       if (intent.strike) {
         const reach = Math.hypot(
           playerPosition.current.x - enemy.position.x,
           playerPosition.current.z - enemy.position.z,
         )
         if (reach <= MISSION_GUARD_CONFIG.attackRange + 0.25) {
-          hurtAnimation.current = 0.32
-          health.current = Math.max(0, health.current - 9)
-          onSound('hurt')
-          cameraShake.current = Math.max(cameraShake.current, 0.17)
+          scratchFlat.x = enemy.position.x
+          scratchFlat.z = enemy.position.z
+          const result = resolveIncomingAttack(
+            stance.current,
+            {
+              damage: 9,
+              frontal: isWithinArc(
+                hero.rotation.y,
+                heroFlat,
+                scratchFlat,
+                MISSION_COMBAT.guardArc,
+              ),
+            },
+            MISSION_COMBAT,
+          )
+          if (result.damage > 0) {
+            hurtAnimation.current = 0.32
+            health.current = Math.max(0, health.current - result.damage)
+          }
+          if (result.staggerTime > 0) {
+            enemy.stagger = result.staggerTime
+            enemy.brain.windupTimer = 0
+            knockBack(enemy.position, 0.55)
+            parries.current += 1
+            riposteHint.current = result.riposteTime
+            if (result.outcome === 'perfect-parry') {
+              perfectParries.current += 1
+            }
+          }
+          onSound(
+            result.outcome === 'hit'
+              ? 'hurt'
+              : result.outcome === 'guard-break'
+                ? 'guard-break'
+                : result.outcome === 'block'
+                  ? 'block'
+                  : result.outcome,
+          )
+          registerImpact(
+            result.outcome,
+            (playerPosition.current.x + enemy.position.x) / 2,
+            playerPosition.current.y + 0.5,
+            (playerPosition.current.z + enemy.position.z) / 2,
+            result.impact,
+            result.outcome === 'perfect-parry'
+              ? sparkColors.perfect
+              : result.outcome === 'parry'
+                ? sparkColors.steel
+                : result.outcome === 'guard-break'
+                  ? sparkColors.broken
+                  : result.outcome === 'block'
+                    ? sparkColors.block
+                    : sparkColors.blood,
+            result.outcome === 'perfect-parry'
+              ? 22
+              : result.outcome === 'parry'
+                ? 15
+                : 8,
+          )
         }
       }
       if (intent.windup && !wasWindup) {
@@ -1513,6 +2099,7 @@ function MissionScene({
         motion.windup = intent.windup
         motion.alert = intent.alert
         motion.defeated = false
+        motion.staggered = enemy.stagger > 0
       }
 
       if (healthBar) {
@@ -1571,6 +2158,7 @@ function MissionScene({
         bossMotion.current.lunging = false
         bossMotion.current.vulnerable = false
         bossMotion.current.moving = false
+        bossMotion.current.staggered = false
         bossDefeatTimer.current = Math.max(0, bossDefeatTimer.current - step)
         bossGroupObj.position.set(
           bossPosition.current.x,
@@ -1628,12 +2216,75 @@ function MissionScene({
             playerPosition.current.z - bossPosition.current.z,
           )
           if (reach <= MISSION_BOSS.config.lungeRange + 0.4) {
-            hurtAnimation.current = 0.36
-            health.current = Math.max(0, health.current - bossIntent.damage)
-            onSound('hurt')
-            cameraShake.current = Math.max(
-              cameraShake.current,
-              bossIntent.lunging ? 0.3 : 0.22,
+            scratchFlat.x = bossPosition.current.x
+            scratchFlat.z = bossPosition.current.z
+            const result = resolveIncomingAttack(
+              stance.current,
+              {
+                damage: bossIntent.damage,
+                heavy: bossIntent.lunging,
+                frontal: isWithinArc(
+                  hero.rotation.y,
+                  heroFlat,
+                  scratchFlat,
+                  MISSION_COMBAT.guardArc,
+                ),
+              },
+              MISSION_COMBAT,
+            )
+            if (result.damage > 0) {
+              hurtAnimation.current = 0.36
+              health.current = Math.max(0, health.current - result.damage)
+            }
+            if (result.staggerTime > 0) {
+              // Parrying the captain forces it straight into the recovery it
+              // normally only enters after a lunge — the existing punish window,
+              // now something the player can create on demand.
+              bossStagger.current = result.staggerTime
+              bossBrain.current.state = 'recover'
+              bossBrain.current.timer = result.staggerTime
+              bossBrain.current.lungeCharging = false
+              bossBrain.current.lungeDir = null
+              bossBrain.current.cooldownTimer = Math.max(
+                bossBrain.current.cooldownTimer,
+                result.staggerTime * 0.6,
+              )
+              knockBack(bossPosition.current, 0.5)
+              parries.current += 1
+              riposteHint.current = result.riposteTime
+              if (result.outcome === 'perfect-parry') {
+                perfectParries.current += 1
+              }
+            }
+            onSound(
+              result.outcome === 'hit'
+                ? 'hurt'
+                : result.outcome === 'guard-break'
+                  ? 'guard-break'
+                  : result.outcome === 'block'
+                    ? 'block'
+                    : result.outcome,
+            )
+            registerImpact(
+              result.outcome,
+              (playerPosition.current.x + bossPosition.current.x) / 2,
+              playerPosition.current.y + 0.6,
+              (playerPosition.current.z + bossPosition.current.z) / 2,
+              result.impact,
+              result.outcome === 'perfect-parry'
+                ? sparkColors.perfect
+                : result.outcome === 'parry'
+                  ? sparkColors.steel
+                  : result.outcome === 'guard-break'
+                    ? sparkColors.broken
+                    : result.outcome === 'block'
+                      ? sparkColors.block
+                      : sparkColors.blood,
+              result.outcome === 'perfect-parry'
+                ? 26
+                : result.outcome === 'parry'
+                  ? 18
+                  : 10,
             )
           }
         }
@@ -1665,6 +2316,8 @@ function MissionScene({
         bossMotion.current.vulnerable = bossIntent.vulnerable
         bossMotion.current.phase = bossIntent.phase
         bossMotion.current.defeated = false
+        bossStagger.current = Math.max(0, bossStagger.current - step)
+        bossMotion.current.staggered = bossStagger.current > 0
       }
 
       const bossBar = bossHealthBar.current
@@ -1703,7 +2356,6 @@ function MissionScene({
     heroMotion.current.attacking = attackAnimation.current > 0
     heroMotion.current.airborne = !grounded.current
     heroMotion.current.hurt = hurtAnimation.current > 0
-
     const objectivesSecured =
       modifiers.securedObjectives + collectedObjectives.current.size
     const gateDistance = Math.hypot(
@@ -1739,27 +2391,33 @@ function MissionScene({
     if (hudClock.current >= 0.12) {
       hudClock.current = 0
       const bossThreat = bossAlive.current && bossEngagedNow
+      // Combat prompts outrank navigation prompts: while a blade is in the air
+      // the player needs to be told what to do about it, not where to walk.
       const prompt =
-        bossThreat
-          ? bossMotion.current.vulnerable
-            ? MISSION_PROMPTS.bossVulnerable
-            : MISSION_PROMPTS.bossEngaged
-          : anyAlerted
-            ? MISSION_PROMPTS.spotted
-            : anySuspicious
-              ? MISSION_PROMPTS.heard
-              : bossAlive.current &&
-                  objectivesSecured >= modifiers.requiredObjectives
-                ? MISSION_PROMPTS.bossGate
-                : gateDistance <= 2.4
-                  ? objectivesSecured >= modifiers.requiredObjectives
-                    ? MISSION_PROMPTS.atGateReady
-                    : MISSION_PROMPTS.atGateLocked
-                  : controls.heal &&
-                      healingCharges.current === 0 &&
-                      health.current < modifiers.maxHealth
-                    ? MISSION_PROMPTS.noHeals
-                    : MISSION_PROMPTS.default
+        stance.current.brokenFor > 0
+          ? MISSION_PROMPTS.guardBroken
+          : riposteHint.current > 0 && stance.current.riposteFor > 0
+            ? MISSION_PROMPTS.riposte
+            : bossThreat
+              ? bossMotion.current.vulnerable || bossMotion.current.staggered
+                ? MISSION_PROMPTS.bossVulnerable
+                : MISSION_PROMPTS.bossEngaged
+              : anyAlerted
+                ? MISSION_PROMPTS.spotted
+                : anySuspicious
+                  ? MISSION_PROMPTS.heard
+                  : bossAlive.current &&
+                      objectivesSecured >= modifiers.requiredObjectives
+                    ? MISSION_PROMPTS.bossGate
+                    : gateDistance <= 2.4
+                      ? objectivesSecured >= modifiers.requiredObjectives
+                        ? MISSION_PROMPTS.atGateReady
+                        : MISSION_PROMPTS.atGateLocked
+                      : controls.heal &&
+                          healingCharges.current === 0 &&
+                          health.current < modifiers.maxHealth
+                        ? MISSION_PROMPTS.noHeals
+                        : MISSION_PROMPTS.default
       onHudChange({
         health: health.current,
         maxHealth: modifiers.maxHealth,
@@ -1776,6 +2434,13 @@ function MissionScene({
         bossMaxHealth: MISSION_BOSS.maxHealth,
         bossPhase: bossMotion.current.phase,
         bossDefeated: !bossAlive.current,
+        resolve: stance.current.resolve,
+        guarding: stance.current.raised,
+        guardBroken: stance.current.brokenFor > 0,
+        riposteReady: stance.current.riposteFor > 0,
+        parries: parries.current,
+        perfectParries: perfectParries.current,
+        feedback: { id: feedbackId.current, kind: feedbackKind.current },
       })
     }
   })
@@ -1817,8 +2482,10 @@ function MissionScene({
         colors={colors}
         heroRef={heroRef}
         motionRef={heroMotion}
+        timeScaleRef={timeScale}
       />
-      <CameraRig target={heroRef} shakeRef={cameraShake} />
+      <CameraRig target={heroRef} shakeRef={cameraShake} punchRef={cameraPunch} />
+      <ImpactSparks apiRef={sparks} />
       {enemies.current.map((enemy) => (
         <GuardFigure
           key={enemy.id}
@@ -1844,8 +2511,10 @@ function MissionScene({
               defeated: false,
               alert: 'calm',
               windup: false,
+              staggered: false,
             }
           }
+          timeScaleRef={timeScale}
         />
       ))}
       {objectivePositions.map((position, index) => (
@@ -1872,6 +2541,7 @@ function MissionScene({
           bossHealthBar.current = mesh
         }}
         motion={bossMotion.current}
+        timeScaleRef={timeScale}
       />
       <mesh position={[0, 0.75, -12.4]}>
         <boxGeometry args={[0.55, 1.5, 0.55]} />

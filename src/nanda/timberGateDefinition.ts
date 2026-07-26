@@ -11,6 +11,7 @@
 import type { ActionMissionDefinition } from '../action/missionDefinition'
 import { GUARD_PERCEPTION } from './guardAi'
 import { BOSS_CONFIG, BOSS_MAX_HEALTH } from './bossAi'
+import { COMBAT_CONFIG } from './combat'
 import { floorHeightAt, isBlocked } from './missionGeometry'
 
 export const timberGateDefinition: ActionMissionDefinition = {
@@ -84,6 +85,7 @@ export const timberGateDefinition: ActionMissionDefinition = {
       config: BOSS_CONFIG,
       maxHealth: BOSS_MAX_HEALTH,
     },
+    playerCombat: COMBAT_CONFIG,
   },
 
   objectives: {
@@ -167,6 +169,8 @@ export const timberGateDefinition: ActionMissionDefinition = {
         bossEngaged: 'Fell the Nanda captain to reach the gate',
         bossVulnerable: 'The captain is off balance — strike now!',
         bossGate: 'Face the Nanda captain guarding the gate',
+        riposte: 'Parried — strike back now!',
+        guardBroken: 'Guard broken — give ground until you recover',
         default: 'Reach the marked dispatches, then the northern gate',
       },
       objectiveLabel: 'Dispatches',

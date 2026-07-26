@@ -116,6 +116,83 @@ async function main() {
       (await page.getByRole('button', { name: /Move forward/i }).count()) > 0,
     )
 
+    // 2b. Close combat. The Guard control and Resolve meter must exist, the
+    // top-left readout must stack without collisions, and a real exchange must
+    // resolve through the guard stance with on-screen feedback.
+    check(
+      'guard control is present',
+      (await page.getByRole('button', { name: /^Guard$/ }).count()) > 0,
+    )
+    check(
+      'resolve meter is present',
+      (await page.locator('.nanda-resolve').count()) > 0,
+    )
+
+    const layout = await page.evaluate(() => {
+      const rect = (selector) => {
+        const el = document.querySelector(selector)
+        return el ? el.getBoundingClientRect() : null
+      }
+      const overlaps = (a, b) =>
+        !!a &&
+        !!b &&
+        a.left < b.right &&
+        b.left < a.right &&
+        a.top < b.bottom &&
+        b.top < a.bottom
+      const title = rect('.nanda-action-title')
+      const hud = rect('.nanda-mission-hud')
+      const meter = rect('.nanda-resolve')
+      return {
+        clean: !overlaps(hud, title) && !overlaps(meter, hud),
+        overflow:
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      }
+    })
+    check('mission readout stacks without collisions', layout.clean)
+    check('no horizontal overflow in the mission', layout.overflow === 0)
+
+    // Sample the combat banner from inside the page: it lives for under a
+    // second, which Playwright polling is far too slow to catch reliably.
+    await page.evaluate(() => {
+      window.__combatSeen = {}
+      window.__combatTimer = window.setInterval(() => {
+        const el = document.querySelector('.nanda-combat-banner')
+        if (el) {
+          const text = el.textContent.trim()
+          window.__combatSeen[text] = (window.__combatSeen[text] ?? 0) + 1
+        }
+      }, 40)
+    })
+    // Walk into the first patrol loudly, then hold the guard up. Anything that
+    // connects is either parried or blocked; both raise a banner.
+    await page.keyboard.down('w')
+    await sleep(3000)
+    await page.keyboard.up('w')
+    await page.keyboard.down('q')
+    await sleep(6000)
+    await page.keyboard.up('q')
+    for (let i = 0; i < 8; i += 1) {
+      await page.keyboard.down('q')
+      await sleep(300)
+      await page.keyboard.up('q')
+      await sleep(360)
+    }
+    const combatSeen = await page.evaluate(() => {
+      window.clearInterval(window.__combatTimer)
+      return window.__combatSeen
+    })
+    check(
+      'a close-combat exchange resolves on the guard',
+      Object.keys(combatSeen).length > 0,
+    )
+    if (!Object.keys(combatSeen).length) {
+      console.log('NO COMBAT FEEDBACK OBSERVED')
+    } else {
+      console.log('      combat feedback:', JSON.stringify(combatSeen))
+    }
+
     // 3. Pause works and is dismissable via the overlay's own Resume control.
     const paused = await clickByRole(page, /Pause game/i)
     await sleep(400)
