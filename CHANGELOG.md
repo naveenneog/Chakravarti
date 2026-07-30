@@ -1,5 +1,69 @@
 # Changelog
 
+## 0.9.0 - 2026-07-30
+
+### Added
+
+- **The Nanda infantry roster.** v0.8.0 gave the player a deep verb but left
+  exactly one enemy behaviour to use it on, so the loop revealed its whole depth
+  in a single exchange. The garrison is now four archetypes, each asking a
+  different question of the same Guard verb — and the equipment is taken from a
+  source the chapter already cites (Arrian's summary of Megasthenes on Indian
+  foot-soldiers) rather than invented:
+  - **Sentry** — the baseline. A broad sword "wield[ed] with both hands". Read
+    the wind-up, parry it.
+  - **Javelineer** — "some are equipped with javelins instead of bows". Longer
+    reach, a heavier and slower telegraph, and the thrust *steps in* as it lands,
+    so backing out of range — the universal answer before the roster — no longer
+    works. Stand and parry.
+  - **Shieldbearer** — "bucklers made of undressed ox-hide, which are not so
+    broad as those who carry them, but are about as long". He carries the
+    player's own mechanic: a raised guard that **deflects** frontal strikes
+    outright and recoils the swing. Because the buckler is long but narrow it
+    covers his front and not his flanks, so the historical detail *is* the
+    mechanic — go around him, or punish the window after his own blow. He keeps
+    the shield up through his own wind-up, so he cannot be out-damaged and the
+    parry has to be learned.
+  - **Archer** — a bow "made of equal length with the man who bears it", braced
+    against the ground to draw. He outranges everything, but the draw is the
+    longest telegraph in the game and he gives ground when rushed. Close the
+    distance, break line of sight, or time the Guard to knock the arrow down.
+- **Arrows** (`src/nanda/arrows.ts`) — a pure, unit-tested projectile pool of 16
+  preallocated slots with arc drop, wall and terrain collision, and no per-frame
+  allocation, rendered as a single instanced mesh.
+- **Bone-attached kit** so the roster reads by silhouette before it reads by
+  behaviour: a tall ox-hide buckler that swings across the body when raised and
+  drops away when its bearer commits, a javelin, and a man-height longbow.
+- **A threat readout** naming the nearest engaged enemy, so the roster teaches
+  itself in play, plus a tutorial page covering all four.
+- Bow-draw/release, arrow flight and shield-rebound audio, layered and detuned
+  per trigger like the rest of the combat set.
+
+### Changed
+
+- `resolveOutgoingStrike` gained a deflection outcome that short-circuits every
+  bonus — a riposte window is **not** consumed by a swing that bounces, so being
+  deflected costs tempo but never the reward you earned.
+- Guard AI takes an optional archetype behaviour block (own guard, guard
+  recovery, minimum range). The shipped `GUARD_PERCEPTION` and every existing
+  caller are untouched, and the sentry archetype is byte-identical to it — the
+  runtime now fails fast if the definition's guard config and the sentry ever
+  drift apart.
+- Guard spawns carry an optional `archetype` in the mission definition; omitting
+  it yields a sentry, so older chapters are unaffected. Enemy health scales per
+  archetype.
+- The Timber Gate garrison is composed so the three always-spawned guards teach
+  three different answers, with the archer held back to the fourth slot.
+
+### Validation
+
+- 186 unit tests (up from 146) and 18/18 browser smoke checks. A scripted
+  playthrough provoked parries, perfect parries, ripostes and **deflections**,
+  and confirmed the sentry, shieldbearer and archer all engage by name with zero
+  console errors and no layout overflow. The archer is additionally verified
+  end to end in a pure test that runs its real brain into the real arrow pool
+  and asserts the shaft connects.
+
 ## 0.8.0 - 2026-07-26
 
 ### Added
