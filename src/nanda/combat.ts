@@ -36,7 +36,12 @@ export type GuardOutcome =
   | 'hit'
 
 /** Which bonus, if any, an outgoing swing carried. */
-export type StrikeKind = 'normal' | 'punish' | 'riposte' | 'perfect-riposte'
+export type StrikeKind =
+  | 'normal'
+  | 'punish'
+  | 'riposte'
+  | 'perfect-riposte'
+  | 'deflected'
 
 export type CombatConfig = {
   /** Seconds a freshly raised guard can parry for. */
@@ -82,6 +87,8 @@ export type CombatConfig = {
   strikeReach: number
   /** Half-angle within which a swing may acquire and turn onto a target. */
   strikeAcquireArc: number
+  /** Seconds the player is locked out of attacking after a deflected swing. */
+  deflectRecoil: number
 }
 
 /**
@@ -114,6 +121,7 @@ export const COMBAT_CONFIG: CombatConfig = {
   guardMoveScale: 0.45,
   strikeReach: 2.25,
   strikeAcquireArc: Math.PI * 0.58,
+  deflectRecoil: 0.55,
 }
 
 export type GuardStance = {
@@ -313,6 +321,11 @@ export type OutgoingContext = {
   baseDamage: number
   /** True when the target is in a vulnerable recovery window. */
   targetVulnerable?: boolean
+  /**
+   * True when the target has its own shield up and the swing came from inside
+   * the arc that shield covers. The blow is deflected entirely.
+   */
+  targetDeflects?: boolean
 }
 
 export type StrikeResolution = {
@@ -322,6 +335,8 @@ export type StrikeResolution = {
   impact: number
   /** True when this swing spent a riposte window. */
   consumedRiposte: boolean
+  /** Seconds the player is locked out of attacking (only on a deflection). */
+  recoil: number
 }
 
 /**
@@ -331,12 +346,26 @@ export type StrikeResolution = {
  * Riposte and vulnerability deliberately do **not** multiply together — the
  * larger bonus wins — so parrying the captain's lunge and then hitting it in
  * recovery stays strong without turning into a one-shot.
+ *
+ * A deflection short-circuits everything: no damage, no bonus consumed, and the
+ * player eats a recoil. The shieldbearer answers the player with the player's
+ * own mechanic, so the correct reply is footwork or patience, not more swings.
  */
 export const resolveOutgoingStrike = (
   stance: GuardStance,
   context: OutgoingContext,
   cfg: CombatConfig = COMBAT_CONFIG,
 ): StrikeResolution => {
+  if (context.targetDeflects) {
+    return {
+      kind: 'deflected',
+      damage: 0,
+      impact: 0.5,
+      consumedRiposte: false,
+      recoil: cfg.deflectRecoil,
+    }
+  }
+
   const riposte = stance.riposteFor > 0 ? stance.riposteMultiplier : 1
   const vulnerable = context.targetVulnerable
     ? cfg.vulnerableDamageMultiplier
@@ -369,6 +398,7 @@ export const resolveOutgoingStrike = (
             ? 0.66
             : 0.42,
     consumedRiposte,
+    recoil: 0,
   }
 }
 
@@ -437,6 +467,7 @@ export const HITSTOP: Readonly<Record<GuardOutcome | StrikeKind | 'kill', number
   punish: 0.08,
   riposte: 0.1,
   'perfect-riposte': 0.15,
+  deflected: 0.09,
   kill: 0.09,
 }
 

@@ -14,6 +14,7 @@ import type {
   Vec2,
   Vec3,
 } from './missionDefinition'
+import type { GuardArchetypeId } from '../nanda/archetypes'
 
 export type ProjectedGuard = {
   readonly id: string
@@ -21,12 +22,14 @@ export type ProjectedGuard = {
   /** Fresh, mutable patrol waypoints (the brain accepts a mutable array). */
   readonly patrol: Vec2[]
   readonly flankSign: 1 | -1
+  /** Resolved archetype id; defaults to the sentry when unspecified. */
+  readonly archetype: GuardArchetypeId
 }
 
 /**
  * The first `count` guards, in definition order, with their ids, spawns, fresh
- * patrol copies, and flank signs. Mirrors the legacy "first N of enemyStarts"
- * selection exactly.
+ * patrol copies, flank signs, and archetypes. Mirrors the legacy "first N of
+ * enemyStarts" selection exactly.
  */
 export const projectGuards = (
   def: ActionMissionDefinition,
@@ -37,6 +40,7 @@ export const projectGuards = (
     spawn: { x: guard.spawn.x, y: guard.spawn.y, z: guard.spawn.z },
     patrol: guard.patrol.map((point) => ({ x: point.x, z: point.z })),
     flankSign: guard.flankSign,
+    archetype: guard.archetype ?? 'sentry',
   }))
 
 /**

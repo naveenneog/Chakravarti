@@ -67,6 +67,32 @@ describe('projectGuards', () => {
     expect(projectGuards(def, 0)).toEqual([])
     expect(projectGuards(def, -2)).toEqual([])
   })
+
+  it('carries the archetype through, defaulting to the sentry', () => {
+    expect(projectGuards(def, 6).map((g) => g.archetype)).toEqual([
+      'sentry',
+      'shieldbearer',
+      'javelineer',
+      'archer',
+      'sentry',
+      'shieldbearer',
+    ])
+
+    const withoutArchetypes = {
+      ...def,
+      encounters: {
+        ...def.encounters,
+        guards: def.encounters.guards.map(
+          ({ archetype: _drop, ...rest }) => rest,
+        ),
+      },
+    }
+    expect(projectGuards(withoutArchetypes, 3).map((g) => g.archetype)).toEqual([
+      'sentry',
+      'sentry',
+      'sentry',
+    ])
+  })
 })
 
 describe('isObjectiveInRange (collection boundaries)', () => {

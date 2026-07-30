@@ -680,6 +680,7 @@ const COMBAT_BANNERS: Partial<
   riposte: { label: 'Riposte', tone: 'riposte' },
   'perfect-riposte': { label: 'Perfect riposte', tone: 'perfect' },
   punish: { label: 'Punish', tone: 'riposte' },
+  deflected: { label: 'Deflected — go around', tone: 'block' },
 }
 
 /**
@@ -919,6 +920,13 @@ function MissionPanel({
               />
             </div>
           </section>
+
+          {hud.threat ? (
+            <section className="nanda-threat" aria-live="polite">
+              <span className="nanda-threat-dot" />
+              {hud.threat}
+            </section>
+          ) : null}
         </div>
 
         <CombatBanner feedback={hud.feedback} />

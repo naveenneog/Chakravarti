@@ -46,6 +46,8 @@ export type NandaMissionHud = {
   /** Parries and perfect parries landed this run. */
   parries: number
   perfectParries: number
+  /** Display name of the nearest engaged enemy, so the roster teaches itself. */
+  threat: string | null
   feedback: CombatFeedback
 }
 

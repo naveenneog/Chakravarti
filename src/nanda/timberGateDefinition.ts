@@ -40,41 +40,51 @@ export const timberGateDefinition: ActionMissionDefinition = {
   encounters: {
     guardAi: { driverId: 'guard-ai-v1', config: GUARD_PERCEPTION },
     guards: [
+      // Roster order is the teaching order: the first three always spawn (the
+      // mission clamps to 3-6 guards), and each asks a different question of the
+      // player's Guard verb - read the wind-up, flank the shield, stand and
+      // parry a thrust you cannot retreat from. The archer arrives at four.
       {
         id: 'nanda-guard-1',
         spawn: { x: 0, y: 0, z: 6 },
         patrol: [{ x: 0, z: 6 }, { x: 3.2, z: 8.6 }, { x: -2.6, z: 8 }],
         flankSign: 1,
+        archetype: 'sentry',
       },
       {
         id: 'nanda-guard-2',
         spawn: { x: 5.5, y: 0, z: 3 },
         patrol: [{ x: 5.5, z: 3 }, { x: 7.6, z: 6.6 }, { x: 4, z: 1.4 }],
         flankSign: -1,
+        archetype: 'shieldbearer',
       },
       {
         id: 'nanda-guard-3',
         spawn: { x: -4, y: 0, z: -3 },
         patrol: [{ x: -4, z: -3 }, { x: -6.6, z: -1.4 }, { x: -3, z: -6 }],
         flankSign: 1,
+        archetype: 'javelineer',
       },
       {
         id: 'nanda-guard-4',
         spawn: { x: 5.5, y: 0, z: -6 },
         patrol: [{ x: 5.5, z: -6 }, { x: 7.6, z: -9 }, { x: 3.6, z: -4 }],
         flankSign: -1,
+        archetype: 'archer',
       },
       {
         id: 'nanda-guard-5',
         spawn: { x: -3, y: 0, z: -10 },
         patrol: [{ x: -3, z: -10 }, { x: -6, z: -12 }, { x: -1.6, z: -8 }],
         flankSign: 1,
+        archetype: 'sentry',
       },
       {
         id: 'nanda-guard-6',
         spawn: { x: 2.8, y: 0, z: -12 },
         patrol: [{ x: 2.8, z: -12 }, { x: 5, z: -13.4 }, { x: 0.6, z: -10 }],
         flankSign: -1,
+        archetype: 'shieldbearer',
       },
     ],
     boss: {

@@ -15,6 +15,8 @@ export type NandaSoundEffect =
   | 'perfect-parry'
   | 'guard-break'
   | 'riposte'
+  | 'arrow-release'
+  | 'deflect'
 
 const AUDIO_MUTED_KEY = 'chakravarti.nanda-audio-muted'
 
@@ -147,6 +149,24 @@ class NandaAudioDirector {
       this.noiseBurst(now + 0.05, 0.14, 0.24, 460 * drift)
       this.tone(now + 0.05, 146 * drift, 0.3, 0.16, 'square', 58)
       this.tone(now + 0.05, 880 * drift, 0.16, 0.055, 'triangle', 330)
+      return
+    }
+    if (effect === 'arrow-release') {
+      this.combatUntil = performance.now() + 3000
+      const drift = this.drift(0.07)
+      // Creak of the drawn stave, the string's snap, then the shaft's flight.
+      this.tone(now, 260 * drift, 0.09, 0.06, 'sawtooth', 150)
+      this.noiseBurst(now + 0.01, 0.06, 0.2, 2600 * drift)
+      this.noiseBurst(now + 0.05, 0.3, 0.07, 1250 * drift)
+      return
+    }
+    if (effect === 'deflect') {
+      this.combatUntil = performance.now() + 2800
+      const drift = this.drift(0.07)
+      // Dead, woody rebound: hide over wood, not steel on steel.
+      this.noiseBurst(now, 0.1, 0.2, 700 * drift)
+      this.tone(now, 196 * drift, 0.15, 0.13, 'triangle', 88)
+      this.tone(now + 0.03, 110 * drift, 0.22, 0.07, 'sine', 62)
       return
     }
     if (effect === 'objective') {

@@ -74,6 +74,28 @@ config. Feedback is driven from the resolution itself — hit-stop, camera punch
 sparks, audio and the on-screen banner all read the same outcome, so the juice
 can never drift out of sync with the rules.
 
+### Enemy archetypes
+
+One verb only stays interesting if different enemies ask different questions of
+it. Archetypes (`src/nanda/archetypes.ts`) are equipment-led, and the equipment
+comes from a source the chapter already cites rather than from invention:
+
+| Archetype | Question it asks | Answer |
+| --- | --- | --- |
+| Sentry | Can you read a wind-up? | Parry it |
+| Javelineer | Longer reach, and the thrust steps in | Stand and parry; retreat no longer works |
+| Shieldbearer | Carries the player's own mechanic | Flank the narrow buckler, or punish the window after his blow |
+| Archer | Outranges everything | Close during the long draw, break line of sight, or deflect the arrow |
+
+The shieldbearer is the design keystone: his buckler is long but **not broad**,
+so it covers his front and not his flanks — the historical detail and the
+mechanic are the same decision. He cannot be out-damaged, which forces the parry
+to be learned rather than optional.
+
+An archetype is data (perception config, behaviour flags, presentation kit,
+evidence labels) attached to a guard spawn in the mission definition, so a new
+chapter composes a garrison without touching the runtime.
+
 ## Strategic layers planned after the vertical slice
 
 - **Supply:** food, animals, river access, and road networks.

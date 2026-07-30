@@ -39,11 +39,27 @@ import {
   selectMeleeTarget,
   updateGuardStance,
   type GuardOutcome,
+  type GuardResolution,
   type GuardStance,
   type MeleeTarget,
   type StrikeKind,
 } from './combat'
 import type { Vec2 } from './guardAi'
+import {
+  GUARD_ARCHETYPES,
+  resolveArchetype,
+  type GuardArchetype,
+  type GuardArchetypeId,
+} from './archetypes'
+import {
+  ARROW_POOL,
+  advanceArrow,
+  arrowHits,
+  createArrowPool,
+  fireArrow,
+  retireArrow,
+  type ArrowPool,
+} from './arrows'
 import type { MissionModifiers, MissionResult } from './types'
 import { timberGateDefinition } from './timberGateDefinition'
 import { projectGuards, isObjectiveInRange, evaluateExitCompletion } from '../action/missionRuntime'
@@ -67,6 +83,15 @@ const MISSION_OBJECTIVES = timberGateDefinition.objectives
 // Gate is a boss encounter, so fail fast if the data ever omits it rather than
 // silently degrading to a bossless mission.
 const MISSION_GUARD_CONFIG = timberGateDefinition.encounters.guardAi.config
+// Each guard now runs its archetype's own perception, but the sentry remains the
+// chapter's baseline. Fail fast if the definition's guard config and the sentry
+// archetype ever drift apart, so "single source of truth" stays true rather than
+// quietly becoming two sources.
+if (MISSION_GUARD_CONFIG !== GUARD_ARCHETYPES.sentry.perception) {
+  throw new Error(
+    'The Timber Gate guard config must match the sentry archetype perception',
+  )
+}
 const missionBossDef = timberGateDefinition.encounters.boss
 if (!missionBossDef) {
   throw new Error('The Timber Gate mission requires a boss encounter definition')
@@ -97,6 +122,7 @@ const STAGGERED_GUARD_INTENT: GuardIntent = {
   strike: false,
   windup: false,
   senses: true,
+  guarding: false,
 }
 if (MISSION_COMPLETION.kind !== 'interact-at-exit-v1') {
   throw new Error(
@@ -140,10 +166,14 @@ type EnemyRuntime = {
   id: string
   position: THREE.Vector3
   hp: number
+  maxHp: number
   alive: boolean
   defeatTimer: number
   /** Seconds of parry-induced stagger left; the brain is frozen while it runs. */
   stagger: number
+  /** True while this archetype's own shield is up (shieldbearer only). */
+  guarding: boolean
+  archetype: GuardArchetype
   brain: GuardBrain
 }
 
@@ -162,6 +192,9 @@ type GuardMotion = {
   alert: GuardAlert
   windup: boolean
   staggered: boolean
+  /** Shield raised, for the buckler pose and the deflection tell. */
+  guarding: boolean
+  archetype: GuardArchetypeId
 }
 
 type BossMotion = {
@@ -299,6 +332,67 @@ function CameraRig({
 }
 
 const SPARK_POOL = 128
+
+/** Renders the live arrows as one instanced mesh; dead slots scale to zero. */
+function ArrowVolley({
+  arrowsRef,
+  colors,
+}: {
+  arrowsRef: RefObject<ArrowPool>
+  colors: WorldColors
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const scratch = useMemo(() => new THREE.Object3D(), [])
+  const up = useMemo(() => new THREE.Vector3(0, 1, 0), [])
+  const dir = useMemo(() => new THREE.Vector3(), [])
+
+  useFrame(() => {
+    const mesh = meshRef.current
+    const pool = arrowsRef.current
+    if (!mesh || !pool) {
+      return
+    }
+    let visible = false
+    for (let i = 0; i < ARROW_POOL; i += 1) {
+      if (pool.life[i] <= 0) {
+        scratch.position.set(0, -500, 0)
+        scratch.scale.setScalar(0)
+        scratch.rotation.set(0, 0, 0)
+      } else {
+        visible = true
+        scratch.position.set(pool.x[i], pool.y[i], pool.z[i])
+        scratch.scale.setScalar(1)
+        // Point the shaft along its own velocity.
+        dir.set(pool.vx[i], pool.vy[i], pool.vz[i])
+        if (dir.lengthSq() > 1e-6) {
+          dir.normalize()
+          scratch.quaternion.setFromUnitVectors(up, dir)
+        }
+      }
+      scratch.updateMatrix()
+      mesh.setMatrixAt(i, scratch.matrix)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    mesh.visible = visible
+  })
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, ARROW_POOL]}
+      frustumCulled={false}
+      visible={false}
+    >
+      <cylinderGeometry args={[0.022, 0.022, 0.78, 5]} />
+      <meshStandardMaterial
+        color={colors.wallDark}
+        emissive={colors.warning}
+        emissiveIntensity={0.35}
+        roughness={0.7}
+      />
+    </instancedMesh>
+  )
+}
 
 export type SparkApi = {
   burst: (
@@ -785,14 +879,20 @@ const themedCharacterClone = (
   source: THREE.Object3D,
   _colors: WorldColors,
   role: CharacterRole,
+  clothOverride?: string,
 ) => {
   const actor = cloneSkeleton(source)
-  const roleColors =
+  const baseColors =
     role === 'hero'
       ? CHARACTER_PALETTE.hero
       : role === 'captain'
         ? CHARACTER_PALETTE.captain
         : CHARACTER_PALETTE.guard
+  // An archetype may recolour only its cloth, so the roster reads apart at a
+  // glance while every guard still shares one coherent palette family.
+  const roleColors = clothOverride
+    ? { ...baseColors, cloth: clothOverride }
+    : baseColors
   actor.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) {
       return
@@ -1041,12 +1141,14 @@ function GuardFigure({
   healthRef,
   motion,
   timeScaleRef,
+  archetype,
 }: {
   colors: WorldColors
   groupRef: (group: THREE.Group | null) => void
   healthRef: (mesh: THREE.Mesh | null) => void
   motion: GuardMotion
   timeScaleRef: RefObject<number>
+  archetype: GuardArchetype
 }) {
   const localRef = useRef<THREE.Group>(null)
   const lastPosition = useRef(new THREE.Vector3())
@@ -1055,8 +1157,8 @@ function GuardFigure({
     MISSION_ASSETS.guardModel,
   )
   const actor = useMemo(
-    () => themedCharacterClone(gltf.scene, colors, 'guard'),
-    [colors, gltf.scene],
+    () => themedCharacterClone(gltf.scene, colors, 'guard', archetype.presentation.accent),
+    [colors, gltf.scene, archetype],
   )
   const mixer = useMemo(() => new THREE.AnimationMixer(actor), [actor])
   const actions = useMemo(
@@ -1067,7 +1169,126 @@ function GuardFigure({
   const indicatorRef = useRef<THREE.Mesh>(null)
   const indicatorMaterial = useRef<THREE.MeshBasicMaterial>(null)
   const leanRef = useRef<THREE.Group>(null)
+  const shieldRef = useRef<THREE.Group | null>(null)
   const pulse = useRef(0)
+
+  // Bone-attached kit, so each archetype reads by silhouette before the player
+  // is close enough to read its behaviour. Fail-soft: a rig missing the bone
+  // simply renders without that piece (same policy as the captain's helmet).
+  useEffect(() => {
+    const kit = archetype.presentation.kit
+    if (kit === 'sword') {
+      return undefined
+    }
+    const wood = new THREE.MeshStandardMaterial({
+      color: '#54381f',
+      roughness: 0.88,
+    })
+    // Undressed ox-hide reads pale against every guard's cloth, which is what
+    // makes the shieldbearer identifiable from across the courtyard.
+    const hide = new THREE.MeshStandardMaterial({
+      color: '#d8b98a',
+      roughness: 0.82,
+      metalness: 0.03,
+    })
+    const iron = new THREE.MeshStandardMaterial({
+      color: '#3f4247',
+      roughness: 0.38,
+      metalness: 0.62,
+    })
+    const attached: { bone: THREE.Object3D; node: THREE.Object3D }[] = []
+    const geometries: THREE.BufferGeometry[] = []
+
+    const attach = (boneName: string, node: THREE.Object3D) => {
+      const bone = actor.getObjectByName(boneName)
+      if (!bone) {
+        return false
+      }
+      bone.add(node)
+      attached.push({ bone, node })
+      return true
+    }
+
+    if (kit === 'buckler') {
+      // Arrian: "not so broad as those who carry them, but are about as long" —
+      // so it is modelled tall and narrow, which is also why it can be flanked.
+      // Sized to read at gameplay camera distance: roughly two thirds of the
+      // bearer's height, and offset clear of the arm so the silhouette is clean.
+      const shield = new THREE.Group()
+      const face = new THREE.BoxGeometry(0.52, 1.85, 0.09)
+      const rim = new THREE.BoxGeometry(0.62, 1.96, 0.05)
+      const boss = new THREE.SphereGeometry(0.13, 10, 8)
+      geometries.push(face, rim, boss)
+      const faceMesh = new THREE.Mesh(face, hide)
+      const rimMesh = new THREE.Mesh(rim, iron)
+      const bossMesh = new THREE.Mesh(boss, iron)
+      rimMesh.position.z = -0.03
+      bossMesh.position.z = 0.08
+      shield.add(rimMesh, faceMesh, bossMesh)
+      shield.position.set(0.18, 0.02, 0.42)
+      shield.rotation.set(0, 0, 0.12)
+      shieldRef.current = shield
+      if (!attach('Fist.L', shield) && !attach('Hand.L', shield)) {
+        attach('Torso', shield)
+      }
+    }
+
+    if (kit === 'javelin') {
+      const shaft = new THREE.CylinderGeometry(0.042, 0.042, 3.1, 6)
+      const head = new THREE.ConeGeometry(0.12, 0.46, 6)
+      const grip = new THREE.CylinderGeometry(0.055, 0.055, 0.3, 6)
+      geometries.push(shaft, head, grip)
+      const group = new THREE.Group()
+      const shaftMesh = new THREE.Mesh(shaft, wood)
+      const headMesh = new THREE.Mesh(head, iron)
+      const gripMesh = new THREE.Mesh(grip, hide)
+      headMesh.position.y = 1.75
+      group.add(shaftMesh, headMesh, gripMesh)
+      group.rotation.set(Math.PI / 2.2, 0, 0)
+      group.position.set(0, 0.08, 0.42)
+      if (!attach('Fist.R', group) && !attach('Hand.R', group)) {
+        attach('Torso', group)
+      }
+    }
+
+    if (kit === 'longbow') {
+      // "a bow made of equal length with the man who bears it".
+      const group = new THREE.Group()
+      const limb = new THREE.TorusGeometry(1.24, 0.05, 6, 16, Math.PI * 1.1)
+      const string = new THREE.CylinderGeometry(0.014, 0.014, 2.42, 4)
+      geometries.push(limb, string)
+      const limbMesh = new THREE.Mesh(limb, wood)
+      const stringMesh = new THREE.Mesh(string, hide)
+      stringMesh.position.set(0.38, 0, 0)
+      group.add(limbMesh, stringMesh)
+      group.rotation.set(0, Math.PI / 2, Math.PI / 2)
+      group.position.set(0, 0.05, 0.42)
+      if (!attach('Fist.L', group) && !attach('Hand.L', group)) {
+        attach('Torso', group)
+      }
+    }
+
+    for (const node of attached.map((a) => a.node)) {
+      node.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.castShadow = true
+        }
+      })
+    }
+
+    return () => {
+      for (const { bone, node } of attached) {
+        bone.remove(node)
+      }
+      shieldRef.current = null
+      for (const geometry of geometries) {
+        geometry.dispose()
+      }
+      wood.dispose()
+      hide.dispose()
+      iron.dispose()
+    }
+  }, [actor, archetype])
 
   useEffect(
     () => () => {
@@ -1109,6 +1330,19 @@ function GuardFigure({
       lean.rotation.x += (target - lean.rotation.x) * (1 - Math.exp(-11 * delta))
     }
 
+    // The buckler swings across the body when raised and drops away when the
+    // shieldbearer commits to a blow — the tell that says "hit me now".
+    const shield = shieldRef.current
+    if (shield) {
+      const up = motion.guarding && !motion.defeated && !motion.staggered
+      const targetRoll = up ? -0.95 : 0.12
+      const targetLift = up ? 0.34 : 0.02
+      shield.rotation.z +=
+        (targetRoll - shield.rotation.z) * (1 - Math.exp(-14 * delta))
+      shield.position.y +=
+        (targetLift - shield.position.y) * (1 - Math.exp(-14 * delta))
+    }
+
     const indicator = indicatorRef.current
     if (indicator) {
       if (motion.defeated || (motion.alert === 'calm' && !motion.staggered)) {
@@ -1126,9 +1360,11 @@ function GuardFigure({
         indicatorMaterial.current?.color.set(
           motion.staggered
             ? colors.success
-            : motion.alert === 'alerted'
-              ? colors.danger
-              : colors.warning,
+            : motion.guarding
+              ? colors.water
+              : motion.alert === 'alerted'
+                ? colors.danger
+                : colors.warning,
         )
       }
     }
@@ -1144,7 +1380,7 @@ function GuardFigure({
       <group ref={leanRef}>
         <primitive
           object={actor}
-          scale={0.6}
+          scale={archetype.presentation.scale}
         />
       </group>
       <mesh ref={indicatorRef} position={[0, 2.78, 0]} visible={false}>
@@ -1435,24 +1671,31 @@ function MissionScene({
   const enemyHealthBars = useRef(new Map<string, THREE.Mesh>())
   const objectiveGroups = useRef(new Map<number, THREE.Group>())
   const enemies = useRef<EnemyRuntime[]>(
-    projectGuards(timberGateDefinition, modifiers.enemyCount).map((guard) => ({
-      id: guard.id,
-      position: new THREE.Vector3(
-        guard.spawn.x,
-        guard.spawn.y,
-        guard.spawn.z,
-      ),
-      hp: modifiers.enemyHealth,
-      alive: true,
-      defeatTimer: 0,
-      stagger: 0,
-      brain: createGuardBrain(
-        guard.id,
-        { x: guard.spawn.x, z: guard.spawn.z },
-        guard.patrol,
-        guard.flankSign,
-      ),
-    })),
+    projectGuards(timberGateDefinition, modifiers.enemyCount).map((guard) => {
+      const archetype = resolveArchetype(guard.archetype)
+      const maxHp = modifiers.enemyHealth * archetype.behaviour.healthScale
+      return {
+        id: guard.id,
+        position: new THREE.Vector3(
+          guard.spawn.x,
+          guard.spawn.y,
+          guard.spawn.z,
+        ),
+        hp: maxHp,
+        maxHp,
+        alive: true,
+        defeatTimer: 0,
+        stagger: 0,
+        guarding: false,
+        archetype,
+        brain: createGuardBrain(
+          guard.id,
+          { x: guard.spawn.x, z: guard.spawn.z },
+          guard.patrol,
+          guard.flankSign,
+        ),
+      }
+    }),
   )
   const enemyMotions = useRef(
     new Map(
@@ -1465,10 +1708,13 @@ function MissionScene({
           alert: 'calm' as GuardAlert,
           windup: false,
           staggered: false,
+          guarding: false,
+          archetype: enemy.archetype.id,
         },
       ]),
     ),
   )
+  const arrows = useRef<ArrowPool>(createArrowPool())
   const playerPosition = useRef(new THREE.Vector3(0, 0.85, 13.4))
   const bossGroup = useRef<THREE.Group | null>(null)
   const bossHealthBar = useRef<THREE.Mesh | null>(null)
@@ -1529,6 +1775,9 @@ function MissionScene({
   )
   const bossCandidates = useMemo<(Vec2 | null)[]>(() => [null], [])
   const bossSlot = useMemo<Vec2>(() => ({ x: 0, z: 0 }), [])
+  // Reusable 3D scratch points for arrow spawn/aim, so a volley allocates nothing.
+  const arrowSource = useMemo(() => ({ x: 0, y: 0, z: 0 }), [])
+  const arrowAim = useMemo(() => ({ x: 0, y: 0, z: 0 }), [])
 
   /**
    * Fire every feedback channel for one combat beat: shake, camera punch,
@@ -1580,6 +1829,63 @@ function MissionScene({
       }
     },
     [heroFlat, modifiers.sideGateOpen],
+  )
+
+  /**
+   * Apply one resolved incoming blow — damage, counters, audio and feedback.
+   * Shared by every source (guard swing, captain strike, arrow) so the roster
+   * cannot drift into inconsistent answers to the same guard stance.
+   */
+  const applyIncoming = useCallback(
+    (
+      result: GuardResolution,
+      source: { x: number; y: number; z: number },
+      onStagger?: (staggerTime: number) => void,
+    ) => {
+      if (result.damage > 0) {
+        hurtAnimation.current = 0.34
+        health.current = Math.max(0, health.current - result.damage)
+      }
+      if (result.staggerTime > 0) {
+        parries.current += 1
+        riposteHint.current = result.riposteTime
+        if (result.outcome === 'perfect-parry') {
+          perfectParries.current += 1
+        }
+        onStagger?.(result.staggerTime)
+      }
+      onSound(
+        result.outcome === 'hit'
+          ? 'hurt'
+          : result.outcome === 'guard-break'
+            ? 'guard-break'
+            : result.outcome === 'block'
+              ? 'block'
+              : result.outcome,
+      )
+      registerImpact(
+        result.outcome,
+        (playerPosition.current.x + source.x) / 2,
+        playerPosition.current.y + 0.55,
+        (playerPosition.current.z + source.z) / 2,
+        result.impact,
+        result.outcome === 'perfect-parry'
+          ? sparkColors.perfect
+          : result.outcome === 'parry'
+            ? sparkColors.steel
+            : result.outcome === 'guard-break'
+              ? sparkColors.broken
+              : result.outcome === 'block'
+                ? sparkColors.block
+                : sparkColors.blood,
+        result.outcome === 'perfect-parry'
+          ? 22
+          : result.outcome === 'parry'
+            ? 15
+            : 8,
+      )
+    },
+    [onSound, registerImpact, sparkColors],
   )
 
   const emitResult = useCallback(
@@ -1807,14 +2113,46 @@ function MissionScene({
         if (!enemy?.alive) {
           return
         }
+        // The shieldbearer answers with the player's own mechanic: a long, narrow
+        // buckler covers his front, so a frontal swing is deflected and only a
+        // flank — or the window after his own blow — gets through.
+        scratchFlat.x = heroFlat.x
+        scratchFlat.z = heroFlat.z
+        const deflects =
+          enemy.guarding &&
+          enemy.archetype.behaviour.ownGuard &&
+          isWithinArc(
+            enemyGroups.current.get(enemy.id)?.rotation.y ?? 0,
+            enemy.position,
+            scratchFlat,
+            enemy.archetype.behaviour.guardArc,
+          )
         const strike = resolveOutgoingStrike(
           stance.current,
           {
             baseDamage: modifiers.attackDamage,
             targetVulnerable: enemy.stagger > 0,
+            targetDeflects: deflects,
           },
           MISSION_COMBAT,
         )
+        if (strike.kind === 'deflected') {
+          attackCooldown.current = Math.max(
+            attackCooldown.current,
+            strike.recoil,
+          )
+          onSound('deflect')
+          registerImpact(
+            'deflected',
+            enemy.position.x,
+            enemy.position.y + 1.15,
+            enemy.position.z,
+            strike.impact,
+            sparkColors.block,
+            12,
+          )
+          return
+        }
         enemy.hp -= strike.damage
         knockBack(enemy.position, 0.18 + strike.impact * 0.3)
         onSound(strike.consumedRiposte ? 'riposte' : 'impact')
@@ -1831,6 +2169,7 @@ function MissionScene({
           enemy.alive = false
           enemy.defeatTimer = 0.9
           enemy.stagger = 0
+          enemy.guarding = false
           guardsDefeated.current += 1
           onSound('defeat')
           registerImpact(
@@ -1920,6 +2259,8 @@ function MissionScene({
     })
     let anyAlerted = false
     let anySuspicious = false
+    let threatName: string | null = null
+    let threatDistance = Number.POSITIVE_INFINITY
 
     for (const enemy of enemies.current) {
       const group = enemyGroups.current.get(enemy.id)
@@ -1941,6 +2282,8 @@ function MissionScene({
       }
 
       const wasWindup = motion?.windup ?? false
+      const behaviour = enemy.archetype.behaviour
+      const perception = enemy.archetype.perception
       const staggered = enemy.stagger > 0
       if (staggered) {
         enemy.stagger = Math.max(0, enemy.stagger - step)
@@ -1949,7 +2292,7 @@ function MissionScene({
         enemy.brain.windupTimer = 0
         enemy.brain.cooldownTimer = Math.max(
           enemy.brain.cooldownTimer,
-          MISSION_GUARD_CONFIG.attackCooldown * 0.5,
+          perception.attackCooldown * 0.5,
         )
       }
       const intent = staggered
@@ -1964,11 +2307,17 @@ function MissionScene({
                 z: playerPosition.current.z,
               },
               playerNoise: heroNoise,
-              healthFraction: clamp01(enemy.hp / modifiers.enemyHealth),
+              healthFraction: clamp01(enemy.hp / enemy.maxHp),
             },
-            MISSION_GUARD_CONFIG,
+            perception,
             step,
+            {
+              ownGuard: behaviour.ownGuard,
+              guardRecovery: behaviour.guardRecovery,
+              minRange: behaviour.minRange,
+            },
           )
+      enemy.guarding = intent.guarding
 
       if (!staggered) {
         if (intent.alert === 'alerted') {
@@ -1978,6 +2327,18 @@ function MissionScene({
         }
       } else {
         anyAlerted = true
+      }
+
+      // Name the nearest live threat so the roster teaches itself in play.
+      if (intent.alert !== 'calm') {
+        const distance = Math.hypot(
+          enemy.position.x - heroFlat.x,
+          enemy.position.z - heroFlat.z,
+        )
+        if (distance < threatDistance) {
+          threatDistance = distance
+          threatName = enemy.archetype.presentation.displayName
+        }
       }
 
       let moved = false
@@ -2011,71 +2372,67 @@ function MissionScene({
       // A telegraphed strike only connects if the player is still in reach, so
       // retreating during the wind-up dodges the blow. Anything that does reach
       // is then answered by the guard stance: parry, block, or take it in full.
+      // A javelineer steps into its thrust, so retreat alone will not save you;
+      // an archer looses an arrow instead of swinging.
       if (intent.strike) {
-        const reach = Math.hypot(
-          playerPosition.current.x - enemy.position.x,
-          playerPosition.current.z - enemy.position.z,
-        )
-        if (reach <= MISSION_GUARD_CONFIG.attackRange + 0.25) {
-          scratchFlat.x = enemy.position.x
-          scratchFlat.z = enemy.position.z
-          const result = resolveIncomingAttack(
-            stance.current,
-            {
-              damage: 9,
-              frontal: isWithinArc(
-                hero.rotation.y,
-                heroFlat,
-                scratchFlat,
-                MISSION_COMBAT.guardArc,
-              ),
-            },
-            MISSION_COMBAT,
+        if (behaviour.ranged) {
+          arrowSource.x = enemy.position.x
+          arrowSource.y = enemy.position.y + 1.25
+          arrowSource.z = enemy.position.z
+          arrowAim.x = playerPosition.current.x
+          arrowAim.y = playerPosition.current.y + 0.15
+          arrowAim.z = playerPosition.current.z
+          fireArrow(
+            arrows.current,
+            arrowSource,
+            arrowAim,
+            behaviour.projectileSpeed,
+            behaviour.damage,
           )
-          if (result.damage > 0) {
-            hurtAnimation.current = 0.32
-            health.current = Math.max(0, health.current - result.damage)
-          }
-          if (result.staggerTime > 0) {
-            enemy.stagger = result.staggerTime
-            enemy.brain.windupTimer = 0
-            knockBack(enemy.position, 0.55)
-            parries.current += 1
-            riposteHint.current = result.riposteTime
-            if (result.outcome === 'perfect-parry') {
-              perfectParries.current += 1
+          onSound('arrow-release')
+        } else {
+          if (behaviour.stepIn > 0) {
+            // Commit the thrust forward so backing out of range is not a free
+            // answer to a javelineer.
+            const dx = playerPosition.current.x - enemy.position.x
+            const dz = playerPosition.current.z - enemy.position.z
+            const length = Math.hypot(dx, dz) || 1
+            const nx = enemy.position.x + (dx / length) * behaviour.stepIn
+            const nz = enemy.position.z + (dz / length) * behaviour.stepIn
+            if (
+              !isBlocked(nx, nz, enemy.position.y + 0.85, modifiers.sideGateOpen)
+            ) {
+              enemy.position.x = nx
+              enemy.position.z = nz
             }
           }
-          onSound(
-            result.outcome === 'hit'
-              ? 'hurt'
-              : result.outcome === 'guard-break'
-                ? 'guard-break'
-                : result.outcome === 'block'
-                  ? 'block'
-                  : result.outcome,
+          const reach = Math.hypot(
+            playerPosition.current.x - enemy.position.x,
+            playerPosition.current.z - enemy.position.z,
           )
-          registerImpact(
-            result.outcome,
-            (playerPosition.current.x + enemy.position.x) / 2,
-            playerPosition.current.y + 0.5,
-            (playerPosition.current.z + enemy.position.z) / 2,
-            result.impact,
-            result.outcome === 'perfect-parry'
-              ? sparkColors.perfect
-              : result.outcome === 'parry'
-                ? sparkColors.steel
-                : result.outcome === 'guard-break'
-                  ? sparkColors.broken
-                  : result.outcome === 'block'
-                    ? sparkColors.block
-                    : sparkColors.blood,
-            result.outcome === 'perfect-parry'
-              ? 22
-              : result.outcome === 'parry'
-                ? 15
-                : 8,
-          )
+          if (reach <= perception.attackRange + 0.25) {
+            scratchFlat.x = enemy.position.x
+            scratchFlat.z = enemy.position.z
+            const result = resolveIncomingAttack(
+              stance.current,
+              {
+                damage: behaviour.damage,
+                heavy: behaviour.heavy,
+                frontal: isWithinArc(
+                  hero.rotation.y,
+                  heroFlat,
+                  scratchFlat,
+                  MISSION_COMBAT.guardArc,
+                ),
+              },
+              MISSION_COMBAT,
+            )
+            applyIncoming(result, enemy.position, (stagger) => {
+              enemy.stagger = stagger
+              enemy.brain.windupTimer = 0
+              knockBack(enemy.position, 0.55)
+            })
+          }
         }
       }
       if (intent.windup && !wasWindup) {
@@ -2100,10 +2457,11 @@ function MissionScene({
         motion.alert = intent.alert
         motion.defeated = false
         motion.staggered = enemy.stagger > 0
+        motion.guarding = enemy.guarding
       }
 
       if (healthBar) {
-        const ratio = clamp01(enemy.hp / modifiers.enemyHealth)
+        const ratio = clamp01(enemy.hp / enemy.maxHp)
         healthBar.scale.x = ratio
         healthBar.position.x = -0.41 + (ratio * 0.82) / 2
       }
@@ -2234,58 +2592,22 @@ function MissionScene({
             )
             if (result.damage > 0) {
               hurtAnimation.current = 0.36
-              health.current = Math.max(0, health.current - result.damage)
             }
-            if (result.staggerTime > 0) {
+            applyIncoming(result, bossPosition.current, (staggerTime) => {
               // Parrying the captain forces it straight into the recovery it
               // normally only enters after a lunge — the existing punish window,
               // now something the player can create on demand.
-              bossStagger.current = result.staggerTime
+              bossStagger.current = staggerTime
               bossBrain.current.state = 'recover'
-              bossBrain.current.timer = result.staggerTime
+              bossBrain.current.timer = staggerTime
               bossBrain.current.lungeCharging = false
               bossBrain.current.lungeDir = null
               bossBrain.current.cooldownTimer = Math.max(
                 bossBrain.current.cooldownTimer,
-                result.staggerTime * 0.6,
+                staggerTime * 0.6,
               )
               knockBack(bossPosition.current, 0.5)
-              parries.current += 1
-              riposteHint.current = result.riposteTime
-              if (result.outcome === 'perfect-parry') {
-                perfectParries.current += 1
-              }
-            }
-            onSound(
-              result.outcome === 'hit'
-                ? 'hurt'
-                : result.outcome === 'guard-break'
-                  ? 'guard-break'
-                  : result.outcome === 'block'
-                    ? 'block'
-                    : result.outcome,
-            )
-            registerImpact(
-              result.outcome,
-              (playerPosition.current.x + bossPosition.current.x) / 2,
-              playerPosition.current.y + 0.6,
-              (playerPosition.current.z + bossPosition.current.z) / 2,
-              result.impact,
-              result.outcome === 'perfect-parry'
-                ? sparkColors.perfect
-                : result.outcome === 'parry'
-                  ? sparkColors.steel
-                  : result.outcome === 'guard-break'
-                    ? sparkColors.broken
-                    : result.outcome === 'block'
-                      ? sparkColors.block
-                      : sparkColors.blood,
-              result.outcome === 'perfect-parry'
-                ? 26
-                : result.outcome === 'parry'
-                  ? 18
-                  : 10,
-            )
+            })
           }
         }
         const nowWindup = bossIntent.windup || bossIntent.lunging
@@ -2328,8 +2650,53 @@ function MissionScene({
       }
     }
 
-    objectivePositions.forEach((position, index) => {
-      if (collectedObjectives.current.has(index)) {
+    // Arrows in flight. A timed guard deflects the shaft outright; otherwise the
+    // same stance resolution as any other blow decides what it does to you.
+    const pool = arrows.current
+    arrowAim.x = playerPosition.current.x
+    arrowAim.y = playerPosition.current.y + 0.25
+    arrowAim.z = playerPosition.current.z
+    for (let i = 0; i < ARROW_POOL; i += 1) {
+      if (pool.life[i] <= 0) {
+        continue
+      }
+      advanceArrow(pool, i, step)
+
+      if (arrowHits(pool, i, arrowAim)) {
+        scratchFlat.x = pool.x[i]
+        scratchFlat.z = pool.z[i]
+        const result = resolveIncomingAttack(
+          stance.current,
+          {
+            damage: pool.damage[i],
+            frontal: isWithinArc(
+              hero.rotation.y,
+              heroFlat,
+              scratchFlat,
+              MISSION_COMBAT.guardArc,
+            ),
+          },
+          MISSION_COMBAT,
+        )
+        arrowSource.x = pool.x[i]
+        arrowSource.y = pool.y[i]
+        arrowSource.z = pool.z[i]
+        applyIncoming(result, arrowSource)
+        retireArrow(pool, i)
+        continue
+      }
+
+      const floor = floorHeightAt(pool.x[i], pool.z[i])
+      if (
+        pool.life[i] <= 0 ||
+        pool.y[i] <= floor + 0.05 ||
+        isBlocked(pool.x[i], pool.z[i], pool.y[i], modifiers.sideGateOpen)
+      ) {
+        retireArrow(pool, i)
+      }
+    }
+
+    objectivePositions.forEach((position, index) => {      if (collectedObjectives.current.has(index)) {
         return
       }
       const marker = objectiveGroups.current.get(index)
@@ -2440,6 +2807,10 @@ function MissionScene({
         riposteReady: stance.current.riposteFor > 0,
         parries: parries.current,
         perfectParries: perfectParries.current,
+        threat:
+          bossAlive.current && bossEngagedNow
+            ? MISSION_BOSS.displayName
+            : threatName,
         feedback: { id: feedbackId.current, kind: feedbackKind.current },
       })
     }
@@ -2486,6 +2857,7 @@ function MissionScene({
       />
       <CameraRig target={heroRef} shakeRef={cameraShake} punchRef={cameraPunch} />
       <ImpactSparks apiRef={sparks} />
+      <ArrowVolley arrowsRef={arrows} colors={colors} />
       {enemies.current.map((enemy) => (
         <GuardFigure
           key={enemy.id}
@@ -2512,9 +2884,12 @@ function MissionScene({
               alert: 'calm',
               windup: false,
               staggered: false,
+              guarding: false,
+              archetype: enemy.archetype.id,
             }
           }
           timeScaleRef={timeScale}
+          archetype={enemy.archetype}
         />
       ))}
       {objectivePositions.map((position, index) => (

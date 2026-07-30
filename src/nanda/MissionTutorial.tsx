@@ -8,6 +8,7 @@ import {
   Sparkles,
   Swords,
   Target,
+  Users,
 } from 'lucide-react'
 
 type MissionTutorialProps = {
@@ -41,6 +42,11 @@ const touchSteps: TutorialStep[] = [
     icon: ShieldCheck,
     title: 'Guard on the wind-up',
     body: 'Every guard telegraphs before it swings. Raise Guard as the blow comes and you parry it: the guard reels, and your next Strike hits far harder. Raise it early and you only block, which drains Resolve — empty it and your guard breaks.',
+  },
+  {
+    icon: Users,
+    title: 'Read who you are facing',
+    body: 'The Nandas do not all fight alike, and the name of the nearest one is shown under your Resolve. A sentry swings a broad sword. A javelineer steps into a longer thrust, so backing away will not save you. A shieldbearer carries a tall, narrow buckler that covers his front only — go around him, or punish the moment after his own blow. An archer needs a long draw to bend a bow his own height: close the distance, break line of sight, or time your Guard to knock the arrow down.',
   },
   {
     icon: Target,

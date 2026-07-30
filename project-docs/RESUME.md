@@ -1,6 +1,6 @@
 # Resume Context — Chakravarti: Chronicles of Bharat
 
-Last updated: 2026-07-26. Read this first to resume work.
+Last updated: 2026-07-30. Read this first to resume work.
 
 ## What this is
 
@@ -14,23 +14,33 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.8.0** (tag `v0.8.0`), on `main`.
-- Working tree clean; everything committed and pushed. **146 unit tests pass.**
-- `package.json` version `0.8.0`. Browser smoke via `npm run test:smoke` (18/18).
-  Current mobile build: `Chakravarti-v0.6.1.apk` (rebuild with `npm run apk`).
+- Latest release: **v0.9.0** (tag `v0.9.0`), on `main`.
+- Working tree clean; everything committed and pushed. **186 unit tests pass.**
+- `package.json` version `0.9.0`. Browser smoke via `npm run test:smoke` (18/18).
+  Current mobile build: `Chakravarti-v0.8.0.apk` (rebuild with `npm run apk`).
+- **Enemy roster (v0.9.0).** `src/nanda/archetypes.ts` (pure, tested) defines
+  four equipment-led infantry types — sentry, javelineer, shieldbearer, archer —
+  each asking a different question of the Guard verb. Equipment is sourced from
+  Arrian's summary of Megasthenes (`megasthenes-fragments`); every timing and
+  behaviour is labelled gameplay reconstruction (see HISTORICAL_METHOD.md).
+  `guardAi.ts` gained an optional behaviour block (own guard / guard recovery /
+  min range) that leaves `GUARD_PERCEPTION` and all existing callers untouched;
+  `combat.ts` gained a `deflected` outcome; `arrows.ts` is a pure 16-slot
+  projectile pool. Guard spawns carry an optional `archetype` in the definition
+  (omitted = sentry). The shieldbearer keeps his shield up through his own
+  wind-up **by design** — he cannot be out-damaged, which is what forces the
+  parry to be learned. Do not "fix" that.
 - **Close combat (v0.8.0): the Guard verb.** `src/nanda/combat.ts` is a pure,
-  engine-agnostic module (36 tests) in the same family as `guardAi`/`bossAi`:
-  parry / perfect parry / block / guard break, a Resolve meter, riposte windows,
-  a frontal guard arc, honest melee target selection by arc, and a hit-stop
+  engine-agnostic module in the same family as `guardAi`/`bossAi`: parry /
+  perfect parry / block / guard break, a Resolve meter, riposte windows, a
+  frontal guard arc, honest melee target selection by arc, and a hit-stop
   budget. Tuning is data on the mission definition
   (`encounters.playerCombat`, optional, defaults to `COMBAT_CONFIG`). The
   runtime wiring in `NandaMission.tsx` adds hit-stop time dilation (the figures
   read a shared `timeScale` ref so skeletons freeze with the sim), a camera
   dolly punch, knockback, and a pooled 128-particle additive spark system. New
-  UI: Resolve meter, combat banner, Guard touch control, tutorial step.
-  Reduced-motion scales shake/punch down.
-  Two bugs fixed along the way: swings used to hit the nearest guard **behind**
-  the player, and the HUD chips clipped the prompt line at desktop widths.
+  UI: Resolve meter, combat banner, threat readout, Guard touch control,
+  tutorial steps. Reduced-motion scales shake/punch down.
 - **Mission-definition refactor: COMPLETE** (Sol-approved 14-gate plan, all
   gates shipped v0.7.4–v0.7.12 + gate-14 playthrough verified at desktop 1280×800
   and mobile 412×915, zero console errors). The `ActionMissionDefinition` schema

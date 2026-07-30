@@ -90,7 +90,22 @@ export type GuardBrain = {
   investigateTimer: number
   windupTimer: number
   cooldownTimer: number
+  /** Seconds the archetype's own guard stays down after it strikes. */
+  guardDownTimer: number
   flankSign: 1 | -1
+}
+
+/**
+ * Archetype behaviour the brain needs to know about. Optional so the shipped
+ * sentry behaviour — and every existing caller and test — is unchanged.
+ */
+export type GuardBehaviourInput = {
+  /** The archetype carries a shield that covers it while it is not striking. */
+  readonly ownGuard?: boolean
+  /** Seconds its guard stays down after its own blow. */
+  readonly guardRecovery?: number
+  /** Distance below which it gives ground rather than fighting toe to toe. */
+  readonly minRange?: number
 }
 
 export type GuardWorldInput = {
@@ -122,6 +137,11 @@ export type GuardIntent = {
   windup: boolean
   /** True when the guard perceives the player this tick. */
   senses: boolean
+  /**
+   * True while the archetype's own shield is up. The player's frontal strikes
+   * are deflected while it is; striking it needs a flank or its recovery window.
+   */
+  guarding: boolean
 }
 
 export const createGuardBrain = (
@@ -140,6 +160,7 @@ export const createGuardBrain = (
   investigateTimer: 0,
   windupTimer: 0,
   cooldownTimer: 0,
+  guardDownTimer: 0,
   flankSign,
 })
 
@@ -235,6 +256,7 @@ const idle = (
   strike: false,
   windup: false,
   senses: false,
+  guarding: false,
 })
 
 /**
@@ -246,8 +268,10 @@ export const updateGuardBrain = (
   input: GuardWorldInput,
   cfg: GuardPerception = GUARD_PERCEPTION,
   dt: number,
+  behaviour: GuardBehaviourInput = {},
 ): GuardIntent => {
   brain.cooldownTimer = Math.max(0, brain.cooldownTimer - dt)
+  brain.guardDownTimer = Math.max(0, brain.guardDownTimer - dt)
 
   const { canSee, canHear } = perceive(brain, input, cfg, dt)
   const senses = canSee || canHear
@@ -264,6 +288,13 @@ export const updateGuardBrain = (
   } else {
     brain.alert = 'calm'
   }
+
+  // A shield only covers a guard who knows you are there, and only while it is
+  // not mid-swing — so its own attack is also the player's opening.
+  const guarding =
+    behaviour.ownGuard === true &&
+    brain.guardDownTimer <= 0 &&
+    brain.awareness >= cfg.suspicionThreshold
 
   // Retreat overrides everything while badly wounded and threatened.
   if (
@@ -288,12 +319,38 @@ export const updateGuardBrain = (
       strike: false,
       windup: false,
       senses,
+      guarding,
     }
   }
 
   // Confirmed detection: chase or attack.
   if (brain.awareness >= cfg.detectThreshold) {
     brain.investigateTimer = cfg.investigateTime
+
+    // Give ground when the player is inside the archetype's minimum range: a
+    // bowman who has been rushed backs off rather than fighting toe to toe.
+    const minRange = behaviour.minRange ?? 0
+    if (minRange > 0 && dist < minRange && brain.windupTimer <= 0) {
+      brain.state = 'chase'
+      const dx = input.guard.x - input.player.x
+      const dz = input.guard.z - input.player.z
+      const length = Math.hypot(dx, dz) || 1
+      return {
+        state: 'chase',
+        alert: brain.alert,
+        awareness: brain.awareness,
+        moveTarget: {
+          x: input.guard.x + (dx / length) * 3,
+          z: input.guard.z + (dz / length) * 3,
+        },
+        faceTarget: { x: input.player.x, z: input.player.z },
+        speed: cfg.chaseSpeed,
+        strike: false,
+        windup: false,
+        senses,
+        guarding,
+      }
+    }
 
     if (dist <= cfg.attackRange) {
       // Telegraphed strike: hold, wind up, then land damage on completion.
@@ -303,6 +360,8 @@ export const updateGuardBrain = (
         brain.windupTimer = Math.max(0, brain.windupTimer - dt)
         if (brain.windupTimer <= 0) {
           brain.cooldownTimer = cfg.attackCooldown
+          // Striking drops the shield for its recovery window.
+          brain.guardDownTimer = behaviour.guardRecovery ?? 0
           return {
             state: 'attack',
             alert: brain.alert,
@@ -313,6 +372,7 @@ export const updateGuardBrain = (
             strike: true,
             windup: false,
             senses,
+            guarding: false,
           }
         }
         return {
@@ -325,6 +385,10 @@ export const updateGuardBrain = (
           strike: false,
           windup: true,
           senses,
+          // A shield-and-sword fighter strikes over the shield rather than
+          // dropping it to swing, so the wind-up is not a free opening: it has
+          // to be parried (which staggers him and drops the guard) or flanked.
+          guarding,
         }
       }
       if (brain.cooldownTimer <= 0) {
@@ -340,6 +404,7 @@ export const updateGuardBrain = (
         strike: false,
         windup: brain.windupTimer > 0,
         senses,
+        guarding,
       }
     }
 
@@ -358,6 +423,7 @@ export const updateGuardBrain = (
       strike: false,
       windup: false,
       senses,
+      guarding,
     }
   }
 
@@ -388,6 +454,7 @@ export const updateGuardBrain = (
       strike: false,
       windup: false,
       senses,
+      guarding,
     }
   }
 
@@ -416,6 +483,7 @@ export const updateGuardBrain = (
     strike: false,
     windup: false,
     senses,
+    guarding,
   }
 }
 

@@ -4,6 +4,7 @@ import { timberGateDefinition as def } from './timberGateDefinition'
 import { GUARD_PERCEPTION } from './guardAi'
 import { BOSS_CONFIG, BOSS_MAX_HEALTH } from './bossAi'
 import { COMBAT_CONFIG } from './combat'
+import { resolveArchetype, validateArchetype } from './archetypes'
 import { floorHeightAt, isBlocked } from './missionGeometry'
 
 // Golden fixture review gate (Sol): these pin the Timber Gate definition to the
@@ -69,6 +70,38 @@ describe('timberGateDefinition golden values', () => {
       [{ x: -3, z: -10 }, { x: -6, z: -12 }, { x: -1.6, z: -8 }],
       [{ x: 2.8, z: -12 }, { x: 5, z: -13.4 }, { x: 0.6, z: -10 }],
     ])
+  })
+
+  it('pins the roster composition and its teaching order', () => {
+    expect(def.encounters.guards.map((g) => g.archetype)).toEqual([
+      'sentry',
+      'shieldbearer',
+      'javelineer',
+      'archer',
+      'sentry',
+      'shieldbearer',
+    ])
+  })
+
+  it('teaches one answer at a time within the always-spawned first three', () => {
+    // The mission clamps to 3-6 guards, so the first three are the only ones
+    // every player is guaranteed to meet. They must not repeat a lesson.
+    const firstThree = def.encounters.guards
+      .slice(0, 3)
+      .map((g) => g.archetype ?? 'sentry')
+    expect(new Set(firstThree).size).toBe(3)
+    // The very first guard is the baseline, so the tutorial's parry lesson lands.
+    expect(firstThree[0]).toBe('sentry')
+    // The ranged threat is held back until the melee vocabulary is established.
+    expect(firstThree).not.toContain('archer')
+  })
+
+  it('only uses archetypes that exist and validate', () => {
+    for (const guard of def.encounters.guards) {
+      const archetype = resolveArchetype(guard.archetype)
+      expect(archetype.id).toBe(guard.archetype ?? 'sentry')
+      expect(validateArchetype(archetype)).toEqual([])
+    }
   })
 
   it('pins the guard perception driver to the shipped config', () => {

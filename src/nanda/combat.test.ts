@@ -304,6 +304,44 @@ describe('outgoing strike resolution', () => {
       5,
     )
   })
+
+  it('is deflected entirely by a target with its shield up', () => {
+    const stance = createGuardStance()
+    const result = resolveOutgoingStrike(stance, {
+      baseDamage: 20,
+      targetDeflects: true,
+    })
+    expect(result.kind).toBe('deflected')
+    expect(result.damage).toBe(0)
+    expect(result.recoil).toBe(COMBAT_CONFIG.deflectRecoil)
+  })
+
+  it('does not burn a riposte window on a deflected swing', () => {
+    const stance = raisedStance()
+    resolveIncomingAttack(stance, frontalBlow())
+    const before = stance.riposteFor
+    const deflected = resolveOutgoingStrike(stance, {
+      baseDamage: 20,
+      targetDeflects: true,
+    })
+    expect(deflected.consumedRiposte).toBe(false)
+    expect(stance.riposteFor).toBe(before)
+
+    // The window survives to be spent on a swing that actually lands.
+    const landed = resolveOutgoingStrike(stance, { baseDamage: 20 })
+    expect(landed.kind).toBe('perfect-riposte')
+  })
+
+  it('deflection beats every bonus, so more swings is never the answer', () => {
+    const stance = raisedStance()
+    resolveIncomingAttack(stance, frontalBlow())
+    const result = resolveOutgoingStrike(stance, {
+      baseDamage: 20,
+      targetVulnerable: true,
+      targetDeflects: true,
+    })
+    expect(result.damage).toBe(0)
+  })
 })
 
 describe('honest melee targeting', () => {

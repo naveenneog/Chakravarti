@@ -29,7 +29,7 @@ export const nandaSources: readonly SourceRecord[] = [
     id: 'megasthenes-fragments',
     title: 'Megasthenes fragments preserved by later authors',
     detail:
-      'The lost Indica describes Palibothra as a timber-walled city with a ditch, gates, and towers. Its exact measurements survive only as claims quoted by later writers.',
+      'The lost Indica describes Palibothra as a timber-walled city with a ditch, gates, and towers, and (in Arrian\u2019s summary) the arms of Indian foot-soldiers: a bow as long as the man carrying it and braced against the ground to draw, a tall narrow ox-hide buckler, javelins carried instead of bows by some, and a broad sword used two-handed at close quarters. Megasthenes wrote at the Mauryan court, so applying his description to the preceding Nanda garrison is inference; the measurements survive only as claims quoted by later writers.',
     url: 'https://archive.org/details/AncientIndiaAsDescribedByMegasthenesAndArrian',
   },
   {

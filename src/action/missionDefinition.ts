@@ -13,6 +13,7 @@
 import type { GuardPerception } from '../nanda/guardAi'
 import type { BossConfig } from '../nanda/bossAi'
 import type { CombatConfig } from '../nanda/combat'
+import type { GuardArchetypeId } from '../nanda/archetypes'
 
 export type Vec2 = { readonly x: number; readonly z: number }
 export type Vec3 = { readonly x: number; readonly y: number; readonly z: number }
@@ -87,6 +88,11 @@ export type GuardSpawn = {
   readonly spawn: Vec3
   readonly patrol: readonly Vec2[]
   readonly flankSign: 1 | -1
+  /**
+   * Which infantry archetype holds this post. Optional: a definition that omits
+   * it gets the baseline sentry, so older chapters are unaffected.
+   */
+  readonly archetype?: GuardArchetypeId
 }
 
 export type BossDefinition = {

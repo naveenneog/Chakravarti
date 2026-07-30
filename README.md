@@ -85,6 +85,14 @@ npm run test:smoke
 - Evade stealth-aware guards: they patrol routes, spot you through a vision cone,
   hear running and fighting, investigate, flank, telegraph strikes, and retreat
   when wounded, so breaking line of sight and staying quiet matter.
+- Face a **roster**, not one repeated guard. Sentries swing a broad two-handed
+  sword; **javelineers** step into a longer thrust so retreating no longer saves
+  you; **shieldbearers** carry a tall, narrow ox-hide buckler that deflects
+  anything from the front, so you flank them or punish the beat after their own
+  blow; **archers** need a long draw to bend a bow their own height, so you close
+  the gap, break line of sight, or time your Guard to knock the arrow down. The
+  equipment is drawn from Arrian's summary of Megasthenes on Indian infantry; the
+  behaviour is labelled gameplay reconstruction.
 - Face the **Nanda Captain** boss at the gate: a three-phase fight with
   telegraphed heavy strikes and lunges that escalate as it loses health, with
   vulnerable recovery windows to punish. A perfect parry forces that window open

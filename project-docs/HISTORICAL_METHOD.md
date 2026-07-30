@@ -73,6 +73,24 @@ The chapter must also state that:
 - The Timber Gate district, dispatches, guards, routes, combat, and outcomes are
   gameplay reconstruction.
 
+### The Nanda infantry roster
+
+The four guard archetypes are equipment-led, and the equipment is a **claim in a
+source**: Arrian, summarising Megasthenes, describes Indian foot-soldiers with a
+bow "made of equal length with the man who bears it" braced against the ground to
+draw, "bucklers made of undressed ox-hide, which are not so broad as those who
+carry them, but are about as long", javelins carried by some in place of bows, and
+a broad sword "wield[ed] with both hands" in close fight.
+
+Two limits must stay visible:
+
+- Megasthenes wrote at the **Mauryan** court, slightly after the transition, so
+  applying his description to a Nanda garrison is **scholarly inference**, not a
+  record of Nanda equipment.
+- Every range, timing, damage value, patrol route, and behaviour — including the
+  design decision that a narrow buckler covers the front but not the flanks — is
+  **gameplay reconstruction** built on the described shape, not evidence.
+
 ## Review workflow
 
 1. Write a one-page evidence brief for the chapter.

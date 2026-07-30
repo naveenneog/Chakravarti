@@ -37,6 +37,7 @@ export const initialHud = (modifiers: MissionModifiers): NandaMissionHud => {
     riposteReady: false,
     parries: 0,
     perfectParries: 0,
+    threat: null,
     feedback: { id: 0, kind: null },
   }
 }
