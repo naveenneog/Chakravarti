@@ -1,5 +1,78 @@
 # Changelog
 
+## 0.10.0 - 2026-08-02
+
+### Added
+
+- **Chapter II — The Western Horizon** (Chandragupta II and the Western
+  Kshatrapas), playable from the Chronicles home screen and the header nav.
+
+  The design brief for this chapter forbade inventing a decisive battle, because
+  no securely preserved account of the western campaign survives. So the chapter
+  makes that constraint the mechanic. There is nothing to win a battle with;
+  instead you conduct a reign across eight seasons — march the Malwa road, seal
+  the Vakataka marriage, hold the Saurashtra ports, strike silver, endow
+  Udayagiri, confirm local officers, or winter the court — and the game tracks
+  the **evidence trail your reign leaves**.
+
+  - **Coinage is the scoreboard.** Western Kshatrapa silver must actually stop
+    circulating and Gupta silver cut to *their* weight standard must replace it.
+    Minting alone is not enough: displacement scales with market acceptance, so a
+    coin nobody trusts does not travel. Meanwhile an unsupported coinage only
+    decays once the province is genuinely held.
+  - **Every season either leaves a durable artifact or leaves nothing.** Coins,
+    inscriptions and dynastic charters survive. Marches, garrisons and quiet
+    seasons are recorded as pointed **absences** — first-class entries in the
+    ledger, because they are the chapter's whole argument.
+  - **The ending is a historian's dossier**, not a victory screen: a coinage
+    chart drawn from the player's own campaign, a count of durable artifacts
+    against silent seasons, and the record split into "what survives" and "what
+    did not". Winning by force alone yields *a conquest the record forgot* — a
+    legitimate, instructive outcome rather than a failure state.
+  - Three endings: **the west absorbed**, **a conquest the record forgot**, and
+    **overreach**.
+
+  Every action carries a citation and an evidence label. Sourced content covers
+  the cessation of Kshatrapa silver with Rudrasimha III, Gupta silver in the
+  Kshatrapa standard, the Udayagiri inscription of Virasena (Gupta era 82), the
+  Sanchi inscription of Amrakardava (Gupta era 93), the Vakataka marriage and
+  Prabhavatigupta's charters, the disputed Mehrauli "Chandra" pillar, and the
+  later Vikramaditya legend — the last two explicitly flagged as *not* evidence
+  for this campaign.
+
+- **Approval briefs for the two remaining historical chapters**,
+  `project-docs/NARRAI_BRIEF.md` (Rani Durgavati / Gondwana) and
+  `project-docs/SARAIGHAT_BRIEF.md` (Lachit Borphukan), following the
+  `PRATAPGAD_BRIEF.md` precedent: experience contract, evidence matrix with
+  claim-status labels, mechanics options, renderer/cost analysis, red lines, and
+  the named approvers required. Both chapters remain **blocked pending review**.
+
+### Changed
+
+- The Vikramaditya entry in the campaign chronicle is promoted from `research` to
+  `playable`, with an accurate era range (c. 395–415 CE).
+- `HISTORICAL_METHOD.md` gains full Western Horizon chapter boundaries, including
+  the rule that in-game artifacts are dated to the player's reconstructed reign
+  while real inscription dates live only in the source records — enforced by a
+  unit test after QA caught the dossier showing two different dates for the same
+  object.
+
+### Not done, deliberately
+
+- **Pratapgad remains blocked.** Its standing NO-GO requires three named
+  approvers (product owner, Deccan-history/sensitivity reviewer, spend
+  authorizer); only the product owner has signed.
+- No generic scene-description language was introduced, per Sol's standing
+  architectural guardrail.
+
+### Validation
+
+- 219 unit tests (up from 186) and 18/18 browser smoke checks. The new chapter is
+  covered by 34 engine tests including every ending, resource and coinage
+  clamping, action gating and once-only rules, and replay determinism. A scripted
+  playthrough completed a full eight-season campaign to the dossier at both
+  1280×900 and 412×915 with zero console errors and no horizontal overflow.
+
 ## 0.9.0 - 2026-07-30
 
 ### Added
