@@ -236,12 +236,12 @@ export const campaigns: readonly Campaign[] = [
     id: 'vikramaditya',
     figure: 'Chandragupta II Vikramaditya',
     title: 'The Western Horizon',
-    era: 'c. 4th-5th century CE',
+    era: 'c. 395-415 CE',
     region: 'Malwa and Saurashtra',
-    status: 'research',
+    status: 'playable',
     evidence: 'Coins and inscriptions; battle details lost',
     description:
-      'A grand campaign against the Western Kshatrapas built around strong evidence for the conquest without inventing a falsely precise battle.',
+      'Conduct the western campaign against the Kshatrapas through routes, marriage, mint policy and endowments — then read the dossier a historian could still assemble from it sixteen centuries later.',
   },
   {
     id: 'narrai',

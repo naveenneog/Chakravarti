@@ -3,6 +3,7 @@ import {
   BookOpen,
   ChevronRight,
   Clock3,
+  Coins,
   Crown,
   Flag,
   Gamepad2,
@@ -36,10 +37,11 @@ import type {
   EvidenceKind,
 } from './game/types'
 
-type View = 'home' | 'nanda' | 'maurya' | 'battle' | 'kalinga-debrief' | 'codex'
+type View = 'home' | 'nanda' | 'maurya' | 'western' | 'battle' | 'kalinga-debrief' | 'codex'
 
 const MauryaCampaign = lazy(() => import('./maurya/MauryaCampaign'))
 const NandaCampaign = lazy(() => import('./nanda/NandaCampaign'))
+const WesternHorizon = lazy(() => import('./vikrama/WesternHorizon'))
 const KalingaIntro = lazy(() => import('./game/KalingaIntro'))
 
 const evidenceLabels: Record<EvidenceKind, string> = {
@@ -241,6 +243,7 @@ function HomeView({
   onNanda,
   onMaurya,
   onKalinga,
+  onWestern,
   onCodex,
   videoFailed,
   setVideoFailed,
@@ -248,6 +251,7 @@ function HomeView({
   onNanda: () => void
   onMaurya: () => void
   onKalinga: () => void
+  onWestern: () => void
   onCodex: () => void
   videoFailed: boolean
   setVideoFailed: (failed: boolean) => void
@@ -300,6 +304,10 @@ function HomeView({
               <Shield size={19} />
               Play the Kalinga battle
             </button>
+            <button className="secondary-button" type="button" onClick={onWestern}>
+              <Coins size={19} />
+              Conduct the western campaign
+            </button>
             <button className="secondary-button" type="button" onClick={onCodex}>
               <BookOpen size={19} />
               Read the historical method
@@ -331,7 +339,9 @@ function HomeView({
                   ? onNanda
                   : campaign.id === 'mauryan-rise'
                     ? onMaurya
-                    : onKalinga
+                    : campaign.id === 'vikramaditya'
+                      ? onWestern
+                      : onKalinga
               }
             />
           ))}
@@ -817,6 +827,10 @@ function App() {
     setView('nanda')
   }
 
+  const startWestern = () => {
+    setView('western')
+  }
+
   const toggleNarration = async () => {
     const audio = audioRef.current
     if (!audio || audioUnavailable) {
@@ -885,6 +899,13 @@ function App() {
             Kingdom
           </button>
           <button
+            className={`nav-button ${view === 'western' ? 'active' : ''}`}
+            type="button"
+            onClick={startWestern}
+          >
+            Western
+          </button>
+          <button
             className={`nav-button ${view === 'battle' ? 'active' : ''}`}
             type="button"
             onClick={startBattle}
@@ -932,6 +953,7 @@ function App() {
           onNanda={startNanda}
           onMaurya={startMaurya}
           onKalinga={startBattle}
+          onWestern={startWestern}
           onCodex={() => setView('codex')}
           videoFailed={videoFailed}
           setVideoFailed={setVideoFailed}
@@ -963,8 +985,21 @@ function App() {
           <MauryaCampaign onExit={() => setView('home')} />
         </Suspense>
       ) : null}
-      {view === 'battle' ? (
-        showKalingaIntro ? (
+      {view === 'western' ? (
+        <Suspense
+          fallback={
+            <main className="page">
+              <section className="panel-card app-loading">
+                <Crown size={28} />
+                <h2>Opening the western campaign...</h2>
+              </section>
+            </main>
+          }
+        >
+          <WesternHorizon onExit={() => setView('home')} />
+        </Suspense>
+      ) : null}
+      {view === 'battle' ? (        showKalingaIntro ? (
           <Suspense fallback={null}>
             <KalingaIntro onBegin={() => setShowKalingaIntro(false)} />
           </Suspense>

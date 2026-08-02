@@ -1,6 +1,6 @@
 # Resume Context — Chakravarti: Chronicles of Bharat
 
-Last updated: 2026-07-30. Read this first to resume work.
+Last updated: 2026-08-02. Read this first to resume work.
 
 ## What this is
 
@@ -14,10 +14,25 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.9.0** (tag `v0.9.0`), on `main`.
-- Working tree clean; everything committed and pushed. **186 unit tests pass.**
-- `package.json` version `0.9.0`. Browser smoke via `npm run test:smoke` (18/18).
-  Current mobile build: `Chakravarti-v0.8.0.apk` (rebuild with `npm run apk`).
+- Latest release: **v0.10.0** (tag `v0.10.0`), on `main`.
+- Working tree clean; everything committed and pushed. **219 unit tests pass.**
+- `package.json` version `0.10.0`. Browser smoke via `npm run test:smoke` (18/18).
+- **Chapter II — The Western Horizon (v0.10.0).** `src/vikrama/` is a complete,
+  self-contained turn campaign (types / content / engine / persistence / UI),
+  wired into `App.tsx` as view `'western'`. It deliberately has **no battle**:
+  the design brief forbade inventing one, so coinage displacement is the win
+  condition and the ending is a historian's dossier. Engine is pure and
+  deterministic (no RNG); `advanceCoinage` scales Gupta displacement by
+  acceptance and decays Kshatrapa silver only once reach is real. In-game
+  artifacts are dated to the player's reconstructed reign — **never put a real
+  regnal year in an artifact title**, it is enforced by a test.
+- **Chapter gating status.** Pratapgad, Narrai and Saraighat all have approval
+  briefs in `project-docs/` and are **blocked pending human review**. Pratapgad
+  needs three named approvers; only the product owner has signed. Do not build
+  chapter code for any of them without the brief being signed.
+- Sol's standing architectural guardrail: build a **bespoke `<XMission>`** per
+  action chapter and share only proven leaf infrastructure. **Do not invent a
+  JSON scene-description language** until 3+ missions reveal stable patterns.
 - **Enemy roster (v0.9.0).** `src/nanda/archetypes.ts` (pure, tested) defines
   four equipment-led infantry types — sentry, javelineer, shieldbearer, archer —
   each asking a different question of the Guard verb. Equipment is sourced from

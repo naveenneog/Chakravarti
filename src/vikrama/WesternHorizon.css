@@ -1,0 +1,532 @@
+/* The Western Horizon — Chandragupta II and the Western Kshatrapas.
+   Uses the shared --cp-* theme variables; no new colour system. */
+
+.wh-page {
+  padding-bottom: 32px;
+}
+
+.wh-briefing h1,
+.wh-campaign h1,
+.wh-dossier h1 {
+  margin: 4px 0 10px;
+  color: var(--cp-text);
+  font-size: clamp(26px, 6vw, 40px);
+  line-height: 1.05;
+}
+
+.wh-campaign h1 span {
+  color: var(--cp-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.wh-briefing h2,
+.wh-campaign h2,
+.wh-dossier h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 22px 0 10px;
+  color: var(--cp-text);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wh-count {
+  color: var(--cp-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.wh-lede {
+  color: var(--cp-text);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.wh-briefing p,
+.wh-dossier p {
+  color: var(--cp-text-muted);
+  line-height: 1.55;
+}
+
+.wh-rules {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wh-rules li {
+  display: flex;
+  gap: 9px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.wh-rules svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--cp-accent);
+}
+
+.wh-warning {
+  margin-top: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--cp-warning);
+  border-radius: 0.625rem;
+  color: var(--cp-text);
+  font-size: 12px;
+}
+
+.wh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.wh-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Coinage: the chapter's central readout. */
+.wh-coinage {
+  margin-top: 6px;
+  padding: 12px;
+  border: 1px solid var(--cp-border-strong);
+  border-radius: 0.75rem;
+  background: var(--cp-panel-strong);
+}
+
+.wh-coinage-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 9px;
+  color: var(--cp-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wh-coinage-title svg {
+  color: var(--cp-accent);
+}
+
+.wh-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--cp-surface-soft);
+  overflow: hidden;
+}
+
+.wh-bar-kshatrapa {
+  height: 100%;
+  background: var(--cp-warning);
+  transition: width 320ms ease;
+}
+
+.wh-bar-gupta {
+  height: 100%;
+  background: var(--cp-link);
+  transition: width 320ms ease;
+}
+
+.wh-bar-keys,
+.wh-chart figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 9px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wh-key {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.wh-key::before {
+  width: 9px;
+  height: 3px;
+  border-radius: 999px;
+  content: '';
+}
+
+.wh-key-kshatrapa {
+  color: var(--cp-warning);
+}
+
+.wh-key-kshatrapa::before {
+  background: var(--cp-warning);
+}
+
+.wh-key-gupta {
+  color: var(--cp-link);
+}
+
+.wh-key-gupta::before {
+  background: var(--cp-link);
+}
+
+.wh-resources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.wh-resources span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 11px;
+}
+
+.wh-resources strong {
+  color: var(--cp-text);
+  font-size: 14px;
+}
+
+.wh-report {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--cp-accent);
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Season choices */
+.wh-choices {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wh-choice {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.75rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.wh-choice:hover:not(:disabled) {
+  border-color: var(--cp-accent);
+}
+
+.wh-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.wh-choice-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.wh-choice-summary {
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.wh-choice-rationale {
+  color: var(--cp-text-soft);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.wh-choice-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.wh-choice-meta span {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.delta-up {
+  background: color-mix(in srgb, var(--cp-success) 18%, transparent);
+  color: var(--cp-success);
+}
+
+.delta-down {
+  background: color-mix(in srgb, var(--cp-danger) 16%, transparent);
+  color: var(--cp-danger);
+}
+
+.wh-choice-record {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--cp-link);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wh-choice-record.none {
+  color: var(--cp-text-soft);
+}
+
+.wh-choice-blocked {
+  color: var(--cp-warning);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Evidence ledger */
+.wh-artifacts {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wh-artifact {
+  display: flex;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+}
+
+.wh-artifact.kind-absence {
+  border-style: dashed;
+  opacity: 0.82;
+}
+
+.wh-artifact-icon {
+  flex: none;
+  color: var(--cp-accent);
+}
+
+.wh-artifact.kind-absence .wh-artifact-icon {
+  color: var(--cp-text-soft);
+}
+
+.wh-artifact p {
+  margin: 0;
+}
+
+.wh-artifact-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--cp-text);
+  font-size: 13px;
+}
+
+.wh-artifact-year {
+  color: var(--cp-text-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wh-artifact-detail {
+  margin-top: 3px;
+  color: var(--cp-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.wh-artifact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--cp-text-soft);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.wh-label {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.label-recorded-evidence {
+  background: color-mix(in srgb, var(--cp-success) 18%, transparent);
+  color: var(--cp-success);
+}
+
+.label-claim-in-source,
+.label-scholarly-inference {
+  background: color-mix(in srgb, var(--cp-warning) 20%, transparent);
+  color: var(--cp-warning);
+}
+
+.label-gameplay-reconstruction,
+.label-literary-tradition {
+  background: color-mix(in srgb, var(--cp-link) 18%, transparent);
+  color: var(--cp-link);
+}
+
+.wh-empty {
+  padding: 12px;
+  border: 1px dashed var(--cp-border-strong);
+  border-radius: 0.625rem;
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Dossier */
+.wh-verdict {
+  margin: 0 0 12px;
+  color: var(--cp-text);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.wh-dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.wh-dossier-grid span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 11px;
+}
+
+.wh-dossier-grid strong {
+  color: var(--cp-text);
+  font-size: 20px;
+}
+
+.wh-chart {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--cp-border-strong);
+  border-radius: 0.75rem;
+  background: var(--cp-panel-strong);
+}
+
+.wh-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.wh-line {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wh-line-kshatrapa {
+  stroke: var(--cp-warning);
+}
+
+.wh-line-gupta {
+  stroke: var(--cp-link);
+}
+
+.wh-chart-crossing {
+  stroke: var(--cp-border-strong);
+  stroke-dasharray: 3 4;
+  stroke-width: 1;
+}
+
+.wh-sources {
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.75rem;
+  background: var(--cp-surface-soft);
+}
+
+.wh-sources ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wh-sources li {
+  display: grid;
+  gap: 3px;
+  color: var(--cp-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.wh-sources strong {
+  color: var(--cp-text);
+  font-size: 13px;
+}
+
+.wh-sources a {
+  color: var(--cp-link);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (min-width: 760px) {
+  .wh-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wh-bar-kshatrapa,
+  .wh-bar-gupta {
+    transition: none;
+  }
+}

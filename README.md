@@ -125,6 +125,27 @@ npm run test:smoke
   Kautilya, and the campaign narrator.
 - Azure Sora mobile cinematic for the Mauryan world.
 
+### The Western Horizon
+
+- Conduct Chandragupta II's western campaign against the Kshatrapas across eight
+  seasons — routes, the Vakataka marriage, mint policy, endowments, and local
+  officers.
+- **There is no battle to win**, because no securely preserved account of one
+  exists. The chapter refuses to invent it and makes that the mechanic instead.
+- Coinage is the scoreboard: Kshatrapa silver must actually stop circulating and
+  your silver, cut to their weight standard so their markets accept it, must take
+  its place. That needs acceptance, not only reach.
+- Every season either leaves a durable artifact — a coin type, an inscription, a
+  dynastic charter — or leaves nothing at all. Marches and garrisons leave
+  nothing.
+- The ending is a historian's dossier reconstructing your reign sixteen centuries
+  later, with a coinage chart drawn from your own campaign, split into what
+  survives and what did not. Win by force alone and the record cannot say what
+  you did.
+- Every claim is labelled and cited: cessation of Kshatrapa silver, Gupta silver
+  in their standard, the Udayagiri and Sanchi inscriptions, the Vakataka
+  charters, and the disputed Mehrauli pillar.
+
 ### The Cost of Kalinga
 
 - Portrait-first 7x8 tactical battlefield.

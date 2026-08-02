@@ -45,10 +45,41 @@ The chapter must also state that:
 ## Vikramaditya chapter boundaries
 
 "Vikramaditya" is both a royal title and a figure surrounded by later legend.
-The planned historical campaign identifies the ruler as **Chandragupta II** and
+The campaign identifies the ruler as **Chandragupta II** and
 uses numismatic and inscriptional evidence for the defeat of the Western
 Kshatrapas. Later dramatic stories are presented as literary tradition, not
 quietly merged into the military record.
+
+### The Western Horizon
+
+The chapter can state that:
+
+- Western Kshatrapa silver coinage ends with Rudrasimha III in the early fifth
+  century CE, and that cessation is the primary evidence that their rule ended.
+- Chandragupta II issued silver for the western provinces cut to the Kshatrapa
+  weight and broadly imitating its format, with an imperial Brahmi legend.
+- The Udayagiri cave inscription of Virasena is dated to Gupta era 82
+  (c. 401–402 CE) and the Sanchi inscription of Amrakardava to Gupta era 93
+  (c. 412–413 CE).
+- Chandragupta II's daughter Prabhavatigupta married the Vakataka ruler Rudrasena
+  II and later governed as regent, attested by her own copper-plate charters.
+
+The chapter must also state that:
+
+- **No securely preserved narrative of the western campaign survives.** There is
+  no battle name, no sequence, no casualty figure, and the chapter deliberately
+  invents none.
+- Regnal end-dates for the Kshatrapas are debated within roughly 395–415 CE, so
+  the chapter presents a range rather than choosing the most dramatic reading.
+- The Mehrauli iron pillar "Chandra" inscription is only *argued* to be
+  Chandragupta II, and cannot be securely mapped onto the western war.
+- Every resource, timing, threshold and outcome in the campaign is **gameplay
+  reconstruction**. Artifacts the player produces are dated to the player's own
+  reconstructed reign; the real dates of the surviving inscriptions live in the
+  source records, never in an in-game artifact title.
+- The evidence categories the game models — coin, inscription, dynastic record,
+  and the pointed **absence** left by marches and garrisons — are real
+  categories, but any particular artifact the player generates is invented.
 
 ## Nanda transition chapter boundaries
 

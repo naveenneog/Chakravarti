@@ -118,8 +118,19 @@ reconstruction.
 
 Coins, inscriptions, and the end of Western Kshatrapa rule strongly support the
 western conquest. Exact battle narratives are not securely preserved. This
-chapter should emphasize grand strategy, routes, diplomacy, and numismatic
+chapter therefore emphasizes grand strategy, routes, diplomacy, and numismatic
 evidence rather than inventing a single cinematic "decisive battle."
+
+**Shipped in v0.10.0.** The constraint became the mechanic: there is no battle to
+win, so the player conducts a reign — routes, the Vakataka marriage, mint policy,
+endowments, local officers — and every season either leaves a durable artifact or
+leaves nothing at all. Coinage is the scoreboard: Kshatrapa silver must actually
+stop and Gupta silver in their weight standard must take its place, which needs
+market acceptance rather than only military reach. The ending is a historian's
+dossier reconstructing the reign from what survived, with a coinage chart drawn
+from the player's own campaign. Winning by pure force produces the *hollow
+conquest* ending, in which the record cannot say what happened — which is the
+lesson the chapter exists to teach.
 
 ### 3. Rani Durgavati - The Defiance at Narrai
 
