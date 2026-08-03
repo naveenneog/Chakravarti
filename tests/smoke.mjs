@@ -12,7 +12,7 @@
  * Exit codes: 0 = pass, 1 = failure, 2 = no usable browser found (skipped).
  */
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 import { chromium } from 'playwright-core'
 
@@ -87,6 +87,20 @@ async function main() {
   try {
     const up = await waitForServer(BASE)
     if (!up) throw new Error('preview server did not start')
+
+    // Guard against a stray server from an earlier run holding the port and
+    // serving a stale build -- that silently invalidates every check below.
+    const servedHtml = await (await fetch(BASE)).text()
+    const localHtml = readFileSync(
+      new URL('../docs/index.html', import.meta.url),
+      'utf8',
+    )
+    if (servedHtml.trim() !== localHtml.trim()) {
+      throw new Error(
+        `port ${PORT} is serving a build that does not match docs/index.html ` +
+          '(stale server still running?). Free the port and re-run.',
+      )
+    }
 
     browser = await chromium.launch({ executablePath: exe })
     const ctx = await browser.newContext({
@@ -281,6 +295,65 @@ async function main() {
       console.log('ERRORS:', JSON.stringify(unexpectedAfterBlock.slice(0, 12), null, 2))
     }
 
+    await ctx.close()
+
+    // 7. WebGL-less device: the player must be told why, and offered a way back.
+    // This is the regression that shipped command mode silently on Android.
+    const blockedCtx = await browser.newContext({
+      viewport: { width: 412, height: 915 },
+      deviceScaleFactor: 2,
+    })
+    await blockedCtx.addInitScript(() => {
+      const original = HTMLCanvasElement.prototype.getContext
+      HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+        const name = String(type)
+        if (name.startsWith('webgl') || name === 'experimental-webgl') return null
+        return original.call(this, type, ...rest)
+      }
+    })
+    const blockedPage = await blockedCtx.newPage()
+    await blockedPage.goto(BASE, { waitUntil: 'networkidle' })
+    await sleep(800)
+    await enterMission(blockedPage)
+    await sleep(900)
+    const notice = blockedPage.locator('.nanda-fallback-notice')
+    check('WebGL-less device explains why 3D is unavailable', (await notice.count()) > 0)
+    check(
+      'WebGL-less device offers a way back to 3D',
+      (await blockedPage.getByRole('button', { name: /Try 3D again/i }).count()) > 0,
+    )
+    await blockedCtx.close()
+
+    // 8. Flaky WebView: a context that false-negatives at startup (the real
+    // Android failure) must recover to the 3D mission on its own.
+    const flakyCtx = await browser.newContext({
+      viewport: { width: 412, height: 915 },
+      deviceScaleFactor: 2,
+    })
+    await flakyCtx.addInitScript(() => {
+      const original = HTMLCanvasElement.prototype.getContext
+      let denials = 0
+      HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+        const name = String(type)
+        const isGL = name.startsWith('webgl') || name === 'experimental-webgl'
+        if (isGL && denials < 3) {
+          denials += 1
+          return null
+        }
+        return original.call(this, type, ...rest)
+      }
+    })
+    const flakyPage = await flakyCtx.newPage()
+    await flakyPage.goto(BASE, { waitUntil: 'networkidle' })
+    await sleep(800)
+    await enterMission(flakyPage)
+    await sleep(1600)
+    check(
+      'transient WebGL failure recovers to the 3D mission',
+      (await flakyPage.locator('canvas').count()) > 0,
+    )
+    await flakyCtx.close()
+
     await browser.close()
   } finally {
     if (browser) {
@@ -290,7 +363,19 @@ async function main() {
         // already closed
       }
     }
+    // `shell: true` on Windows means server.kill() only kills cmd.exe and
+    // leaves the vite grandchild holding the port -- which silently serves a
+    // stale build to the next run. Kill the whole tree.
     server.kill()
+    if (process.platform === 'win32' && server.pid) {
+      try {
+        spawn('taskkill', ['/pid', String(server.pid), '/T', '/F'], {
+          stdio: 'ignore',
+        })
+      } catch {
+        // best effort
+      }
+    }
   }
 
   const failed = checks.filter((c) => !c.ok)

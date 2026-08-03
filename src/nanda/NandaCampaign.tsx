@@ -69,6 +69,12 @@ import {
   markTutorialSeen,
 } from './onboarding'
 import MissionTutorial from './MissionTutorial'
+import {
+  describeWebGLReason,
+  probeWebGL,
+  probeWebGLWithRetries,
+  type WebGLReason,
+} from './webgl'
 import { initialHud } from './initialHud'
 import { timberGateDefinition } from './timberGateDefinition'
 import type { CutsceneOutcome } from './OutcomeCutscene'
@@ -176,16 +182,7 @@ const outcomeCopy: Record<
   },
 }
 
-const supportsWebGL = () => {
-  try {
-    const canvas = document.createElement('canvas')
-    return Boolean(
-      canvas.getContext('webgl2') || canvas.getContext('webgl'),
-    )
-  } catch {
-    return false
-  }
-}
+const supportsWebGL = () => probeWebGL().ok
 
 function EvidenceBadge({ evidence }: { evidence: EvidenceRef }) {
   const source = nandaSourceById(evidence.sourceId)
@@ -737,6 +734,53 @@ function MissionPanel({
   const modifiers = state.missionModifiers
   const webglAvailable = useMemo(supportsWebGL, [])
   const [reducedMode, setReducedMode] = useState(!webglAvailable)
+  /**
+   * Why 3D is unavailable, and whether we are still trying. A single
+   * synchronous probe at mount false-negatives inside an Android WebView that
+   * has not finished attaching, so the first failure is provisional: we retry,
+   * and we tell the player what happened instead of silently swapping the game.
+   */
+  const [webglReason, setWebglReason] = useState<WebGLReason>(
+    webglAvailable ? 'ok' : 'no-context',
+  )
+  const [retrying, setRetrying] = useState(!webglAvailable)
+  const [manualFallback, setManualFallback] = useState(false)
+
+  useEffect(() => {
+    if (webglAvailable) {
+      return undefined
+    }
+    let cancelled = false
+    void probeWebGLWithRetries().then((probe) => {
+      if (cancelled) {
+        return
+      }
+      setRetrying(false)
+      setWebglReason(probe.reason)
+      if (probe.ok) {
+        setReducedMode((current) => (manualFallback ? current : false))
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+    // Intentionally runs once: the retry schedule is self-contained.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webglAvailable])
+
+  const retryThreeD = () => {
+    setRetrying(true)
+    setManualFallback(false)
+    void probeWebGLWithRetries().then((probe) => {
+      setRetrying(false)
+      setWebglReason(probe.reason)
+      if (probe.ok) {
+        setReducedMode(false)
+        setResetToken((value) => value + 1)
+      }
+    })
+  }
+
   const [paused, setPaused] = useState(false)
   const [councilOpen, setCouncilOpen] = useState(false)
   const [tutorialOpen, setTutorialOpen] = useState(() => !hasSeenTutorial())
@@ -794,13 +838,46 @@ function MissionPanel({
     <main className="nanda-mission-page action-first">
       <section className="nanda-mission-frame">
         {reducedMode ? (
-          <AccessibleMission
-            key={resetToken}
-            modifiers={modifiers}
-            onComplete={complete}
-          />
+          <>
+            <section className="nanda-fallback-notice" role="status">
+              <AlertTriangle size={17} />
+              <div>
+                <strong>
+                  {retrying
+                    ? 'Checking for 3D support\u2026'
+                    : manualFallback
+                      ? 'Command mode (you chose this)'
+                      : '3D unavailable on this device'}
+                </strong>
+                <span>
+                  {manualFallback
+                    ? 'The full third-person mission is available again whenever you want it.'
+                    : describeWebGLReason(webglReason)}
+                </span>
+              </div>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={retryThreeD}
+                disabled={retrying}
+              >
+                <RotateCcw size={16} />
+                {retrying ? 'Checking\u2026' : 'Try 3D again'}
+              </button>
+            </section>
+            <AccessibleMission
+              key={resetToken}
+              modifiers={modifiers}
+              onComplete={complete}
+            />
+          </>
         ) : (
-          <MissionErrorBoundary onFallback={() => setReducedMode(true)}>
+          <MissionErrorBoundary
+            onFallback={() => {
+              setReducedMode(true)
+              setWebglReason('threw')
+            }}
+          >
             <Suspense
               fallback={
                 <div className="nanda-mission-loading">
@@ -1093,14 +1170,18 @@ function MissionPanel({
                   className="secondary-button"
                   type="button"
                   onClick={() => {
-                    setReducedMode((value) => !value)
+                    setReducedMode((value) => {
+                      // Remember that command mode was a choice, so the WebGL
+                      // retry does not drag the player back into 3D.
+                      setManualFallback(!value)
+                      return !value
+                    })
                     setCouncilOpen(false)
                   }}
                 >
                   <BookOpen size={17} />
                   {reducedMode ? 'Return to 3D mode' : 'Use command mode'}
-                </button>
-                <button
+                </button>                <button
                   className="secondary-button"
                   type="button"
                   onClick={() => {

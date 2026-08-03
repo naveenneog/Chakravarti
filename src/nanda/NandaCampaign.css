@@ -1416,6 +1416,57 @@
   font-weight: 700;
 }
 
+/* Shown when the 3D mission cannot run, so the swap to command mode is never
+   silent and always has a way back. */
+.nanda-fallback-notice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--cp-warning);
+  border-radius: 0.75rem;
+  background: var(--cp-panel-strong);
+}
+
+.nanda-fallback-notice > svg {
+  flex: none;
+  color: var(--cp-warning);
+}
+
+.nanda-fallback-notice div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nanda-fallback-notice strong {
+  color: var(--cp-text);
+  font-size: 13px;
+}
+
+.nanda-fallback-notice span {
+  color: var(--cp-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.nanda-fallback-notice button {
+  flex: none;
+}
+
+@media (max-width: 560px) {
+  .nanda-fallback-notice {
+    flex-wrap: wrap;
+  }
+
+  .nanda-fallback-notice button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .nanda-threat {
   display: flex;
   align-items: center;

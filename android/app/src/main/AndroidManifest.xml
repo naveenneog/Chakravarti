@@ -3,6 +3,7 @@
 
     <application
         android:allowBackup="true"
+        android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -39,4 +40,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- The 3D missions need WebGL. Declared not-required so the app still
+         installs on devices without it and falls back to command mode. -->
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="false" />
 </manifest>

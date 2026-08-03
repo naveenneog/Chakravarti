@@ -41,12 +41,26 @@ if ($manifestText -notmatch 'android:screenOrientation=') {
     'android:exported="true"',
     "android:exported=`"true`"`r`n            android:screenOrientation=`"portrait`""
   )
-  [System.IO.File]::WriteAllText(
-    $manifest,
-    $manifestText,
-    (New-Object System.Text.UTF8Encoding($false))
+}
+# The 3D missions need a hardware-accelerated WebView. Leaving this to the
+# platform default is what drops devices into the non-3D command-mode fallback.
+if ($manifestText -notmatch 'android:hardwareAccelerated=') {
+  $manifestText = $manifestText -replace(
+    'android:allowBackup="true"',
+    "android:allowBackup=`"true`"`r`n        android:hardwareAccelerated=`"true`""
   )
 }
+if ($manifestText -notmatch 'android:glEsVersion=') {
+  $manifestText = $manifestText -replace(
+    '</manifest>',
+    "    <uses-feature android:glEsVersion=`"0x00020000`" android:required=`"false`" />`r`n</manifest>"
+  )
+}
+[System.IO.File]::WriteAllText(
+  $manifest,
+  $manifestText,
+  (New-Object System.Text.UTF8Encoding($false))
+)
 
 $gradle = "$root\android\app\build.gradle"
 function Write-NoBom([string]$Path, [string]$Text) {
