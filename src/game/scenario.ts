@@ -249,21 +249,21 @@ export const campaigns: readonly Campaign[] = [
     title: 'The Defiance at Narrai',
     era: '1564 CE',
     region: 'Gondwana',
-    status: 'planned',
-    evidence: 'Historical battle, multi-source campaign',
+    status: 'playable',
+    evidence: 'One surviving account, written by the invaders',
     description:
-      'Use terrain, mobility, and resolve to defend Gondwana in a campaign centered on the Battle of Narrai.',
+      'A defence that cannot be won. Trade the defiles of Narrai for the price the invasion pays and the people who get out — then read the only account of it that survives.',
   },
   {
     id: 'saraighat',
     figure: 'Lachit Borphukan',
     title: 'The Brahmaputra Holds',
-    era: '1671 CE',
+    era: '1667-1671 CE',
     region: 'Assam',
-    status: 'planned',
-    evidence: 'Historical battle, river-warfare focus',
+    status: 'playable',
+    evidence: 'Two traditions that corroborate each other',
     description:
-      'Coordinate boats, river forts, and land detachments during the Battle of Saraighat.',
+      'Close the land approach so the imperial fleet must come up the narrows, where its weight cannot tell. Each season shows the buranji and Mughal accounts side by side.',
   },
   {
     id: 'pratapgad',
@@ -271,9 +271,9 @@ export const campaigns: readonly Campaign[] = [
     title: 'The Hills of Pratapgad',
     era: '1659 CE',
     region: 'Western Ghats',
-    status: 'planned',
-    evidence: 'Historical battle, source comparison',
+    status: 'playable',
+    evidence: 'Contested accounts, deliberately unresolved',
     description:
-      'Plan movement through hill forts and broken terrain while the codex compares accounts of Pratapgad.',
+      'Arrange the hills around a meeting you never fight in: scouting, lookouts, a concealed reserve, a signal, a road home. The disputed encounter is shown, not played, and not adjudicated.',
   },
 ]

@@ -102,3 +102,22 @@ same move the Kalinga chapter makes about the absent Kalingan voice.
 - [ ] Spend authorizer (only if any paid media is proposed)
 
 **Chapter build is blocked until all applicable boxes are signed.**
+
+---
+
+## SIGN-OFF (2026-08-03)
+
+**Status: APPROVED BY PRODUCT OWNER. Chapter built and shipped in v0.11.0.**
+
+- [x] **Product owner** — @naveenneog, sole owner of this project, approved
+      construction of all remaining chapters on 2026-08-03.
+- [ ] **Independent subject-specialist / sensitivity reviewer — NOT OBTAINED.**
+      The owner elected to proceed without one and accepted that risk. This is
+      recorded here rather than quietly skipped.
+- [x] **Spend authorizer** — not applicable. No paid media was generated for
+      this chapter; there is no Sora or other paid-render spend.
+
+The content red lines in this brief were treated as binding design constraints
+regardless of approval status, and are enforced by unit tests in the chapter's
+engine test suite. If a qualified reviewer is engaged later, this brief and the
+shipped chapter should be re-examined together.

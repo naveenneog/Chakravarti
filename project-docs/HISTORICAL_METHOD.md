@@ -122,8 +122,80 @@ Two limits must stay visible:
   design decision that a narrow buckler covers the front but not the flanks — is
   **gameplay reconstruction** built on the described shape, not evidence.
 
-## Review workflow
+## Saraighat chapter boundaries
 
+The chapter can state that a Mughal campaign against the Ahom kingdom culminated
+at Saraighat on the Brahmaputra in 1671, that Lachit Borphukan held the Ahom
+command, that the Ahom side chose Guwahati deliberately because hilly ground
+denied cavalry its mobility, that earthwork defences were prepared, and that the
+campaign ended with the imperial force withdrawing west.
+
+The chapter must also state that:
+
+- The **buranjis are a source tradition in their own right** — an indigenous
+  court chronicle with its own authorship and purpose — and are not folklore
+  glossing a Mughal narrative. The chapter says so explicitly.
+- Where the buranji and Mughal-side accounts agree, that agreement is
+  evidentially valuable and is marked as such. This is the one chapter in the
+  anthology that can teach corroboration rather than absence.
+- Fleet and troop figures from either tradition are **claims**, and are never
+  used as game quantities.
+- The words attributed to Lachit at the final battle come from the chronicle
+  tradition and are **transmitted, not contemporary transcript**.
+- All timings, thresholds, resource values and the ground-selection rule are
+  gameplay reconstruction.
+- The conflict is never framed in religious terms.
+
+## Narrai chapter boundaries
+
+The chapter can state that Durgavati governed Garha-Katanga as regent, that a
+Mughal force invaded in 1564, that a defensive engagement was fought in
+constricted country between a hill range and the Gaur and Narmada rivers, and
+that the invading force was materially superior in trained troops and firearms.
+
+The chapter must also state that:
+
+- **The only narrative that survives is the invaders'.** No contemporary Gond or
+  Garha-Katanga account of this campaign is known. The chapter says this on
+  screen, and its entire epilogue is built around the gap between what the player
+  did and what the record keeps.
+- Chronicle figures are **victor-side claims**, labelled and never used as
+  balance numbers.
+- The account of the queen's death is a **single source with no independent
+  corroboration**. It appears once, as what that source reports, and is never a
+  playable mechanic.
+- The campaign offers **no counterfactual victory**. The historical outcome is
+  not in doubt and no ending reverses it.
+- Every disposition, timing and resource value is gameplay reconstruction.
+
+## Pratapgad chapter boundaries
+
+The chapter can state that a meeting between Shivaji and the Adilshahi commander
+Afzal Khan took place beneath Pratapgad on 10 November 1659, that it ended in
+violence in which the Adilshahi commander was killed, that the surrounding forces
+then engaged, and that the site had been prepared beforehand.
+
+The chapter must also state that:
+
+- The event is **contested and the accounts are irreconcilable** on the central
+  question of who struck first. The chapter presents the Marathi bakhar tradition,
+  the Persian/Adilshahi-side accounts and contemporary European reports **side by
+  side, marked unresolved**, and explicitly declines to adjudicate.
+- There is **no disinterested eyewitness account**, and the earliest detailed
+  narratives are considerably later than the event.
+- Preparation of the ground is consistent with *expecting* an ambush and with
+  *laying* one; the evidence does not distinguish intent, and the chapter says so.
+- The bakhars are late, literary, and shaped by their compilers' purposes; the
+  Persian accounts are equally shaped by theirs.
+- Numbers in the narrative sources are conventional or rhetorical and **none are
+  used as game quantities**.
+- **The encounter is never played.** There is no strike action, no target, no
+  enemy health and no combat resolution in the chapter. Afzal Khan is never a
+  boss or a kill objective, and the player never performs a killing blow as a
+  mechanic. These constraints are enforced by unit tests.
+- No communal or religious framing, and no invented quotations.
+
+## Review workflow
 1. Write a one-page evidence brief for the chapter.
 2. Record a citation and evidence label for every historical claim.
 3. Mark every invented name, formation, map feature, and objective.

@@ -14,9 +14,29 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.10.0** (tag `v0.10.0`), on `main`.
-- Working tree clean; everything committed and pushed. **219 unit tests pass.**
-- `package.json` version `0.10.0`. Browser smoke via `npm run test:smoke` (18/18).
+- Latest release: **v0.11.0** (tag `v0.11.0`), on `main`.
+- Working tree clean; everything committed and pushed. **295 unit tests pass.**
+- `package.json` version `0.11.0`. Browser smoke via `npm run test:smoke` (18/18).
+- **The anthology is complete.** All five roadmap chapters are playable, and they
+  are deliberately a tour of *evidential situations*: Kalinga (one-sided, the
+  perpetrator's own inscription), The Western Horizon (no narrative at all, only
+  coins and inscriptions), The Brahmaputra Holds (two traditions corroborating),
+  The Defiance at Narrai (only the invaders wrote), The Hills of Pratapgad
+  (accounts that contradict and are left unresolved). Each has a distinct verb;
+  do not collapse them into one shared campaign engine.
+- New chapters live in `src/saraighat/`, `src/narrai/`, `src/pratapgad/`, each
+  with its own pure deterministic engine + tests, following the established
+  per-chapter convention. They share only `src/chapters/campaign.css`.
+- **Design constraints that are enforced by tests, not just documented:**
+  Pratapgad exposes no attack/strike/kill action, never names the opposing
+  commander as a target, and has no combat state at all; Narrai never exposes the
+  queen's death as an action, offers no counterfactual victory, and never uses
+  victor-side chronicle figures as balance numbers. Do not "add combat" to
+  Pratapgad or a win condition to Narrai — both would break the chapter.
+- **Approval status:** all three briefs carry a sign-off block recording product
+  owner approval on 2026-08-03 and that **no independent specialist review was
+  obtained**. If one is engaged later, re-examine the briefs and the shipped
+  chapters together.
 - **Chapter II — The Western Horizon (v0.10.0).** `src/vikrama/` is a complete,
   self-contained turn campaign (types / content / engine / persistence / UI),
   wired into `App.tsx` as view `'western'`. It deliberately has **no battle**:
@@ -165,3 +185,4 @@ fully unattended execution**; they need human oversight:
 
 Other safe, unblocked ideas: Draco/KTX2 mesh compression, instanced palisade
 posts, LOD; a dedicated Kalinga battle unit tutorial.
+

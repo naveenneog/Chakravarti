@@ -137,15 +137,43 @@ lesson the chapter exists to teach.
 A terrain-led defensive campaign centered on Gondwana, mobility, and the Battle
 of Narrai.
 
+**Shipped in v0.11.0.** The chapter on a **hostile record**: the only narrative
+of this campaign belongs to the invaders, and no Gond account survives. The
+campaign cannot be won and offers no counterfactual in which it is. The player
+trades the defiles of Narrai between two axes they actually controlled — the
+price the invasion pays, and how many people get out — and the epilogue prints
+the short, self-serving imperial account beside everything the player did that
+it does not preserve. The queen's death appears once, as what that single source
+reports, and is never a mechanic.
+
 ### 4. Lachit Borphukan - The Brahmaputra Holds
 
 A river-warfare campaign centered on the Battle of Saraighat, coordinating
 boats, forts, artillery, and land detachments.
 
+**Shipped in v0.11.0.** The chapter on **corroboration** — the one place in the
+anthology where two independent traditions, the Assamese buranjis and the
+Mughal-side accounts, broadly agree, and each season shows both side by side.
+The verb is *choose the ground*: earthworks close the land approach so the
+imperial fleet must come up the narrows where its weight cannot tell. The
+narrows are never picked from a menu, they are earned by making every other
+approach impossible — and accepting battle in the open field throws all of it
+away, as it historically did at Alaboi.
+
 ### 5. Chhatrapati Shivaji Maharaj - The Hills of Pratapgad
 
 A campaign about intelligence, hill-fort geography, diplomacy, and comparing
 accounts of the Battle of Pratapgad.
+
+**Shipped in v0.11.0.** The chapter on an **irreconcilable record**. The player
+never fights: there is no strike action, no target and no combat resolution
+anywhere in the engine. They arrange the hills — scouting, lookouts, a concealed
+reserve, a signal chain, a withdrawal route — and the arrangement is scored on
+its weakest element rather than its average. The encounter beneath the fort is
+narrated in neutral terms, labelled *disputed and not depicted*, and the
+aftermath presents the contradictory accounts of who struck first, whether it
+was premeditated, and how many were present, each marked **unresolved** with the
+reason it cannot presently be settled.
 
 ## Epic and literary material
 

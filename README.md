@@ -146,6 +146,41 @@ npm run test:smoke
   in their standard, the Udayagiri and Sanchi inscriptions, the Vakataka
   charters, and the disputed Mehrauli pillar.
 
+### The Brahmaputra Holds
+
+- Lachit Borphukan's defence of Guwahati, 1667–1671, ending at Saraighat.
+- **Choose the ground.** Raise earthworks until the land approach is shut, and
+  the imperial fleet has to come up the narrows, where a heavy fleet cannot
+  deploy and a light one can. You never pick the narrows from a menu — you earn
+  them by making every other approach impossible.
+- Accept battle in the open field and none of it counts. That is what happened at
+  Alaboi.
+- The one chapter in the anthology where **two independent traditions
+  corroborate each other**: every season shows the Assamese buranji account and
+  the Mughal-side account side by side, with agreement marked.
+
+### The Defiance at Narrai
+
+- Rani Durgavati's defence of Gondwana, 1564.
+- **You cannot win, and the chapter does not pretend otherwise.** What you
+  control is what you spend and for what: the price the invasion pays, or the
+  people who get out ahead of it.
+- Afterwards you read the only account of this campaign that survives. It is four
+  sentences long and it was written by the people you fought — beside a list of
+  everything you did that it does not preserve.
+- No Gond account exists. The chapter says so, and is built around the absence.
+
+### The Hills of Pratapgad
+
+- The meeting beneath the fort, 10 November 1659.
+- **You never fight.** There is no strike, no target and no combat in this
+  chapter. You arrange the hills — scouting, lookouts, a concealed reserve, a
+  signal chain, a withdrawal route — and the arrangement is judged on its weakest
+  part, not its average.
+- The encounter itself is shown but not depicted and not adjudicated. The
+  aftermath lays the contradictory accounts side by side and marks each disputed
+  question **unresolved**, with the reason it cannot presently be settled.
+
 ### The Cost of Kalinga
 
 - Portrait-first 7x8 tactical battlefield.

@@ -37,11 +37,24 @@ import type {
   EvidenceKind,
 } from './game/types'
 
-type View = 'home' | 'nanda' | 'maurya' | 'western' | 'battle' | 'kalinga-debrief' | 'codex'
+type View =
+  | 'home'
+  | 'nanda'
+  | 'maurya'
+  | 'western'
+  | 'saraighat'
+  | 'narrai'
+  | 'pratapgad'
+  | 'battle'
+  | 'kalinga-debrief'
+  | 'codex'
 
 const MauryaCampaign = lazy(() => import('./maurya/MauryaCampaign'))
 const NandaCampaign = lazy(() => import('./nanda/NandaCampaign'))
 const WesternHorizon = lazy(() => import('./vikrama/WesternHorizon'))
+const BrahmaputraHolds = lazy(() => import('./saraighat/BrahmaputraHolds'))
+const DefianceAtNarrai = lazy(() => import('./narrai/DefianceAtNarrai'))
+const HillsOfPratapgad = lazy(() => import('./pratapgad/HillsOfPratapgad'))
 const KalingaIntro = lazy(() => import('./game/KalingaIntro'))
 
 const evidenceLabels: Record<EvidenceKind, string> = {
@@ -244,6 +257,9 @@ function HomeView({
   onMaurya,
   onKalinga,
   onWestern,
+  onSaraighat,
+  onNarrai,
+  onPratapgad,
   onCodex,
   videoFailed,
   setVideoFailed,
@@ -252,6 +268,9 @@ function HomeView({
   onMaurya: () => void
   onKalinga: () => void
   onWestern: () => void
+  onSaraighat: () => void
+  onNarrai: () => void
+  onPratapgad: () => void
   onCodex: () => void
   videoFailed: boolean
   setVideoFailed: (failed: boolean) => void
@@ -341,7 +360,13 @@ function HomeView({
                     ? onMaurya
                     : campaign.id === 'vikramaditya'
                       ? onWestern
-                      : onKalinga
+                      : campaign.id === 'saraighat'
+                        ? onSaraighat
+                        : campaign.id === 'narrai'
+                          ? onNarrai
+                          : campaign.id === 'pratapgad'
+                            ? onPratapgad
+                            : onKalinga
               }
             />
           ))}
@@ -831,6 +856,18 @@ function App() {
     setView('western')
   }
 
+  const startSaraighat = () => {
+    setView('saraighat')
+  }
+
+  const startNarrai = () => {
+    setView('narrai')
+  }
+
+  const startPratapgad = () => {
+    setView('pratapgad')
+  }
+
   const toggleNarration = async () => {
     const audio = audioRef.current
     if (!audio || audioUnavailable) {
@@ -954,6 +991,9 @@ function App() {
           onMaurya={startMaurya}
           onKalinga={startBattle}
           onWestern={startWestern}
+          onSaraighat={startSaraighat}
+          onNarrai={startNarrai}
+          onPratapgad={startPratapgad}
           onCodex={() => setView('codex')}
           videoFailed={videoFailed}
           setVideoFailed={setVideoFailed}
@@ -997,6 +1037,21 @@ function App() {
           }
         >
           <WesternHorizon onExit={() => setView('home')} />
+        </Suspense>
+      ) : null}
+      {view === 'saraighat' ? (
+        <Suspense fallback={null}>
+          <BrahmaputraHolds onExit={() => setView('home')} />
+        </Suspense>
+      ) : null}
+      {view === 'narrai' ? (
+        <Suspense fallback={null}>
+          <DefianceAtNarrai onExit={() => setView('home')} />
+        </Suspense>
+      ) : null}
+      {view === 'pratapgad' ? (
+        <Suspense fallback={null}>
+          <HillsOfPratapgad onExit={() => setView('home')} />
         </Suspense>
       ) : null}
       {view === 'battle' ? (        showKalingaIntro ? (

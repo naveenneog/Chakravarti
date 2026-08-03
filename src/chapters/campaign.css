@@ -1,0 +1,482 @@
+/* Shared layout for the turn-based chapter campaigns (Saraighat, Narrai,
+   Pratapgad). One vocabulary, so three chapters shipped together stay visually
+   coherent without triplicating a stylesheet. Uses the app's --cp-* variables. */
+
+.cc-page {
+  padding-bottom: 32px;
+}
+
+.cc-card h1 {
+  margin: 4px 0 10px;
+  color: var(--cp-text);
+  font-size: clamp(25px, 6vw, 38px);
+  line-height: 1.06;
+}
+
+.cc-card h1 .cc-sub {
+  color: var(--cp-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cc-card h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 22px 0 10px;
+  color: var(--cp-text);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cc-count {
+  color: var(--cp-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.cc-lede {
+  color: var(--cp-text);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.cc-card p {
+  color: var(--cp-text-muted);
+  line-height: 1.55;
+}
+
+.cc-rules {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cc-rules li {
+  display: flex;
+  gap: 9px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cc-rules svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--cp-accent);
+}
+
+.cc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.cc-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* A headline gauge: the one number the chapter is really about. */
+.cc-gauge {
+  margin-top: 6px;
+  padding: 12px;
+  border: 1px solid var(--cp-border-strong);
+  border-radius: 0.75rem;
+  background: var(--cp-panel-strong);
+}
+
+.cc-gauge-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 9px;
+  color: var(--cp-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cc-gauge-title svg {
+  color: var(--cp-accent);
+}
+
+.cc-track {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--cp-surface-soft);
+  overflow: hidden;
+}
+
+.cc-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 320ms ease;
+}
+
+.cc-fill.tone-danger {
+  background: var(--cp-danger);
+}
+
+.cc-fill.tone-accent {
+  background: var(--cp-accent);
+}
+
+.cc-fill.tone-link {
+  background: var(--cp-link);
+}
+
+.cc-fill.tone-success {
+  background: var(--cp-success);
+}
+
+.cc-gauge-note {
+  margin: 9px 0 0;
+  color: var(--cp-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cc-resources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.cc-resources span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 11px;
+}
+
+.cc-resources strong {
+  color: var(--cp-text);
+  font-size: 14px;
+}
+
+.cc-report {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--cp-accent);
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Choices */
+.cc-choices {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cc-choice {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.75rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.cc-choice:hover:not(:disabled) {
+  border-color: var(--cp-accent);
+}
+
+.cc-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.cc-choice.is-grave {
+  border-color: color-mix(in srgb, var(--cp-danger) 55%, var(--cp-border));
+}
+
+.cc-choice-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cc-choice-summary {
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cc-choice-rationale {
+  color: var(--cp-text-soft);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.cc-choice-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cc-choice-meta span {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cc-up {
+  background: color-mix(in srgb, var(--cp-success) 18%, transparent);
+  color: var(--cp-success);
+}
+
+.cc-down {
+  background: color-mix(in srgb, var(--cp-danger) 16%, transparent);
+  color: var(--cp-danger);
+}
+
+.cc-blocked {
+  color: var(--cp-warning);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Evidence labels */
+.cc-label {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cc-label.label-recorded-evidence {
+  background: color-mix(in srgb, var(--cp-success) 18%, transparent);
+  color: var(--cp-success);
+}
+
+.cc-label.label-claim-in-source,
+.cc-label.label-scholarly-inference {
+  background: color-mix(in srgb, var(--cp-warning) 20%, transparent);
+  color: var(--cp-warning);
+}
+
+.cc-label.label-gameplay-reconstruction,
+.cc-label.label-literary-tradition {
+  background: color-mix(in srgb, var(--cp-link) 18%, transparent);
+  color: var(--cp-link);
+}
+
+/* Two-tradition comparison: the Saraighat signature, reused by Pratapgad. */
+.cc-accounts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cc-account {
+  padding: 11px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+}
+
+.cc-account-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--cp-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cc-agree {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.cc-agree.yes {
+  background: color-mix(in srgb, var(--cp-success) 18%, transparent);
+  color: var(--cp-success);
+}
+
+.cc-agree.no {
+  background: color-mix(in srgb, var(--cp-danger) 16%, transparent);
+  color: var(--cp-danger);
+}
+
+.cc-columns {
+  display: grid;
+  gap: 8px;
+}
+
+.cc-column {
+  padding: 9px 10px;
+  border-radius: 0.5rem;
+  background: var(--cp-surface-soft);
+}
+
+.cc-column-title {
+  margin: 0 0 4px;
+  color: var(--cp-text-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cc-column p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cc-account-source {
+  margin: 8px 0 0;
+  color: var(--cp-text-soft);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.cc-empty {
+  padding: 12px;
+  border: 1px dashed var(--cp-border-strong);
+  border-radius: 0.625rem;
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Debrief */
+.cc-verdict {
+  margin: 0 0 12px;
+  color: var(--cp-text);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.cc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.cc-stats span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 11px;
+}
+
+.cc-stats strong {
+  color: var(--cp-text);
+  font-size: 20px;
+}
+
+.cc-lines {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cc-lines li {
+  padding: 9px 11px;
+  border-left: 3px solid var(--cp-border-strong);
+  background: var(--cp-panel-strong);
+  color: var(--cp-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cc-sources {
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid var(--cp-border);
+  border-radius: 0.75rem;
+  background: var(--cp-surface-soft);
+}
+
+.cc-sources ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cc-sources li {
+  display: grid;
+  gap: 3px;
+  color: var(--cp-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cc-sources strong {
+  color: var(--cp-text);
+  font-size: 13px;
+}
+
+@media (min-width: 700px) {
+  .cc-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 760px) {
+  .cc-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-fill {
+    transition: none;
+  }
+}
