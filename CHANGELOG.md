@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.11.1 - 2026-08-03
+
+**Fix: the phone was playing the wrong game.** On some Android devices the app
+opened straight into the text-and-turns *accessible command mode* instead of the
+third-person action mission — no canvas, no Strike or Guard, just a list of
+choices. It looked like a different game entirely, and nothing on screen said
+why or offered a way back.
+
+The cause was a single, unforgiving line of detection. WebGL support was probed
+**once**, synchronously, during the very first render. An Android WebView
+routinely reports "no WebGL" for a few tens of milliseconds while the view is
+still being attached — so the probe caught a transient false negative, and that
+answer was then **latched for the whole session**. The only escape was a toggle
+buried two taps deep in the War Council, with nothing anywhere hinting that
+anything had gone wrong.
+
+Three changes, each addressing a different part of the failure:
+
+- **The probe now retries** (`src/nanda/webgl.ts`). It tries `webgl2`, `webgl`
+  and `experimental-webgl`, ignores the major-performance-caveat flag rather
+  than treating it as failure, checks the returned context isn't already lost,
+  and releases it immediately via `WEBGL_lose_context`. If the first attempt
+  fails it retries after 60 ms, 200 ms and 600 ms. A device that comes good on
+  the second attempt now gets the full 3D mission with no user action at all.
+- **The fallback explains itself.** When command mode really is the right
+  answer, the mission opens with a notice naming the actual detected reason and
+  a **Try 3D again** button. Choosing command mode deliberately from the War
+  Council says so instead, and suppresses the auto-retry so a deliberate choice
+  is never overridden.
+- **The Android shell declares what it needs.** `AndroidManifest.xml` now sets
+  `android:hardwareAccelerated="true"` and declares GLES 2.0 as a non-required
+  feature, and `tooling/build_apk.ps1` re-applies both idempotently after every
+  `cap sync` so they cannot be silently dropped from a future build.
+
+Also hardened the test harness that hid this from QA: `tests/smoke.mjs` now
+verifies the served bundle actually matches `docs/index.html` before asserting
+anything, and kills the preview server's whole process tree on Windows. A stray
+server from an earlier run had been holding the port and serving a stale build,
+which quietly invalidated every check made against it.
+
+Smoke coverage 18 → 21 checks, adding a WebGL-less device, its recovery
+affordance, and a flaky WebView that must self-heal into 3D. Unit tests 295 →
+302.
+
 ## 0.11.0 - 2026-08-03
 
 **The anthology is complete.** All five historical chapters on the roadmap are

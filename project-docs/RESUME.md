@@ -14,9 +14,9 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.11.0** (tag `v0.11.0`), on `main`.
-- Working tree clean; everything committed and pushed. **295 unit tests pass.**
-- `package.json` version `0.11.0`. Browser smoke via `npm run test:smoke` (18/18).
+- Latest release: **v0.11.1** (tag `v0.11.1`), on `main`.
+- Working tree clean; everything committed and pushed. **302 unit tests pass.**
+- `package.json` version `0.11.1`. Browser smoke via `npm run test:smoke` (21/21).
 - **The anthology is complete.** All five roadmap chapters are playable, and they
   are deliberately a tour of *evidential situations*: Kalinga (one-sided, the
   perpetrator's own inscription), The Western Horizon (no narrative at all, only
@@ -148,6 +148,17 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 - Keep game AI/logic as pure, unit-tested modules (like `guardAi.ts`), separate
   from the R3F render loop.
 - Plain CSS with `--cp-*` theme variables (no Tailwind/shadcn).
+- **Never regress the WebGL fallback (v0.11.1).** `src/nanda/webgl.ts` must stay
+  retrying and non-latching: a WebView that false-negatives at startup has to
+  self-heal into the 3D mission. If command mode is entered involuntarily the
+  player must see the reason and a **Try 3D again** button; a deliberate War
+  Council choice sets `manualFallback` and must not be auto-overridden. Three
+  smoke checks enforce this. `tooling/build_apk.ps1` re-stamps
+  `android:hardwareAccelerated` + the GLES feature after every `cap sync` —
+  don't drop that patching.
+- **QA against a build you just made.** `tests/smoke.mjs` compares the served
+  HTML to `docs/index.html` and aborts on mismatch; a stray `vite preview` once
+  held the port and served a stale build through a whole debugging session.
 - Azure media: endpoint `https://ai-contosohub530569751908.cognitiveservices.azure.com`,
   AAD via `az account get-access-token --resource https://cognitiveservices.azure.com`.
   `tooling/.media-state*.json` is gitignored (paid-render idempotency state).
