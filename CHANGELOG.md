@@ -1,5 +1,91 @@
 # Changelog
 
+## 0.11.0 - 2026-08-03
+
+**The anthology is complete.** All five historical chapters on the roadmap are
+now playable, and together they form a deliberate tour of *evidential
+situations* — because the interesting thing about each of these campaigns turned
+out to be a different problem with the record.
+
+| Chapter | The record is… | Your verb |
+| --- | --- | --- |
+| The Cost of Kalinga | one-sided — the perpetrator's own inscription | fight, then read the cost |
+| The Western Horizon | absent — no narrative at all, only material evidence | leave a record |
+| The Brahmaputra Holds | **corroborated** — two traditions broadly agree | **choose the ground** |
+| The Defiance at Narrai | **hostile** — only the invaders wrote | **trade space for cost** |
+| The Hills of Pratapgad | **irreconcilable** — the accounts contradict | **arrange, never strike** |
+
+### Added
+
+- **Chapter III — The Brahmaputra Holds** (Lachit Borphukan, 1667–1671). The one
+  chapter that can teach **corroboration**: the Assamese buranjis and the
+  Mughal-side accounts broadly agree, and every season shows both side by side
+  with agreement marked. The verb is *choose the ground* — raise earthworks until
+  the land approach is shut, so the imperial fleet must come up the narrows where
+  its weight cannot tell. The narrows are never a menu choice; they are earned by
+  making every other approach impossible, and accepting battle in the open field
+  throws all of it away, as it historically did at Alaboi. Three endings: the
+  river holds, Guwahati falls, or the terms are accepted.
+
+- **Chapter IV — The Defiance at Narrai** (Rani Durgavati, 1564). The chapter on
+  a **hostile record**. It cannot be won and offers no counterfactual in which it
+  is. Narrai is a defile between the hills and two rivers, and the player trades
+  it across the two axes the defender actually controlled: the price the invasion
+  pays, and how many people get out. The epilogue prints the short, self-serving
+  imperial account — the only narrative that survives — beside everything the
+  player did that it does not preserve. The queen's death appears once, as what
+  that single source reports, and is never a mechanic.
+
+- **Chapter V — The Hills of Pratapgad** (Shivaji, 1659). The chapter on an
+  **irreconcilable record**, and the only one in which the player never fights:
+  there is no strike action, no target, no enemy health and no combat resolution
+  anywhere in the engine. You arrange the hills — scouting, lookouts, a concealed
+  reserve, a signal chain, a road home — and the arrangement is scored on its
+  *weakest* element, not its average, because a plan in broken country fails at
+  its weakest link. The encounter beneath the fort is narrated neutrally and
+  labelled *disputed and not depicted*; the aftermath shows the contradictory
+  accounts of who struck first, whether it was premeditated, and how many were
+  present, each marked **unresolved** with the reason it cannot presently be
+  settled.
+
+- A shared campaign stylesheet (`src/chapters/campaign.css`) so three chapters
+  shipped together stay visually coherent without triplicating a stylesheet.
+
+### Changed
+
+- The Narrai, Saraighat and Pratapgad chronicle cards move from `planned` to
+  `playable`, with descriptions and evidence lines rewritten to match what was
+  actually built.
+- `HISTORICAL_METHOD.md` gains full chapter boundaries for all three, and
+  `GAME_DESIGN.md` records what each shipped chapter does.
+- Pratapgad's readiness readout is rescaled against what is achievable in the
+  turns available, so a fully prepared ground no longer reads as "35 out of 100".
+
+### Approval and its limits
+
+All three briefs (`PRATAPGAD_BRIEF.md`, `NARRAI_BRIEF.md`, `SARAIGHAT_BRIEF.md`)
+now carry a sign-off block recording that **the product owner approved
+construction on 2026-08-03**, that **no independent subject-specialist or
+sensitivity review was obtained**, and that the owner accepted that risk. That is
+recorded rather than quietly skipped.
+
+The content red lines in each brief were treated as binding design constraints
+regardless of approval, and are **enforced by unit tests** — including that
+Pratapgad exposes no attack/strike/kill action, never names the opposing
+commander as a target, and contains no combat state; and that Narrai never
+exposes the queen's death as an action and never uses victor-side figures as
+balance numbers.
+
+### Validation
+
+- 295 unit tests (up from 219) across 16 files, lint and type-check clean, 18/18
+  browser smoke. Each new chapter has its own deterministic engine test suite
+  (Saraighat 25, Narrai 26, Pratapgad 25) covering gating, thresholds, every
+  ending, and replay determinism. A scripted playthrough completed **all three
+  chapters end to end at 1280×900 and 412×915** — reaching "The Brahmaputra
+  holds", "A price, and a people" and "The ground was ready" — with zero console
+  errors and no horizontal overflow.
+
 ## 0.10.0 - 2026-08-02
 
 ### Added
@@ -635,3 +721,4 @@
   Lachit Borphukan, and Chhatrapati Shivaji Maharaj.
 - Keyless Azure Speech and Sora media-generation pipeline with paid-render guard.
 - Unit tests for movement, combat, victory, and enemy turns.
+
