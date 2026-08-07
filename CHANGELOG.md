@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.12.2 - 2026-08-07
+
+**Fix: installing a new APK kept running the old game.**
+
+Reported as "it still says error", and reproduced end to end on an Android
+emulator: install v0.11.1, launch it, then install v0.12.0 over the top. The
+app came up showing the **v0.11.x hero** — the brown mannequin in a pink dhoti —
+even though the new APK on disk contained the new Chandragupta. Relaunching
+never fixed it.
+
+The cause was the PWA service worker. Its precache lives in the WebView's
+**Cache Storage, inside the app's data directory, not inside the APK**, so it
+survives an upgrade untouched. A worker registered by an older build kept
+answering navigations from its own precache forever, serving that build's
+`index.html` and every chunk it referenced. Any new JavaScript that could have
+unregistered it never got the chance to run, because the stale worker answered
+first.
+
+Three changes, because one was not enough:
+
+- **The native bundle no longer ships a service worker at all.** Every asset is
+  already inside the APK, so a precache there was pure downside. `vite.config.ts`
+  drops `VitePWA` when `VITE_NATIVE=1`, and `tooling/build_apk.ps1` builds with
+  that flag and asserts no `sw.js`, `registerSW.js` or `workbox-*.js` survives
+  into `dist/`.
+- **`MainActivity` clears the WebView's service-worker storage whenever the
+  installed versionCode changes.** This is what actually rescues devices that
+  already registered one, and it runs before `super.onCreate()` because that is
+  what opens those files. Deliberately narrow: only the `Service Worker`
+  directories are deleted, so **campaign progress in Local Storage survives**.
+- **A runtime sweep** (`src/serviceWorkerCleanup.ts`) unregisters any leftover
+  worker and deletes its precache when the build did not ship one, so the web
+  and native paths cannot drift apart again.
+
+The web build on GitHub Pages keeps its service worker — offline support is the
+point there — and now sets `skipWaiting`, `clientsClaim` and
+`cleanupOutdatedCaches` so a new deploy is never served from the previous one's
+precache.
+
+Verified on an emulator by repeating the exact failing upgrade: v0.11.1 → v0.12.2
+now shows the new hero, with his sword, on the **first** launch.
+
+Unit tests 334 → **339**.
+
 ## 0.12.0 - 2026-08-07
 
 **A real Chandragupta, and a real reason to keep swinging.**

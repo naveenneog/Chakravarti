@@ -14,9 +14,9 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 
 ## Current state
 
-- Latest release: **v0.12.0** (tag `v0.12.0`), on `main`.
-- Working tree clean; everything committed and pushed. **334 unit tests pass.**
-- `package.json` version `0.12.0`. Browser smoke via `npm run test:smoke` (21/21).
+- Latest release: **v0.12.2** (tag `v0.12.2`), on `main`.
+- Working tree clean; everything committed and pushed. **339 unit tests pass.**
+- `package.json` version `0.12.2`. Browser smoke via `npm run test:smoke` (21/21).
 - **The anthology is complete.** All five roadmap chapters are playable, and they
   are deliberately a tour of *evidential situations*: Kalinga (one-sided, the
   perpetrator's own inscription), The Western Horizon (no narrative at all, only
@@ -148,6 +148,16 @@ young Chandragupta infiltrates the timber district of Pataliputra.
 - Keep game AI/logic as pure, unit-tested modules (like `guardAi.ts`), separate
   from the R3F render loop.
 - Plain CSS with `--cp-*` theme variables (no Tailwind/shadcn).
+- **The APK ships no service worker, and must not start.** A precache inside the
+  WebView survives an APK upgrade and pins the app to the previous build — that
+  is why v0.12.0 launched showing the v0.11.x hero. `npm run build:native`
+  (`VITE_NATIVE=1`) drops `VitePWA`; `build_apk.ps1` asserts nothing worker-shaped
+  reaches `dist/`; `MainActivity` clears the WebView's `Service Worker`
+  directories on versionCode change (never `Local Storage` — saves live there).
+  The Pages build keeps its worker on purpose.
+- **Test APK changes on the emulator via the upgrade path, not a clean install.**
+  AVD `actioncut_test`; install the previous release, launch it, then
+  `adb install -r` the new one. A clean install hides every caching bug.
 - **Bone lookups must go through `findBone`** (`NandaMission.tsx`). THREE's
   GLTFLoader runs node names through `PropertyBinding.sanitizeNodeName`, which
   drops `.` — `Fist.R` in the file is `FistR` in the scene. Calling

@@ -22,9 +22,19 @@ if (!(Test-Path "$root\android")) {
   }
 }
 
-npm run build
+# The APK bundle is built without a service worker: every asset is already in
+# the package, and a precache there survives an APK upgrade and keeps serving
+# the previous build. See vite.config.ts.
+npm run build:native
 if ($LASTEXITCODE -ne 0) {
   throw "web build failed"
+}
+
+# A stale sw.js from an earlier build would still be copied into the APK and
+# re-register itself, so make sure the native bundle really has none.
+foreach ($stale in @('sw.js', 'registerSW.js', 'workbox-*.js')) {
+  Get-ChildItem -Path "$root\dist" -Filter $stale -ErrorAction SilentlyContinue |
+    Remove-Item -Force
 }
 
 npx cap sync android
