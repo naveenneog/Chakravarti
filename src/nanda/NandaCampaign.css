@@ -1864,3 +1864,50 @@
   color: var(--cp-text-soft);
   font-size: 12px;
 }
+
+/* Three-cut chain readout: which cut is live, and whether it linked in rhythm. */
+.nanda-combo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cp-surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cp-text) 14%, transparent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cp-text);
+  width: fit-content;
+}
+
+.nanda-combo.flowing {
+  border-color: color-mix(in srgb, var(--cp-warning) 62%, transparent);
+  background: color-mix(in srgb, var(--cp-warning) 16%, var(--cp-surface));
+}
+
+.nanda-combo-pips {
+  display: inline-flex;
+  gap: 0.22rem;
+}
+
+.nanda-combo-pip {
+  width: 0.44rem;
+  height: 0.44rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cp-text) 22%, transparent);
+}
+
+.nanda-combo-pip.lit {
+  background: var(--cp-accent);
+}
+
+.nanda-combo.flowing .nanda-combo-pip.lit {
+  background: var(--cp-warning);
+}
+
+.nanda-combo-flow {
+  font-size: 0.66rem;
+  color: color-mix(in srgb, var(--cp-warning) 88%, var(--cp-text));
+}

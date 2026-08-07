@@ -52,6 +52,62 @@
       "backendUsed": "onnx",
       "bytes": 108828,
       "sha256": "69ee2ebccbed9903ae51ebd3ee1ebcc8d95658cf0bd39796a7b0b4847e607498"
+    },
+    {
+      "id": "chandragupta-hero",
+      "concept": "public/media/nanda/asset-concepts/chandragupta-hero.png",
+      "output": "public/models/nanda/chandragupta-hero.glb",
+      "conceptGenerator": "gpt-image-2",
+      "generator": "microsoft/TRELLIS or dcharlot65-aurasense/triposr-onnx-web",
+      "preferredSpace": "https://huggingface.co/spaces/trellis-community/TRELLIS",
+      "seed": 320301,
+      "license": "Project-original generated asset",
+      "historicalNote": "No contemporary likeness or physical description of Chandragupta Maurya survives. This figure is a gameplay reconstruction assembled from broad Mauryan-era material culture -- draped cotton dhoti, waist sash, folded turban and simple ornament -- and is never presented as a portrait or as evidence of his appearance.",
+      "backendUsed": "hunyuan",
+      "bytes": 216632,
+      "sha256": "19171a5ccb1b1e801b1633b38fea04c946f7692ad105e1172c27f90524af4e56"
+    },
+    {
+      "id": "chandragupta-hero-tpose",
+      "concept": "public/media/nanda/asset-concepts/chandragupta-hero-tpose.png",
+      "output": "public/models/nanda/chandragupta-hero-tpose.glb",
+      "conceptGenerator": "gpt-image-2",
+      "generator": "microsoft/TRELLIS or dcharlot65-aurasense/triposr-onnx-web",
+      "preferredSpace": "https://huggingface.co/spaces/trellis-community/TRELLIS",
+      "seed": 320302,
+      "license": "Project-original generated asset",
+      "historicalNote": "The same gameplay reconstruction as chandragupta-hero, generated in a neutral T-pose so it can be skinned to the CC0 Quaternius skeleton and inherit its animation set. Not a portrait and not evidence of Chandragupta Maurya's appearance.",
+      "backendUsed": "hunyuan",
+      "bytes": 216464,
+      "sha256": "bc2db72da89b4abb0c9619955d1534f5c4ff8e2bb0f6804934942da5d5400cf4"
+    },
+    {
+      "id": "mauryan-sword",
+      "concept": "public/media/nanda/asset-concepts/mauryan-sword.png",
+      "output": "public/models/nanda/mauryan-sword.glb",
+      "conceptGenerator": "gpt-image-2",
+      "generator": "tencent/Hunyuan3D-2",
+      "preferredSpace": "https://huggingface.co/spaces/tencent/Hunyuan3D-2",
+      "seed": 512207,
+      "license": "Project-original generated asset",
+      "historicalNote": "An original broad-bladed iron sword built from the single surviving description of Indian infantry equipment in Megasthenes as summarised by Arrian (Indica 16). It does not reproduce an excavated object and makes no claim to an exact Mauryan typology.",
+      "backendUsed": "hunyuan",
+      "bytes": 72772,
+      "sha256": "0f613ffb3406f5ec5be9d85c1c90fecdcce0c09c6741ba8fd74d83b308ecfa68"
+    },
+    {
+      "id": "chandragupta-rigged",
+      "concept": "public/media/nanda/asset-concepts/chandragupta-hero-tpose.png",
+      "output": "public/models/nanda/chandragupta-rigged.glb",
+      "conceptGenerator": "gpt-image-2",
+      "generator": "tencent/Hunyuan3D-2 + tooling/rig_hero_mesh.py",
+      "preferredSpace": "https://huggingface.co/spaces/tencent/Hunyuan3D-2",
+      "seed": 320302,
+      "license": "Project-original generated asset",
+      "historicalNote": "The playable hero. Generated in a neutral T-pose, then skinned to the CC0 Quaternius skeleton by tooling/rig_hero_mesh.py so it inherits that rig and its sixteen animation clips, and coloured by projecting the front and rear concept views onto the mesh. No contemporary likeness or physical description of Chandragupta Maurya survives; this figure is a gameplay reconstruction from broad Mauryan-era material culture and is never presented as a portrait or as evidence of his appearance.",
+      "backendUsed": "hunyuan",
+      "bytes": 1430952,
+      "sha256": "ebea934dbf57bfb0112562ca936b4fe1c7bcd6ccb67e9102c39eb91da0705e68"
     }
   ],
   "futureTargets": [
@@ -62,10 +118,6 @@
     {
       "id": "mauryan-round-shield",
       "reason": "Available CC0 weapon packs are visibly European and are suitable only as temporary animation placeholders."
-    },
-    {
-      "id": "chandragupta-hero-mesh",
-      "reason": "CC0 humanoids provide useful rigs and animations but not historically responsible Indian clothing silhouettes."
     }
   ]
 }

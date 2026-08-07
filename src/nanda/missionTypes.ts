@@ -7,6 +7,11 @@ export type NandaMissionControls = {
   right: boolean
   jump: boolean
   attack: boolean
+  /**
+   * Set on press and cleared once the mission loop consumes it, so a tap
+   * shorter than a single frame still lands a cut.
+   */
+  attackPressed: boolean
   interact: boolean
   heal: boolean
   guard: boolean
@@ -46,6 +51,12 @@ export type NandaMissionHud = {
   /** Parries and perfect parries landed this run. */
   parries: number
   perfectParries: number
+  /** 0 when idle, else which cut of the three-cut chain is running. */
+  comboStep: number
+  /** Banked flow links, 0..2. */
+  comboFlow: number
+  /** Player-facing name of the running cut. */
+  comboLabel: string
   /** Display name of the nearest engaged enemy, so the roster teaches itself. */
   threat: string | null
   feedback: CombatFeedback
@@ -58,6 +69,7 @@ export const createMissionControls = (): NandaMissionControls => ({
   right: false,
   jump: false,
   attack: false,
+  attackPressed: false,
   interact: false,
   heal: false,
   guard: false,

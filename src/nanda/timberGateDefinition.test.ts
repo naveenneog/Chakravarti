@@ -157,13 +157,14 @@ describe('timberGateDefinition golden values', () => {
 
   it('pins asset paths and the reduced-mode failure policy', () => {
     expect(def.presentation.assets).toEqual({
-      heroModel: './models/cc0/quaternius-characters/BaseCharacter.gltf',
+      heroModel: './models/nanda/chandragupta-rigged.glb',
       guardModel: './models/cc0/quaternius-characters/Ninja_Sand.gltf',
       bossModel: './models/cc0/quaternius-characters/Ninja_Sand.gltf',
       props: {
         tree: './models/cc0/kenney-nature/tree_oak.glb',
         bush: './models/cc0/kenney-nature/plant_bushLarge.glb',
         jar: './models/nanda/mauryan-storage-jar.glb',
+        sword: './models/nanda/mauryan-sword.glb',
       },
     })
     expect(def.presentation.assetFailurePolicy).toBe('reduced-mode')

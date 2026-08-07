@@ -44,6 +44,20 @@ import {
   type MeleeTarget,
   type StrikeKind,
 } from './combat'
+import {
+  CUTS,
+  COMBO_CONFIG,
+  activeCut,
+  advanceCombo,
+  comboDamageMultiplier,
+  createComboState,
+  cutDuration,
+  cutLabel,
+  registerHit,
+  requestStrike,
+  resetCombo,
+} from './heroCombo'
+import { withComboClips } from './swordAnimations'
 import type { Vec2 } from './guardAi'
 import {
   GUARD_ARCHETYPES,
@@ -107,6 +121,8 @@ const MISSION_COMBAT =
   timberGateDefinition.encounters.playerCombat ?? COMBAT_CONFIG
 /** The captain's longer silhouette is reachable slightly further out. */
 const BOSS_STRIKE_REACH = 2.6
+/** Timing for the three-cut chain. */
+const MISSION_COMBO = COMBO_CONFIG
 
 /**
  * What a parried guard "wants" while it is reeling: nothing. Frozen in place,
@@ -183,6 +199,10 @@ type HeroMotion = {
   airborne: boolean
   hurt: boolean
   guarding: boolean
+  /** Clip for the running combo cut, so each swing in the chain reads apart. */
+  cutClip?: string
+  /** Playback rate for that clip. */
+  cutTimeScale?: number
 }
 
 type GuardMotion = {
@@ -271,6 +291,11 @@ function useKeyboardControls(
       event.preventDefault()
       if (pressed) {
         onAudioStart()
+        // A tap shorter than one frame must still land a cut, so record the
+        // press as well as the held state.
+        if (control === 'attack') {
+          controlsRef.current.attackPressed = true
+        }
       }
       controlsRef.current[control] = pressed
     }
@@ -944,6 +969,25 @@ const themedCharacterClone = (
   return actor
 }
 
+/**
+ * Find a rig bone by its glTF name.
+ *
+ * THREE's GLTFLoader runs node names through `PropertyBinding.sanitizeNodeName`
+ * so they are legal in an animation binding path: whitespace becomes `_` and
+ * the reserved characters `.[]:/` are dropped entirely. `Fist.R` in the file is
+ * therefore `FistR` in the scene. Looking up the raw name silently returns
+ * undefined, which is how the hero's sword spent several releases attached to
+ * nothing at all.
+ */
+const sanitizeBoneName = (name: string): string =>
+  name.replace(/\s/g, '_').replace(/[.[\]:/]/g, '')
+
+const findBone = (
+  actor: THREE.Object3D,
+  name: string,
+): THREE.Object3D | undefined =>
+  actor.getObjectByName(name) ?? actor.getObjectByName(sanitizeBoneName(name))
+
 const animationActions = (
   mixer: THREE.AnimationMixer,
   clips: readonly THREE.AnimationClip[],
@@ -952,13 +996,46 @@ const animationActions = (
     clips.map((clip) => [clip.name, mixer.clipAction(clip)]),
   ) as Record<string, THREE.AnimationAction>
 
+/**
+ * The generated blade is normalised to unit height with the pommel at +Y and
+ * centred on its own origin. Rotating it puts the pommel in the fist, and the
+ * offset slides the grip -- not the middle of the blade -- into the hand.
+ * 1.35 makes it a little over half the hero's height, which is what Arrian's
+ * "broad sword" description implies at this scale.
+ */
+const SWORD_SCALE = 1.35
+const SWORD_GRIP_OFFSET = 0.47
+
+/**
+ * Keep the generated hero's baked-in vertex colours -- the dhoti, sash, turban
+ * and skin are painted into the mesh, so the role-recolouring used for guards
+ * would flatten Chandragupta back into a single tone.
+ */
+const heroClone = (source: THREE.Object3D) => {
+  const actor = cloneSkeleton(source)
+  actor.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) {
+      return
+    }
+    child.castShadow = true
+    child.receiveShadow = true
+    const hasVertexColor = Boolean(child.geometry.getAttribute('color'))
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      vertexColors: hasVertexColor,
+      roughness: 0.78,
+      metalness: 0.02,
+    })
+    child.material = material
+  })
+  return actor
+}
+
 function HeroFigure({
-  colors,
   heroRef,
   motionRef,
   timeScaleRef,
 }: {
-  colors: WorldColors
   heroRef: RefObject<THREE.Group | null>
   motionRef: RefObject<HeroMotion>
   timeScaleRef: RefObject<number>
@@ -967,147 +1044,60 @@ function HeroFigure({
     GLTFLoader,
     MISSION_ASSETS.heroModel,
   )
-  const actor = useMemo(
-    () => themedCharacterClone(gltf.scene, colors, 'hero'),
-    [colors, gltf.scene],
-  )
+  const swordGltf = useLoader(GLTFLoader, MISSION_ASSETS.props.sword)
+  const actor = useMemo(() => heroClone(gltf.scene), [gltf.scene])
   const mixer = useMemo(() => new THREE.AnimationMixer(actor), [actor])
-  const actions = useMemo(
-    () => animationActions(mixer, gltf.animations),
-    [gltf.animations, mixer],
-  )
+  // The CC0 rig ships one sword swing; the chain needs three that read apart.
+  const clips = useMemo(() => withComboClips(gltf.animations), [gltf.animations])
+  const actions = useMemo(() => animationActions(mixer, clips), [clips, mixer])
   const activeAction = useRef<THREE.AnimationAction | null>(null)
 
   useEffect(() => {
-    const hips = actor.getObjectByName('Hips')
-    const torso = actor.getObjectByName('Torso')
-    const head = actor.getObjectByName('Head')
-    const hand = actor.getObjectByName('Fist.R')
-    const clothMaterial = new THREE.MeshStandardMaterial({
-      color: colors.accent,
-      roughness: 0.86,
-    })
-    const sashMaterial = new THREE.MeshStandardMaterial({
-      color: colors.groundSoft,
-      roughness: 0.9,
-    })
-    const goldMaterial = new THREE.MeshStandardMaterial({
-      color: colors.warning,
-      metalness: 0.42,
-      roughness: 0.35,
-    })
-    const hairMaterial = new THREE.MeshStandardMaterial({
-      color: colors.text,
-      roughness: 0.96,
-    })
-    const swordMaterial = new THREE.MeshStandardMaterial({
-      color: colors.text,
+    const hand = findBone(actor, 'Fist.R')
+    if (!hand) {
+      return () => mixer.stopAllAction()
+    }
+    // Chandragupta's clothing is baked into the generated mesh, so the only
+    // thing still bolted to a bone is the blade itself.
+    const sword = cloneSkeleton(swordGltf.scene)
+    const bladeMaterial = new THREE.MeshStandardMaterial({
+      color: '#6c7076',
       metalness: 0.72,
-      roughness: 0.24,
+      roughness: 0.34,
     })
-    const sword = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 1.15, 0.11),
-      swordMaterial,
-    )
-    sword.position.set(0, -0.65, 0)
-    sword.rotation.z = 0.08
-    const torsoWrap = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.34, 0.42, 0.7, 8),
-      clothMaterial,
-    )
-    torsoWrap.position.set(0, 0.02, 0)
-    const shoulderCloth = new THREE.Mesh(
-      new THREE.BoxGeometry(0.17, 0.92, 0.08),
-      sashMaterial,
-    )
-    shoulderCloth.position.set(-0.2, 0.02, 0.28)
-    shoulderCloth.rotation.z = 0.32
-    const dhoti = new THREE.Mesh(
-      new THREE.ConeGeometry(0.5, 1.0, 8),
-      clothMaterial,
-    )
-    dhoti.position.set(0, -0.34, 0)
-    const belt = new THREE.Mesh(
-      new THREE.TorusGeometry(0.38, 0.055, 6, 16),
-      goldMaterial,
-    )
-    belt.rotation.x = Math.PI / 2
-    belt.position.set(0, 0.08, 0)
-    const hair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.27, 12, 8),
-      hairMaterial,
-    )
-    hair.scale.set(1, 0.58, 1)
-    hair.position.set(0, 0.18, -0.02)
-    const topKnot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.1, 10, 8),
-      hairMaterial,
-    )
-    topKnot.position.set(0, 0.36, -0.03)
-    const diadem = new THREE.Mesh(
-      new THREE.TorusGeometry(0.235, 0.034, 6, 16),
-      goldMaterial,
-    )
-    diadem.rotation.x = Math.PI / 2
-    diadem.position.set(0, 0.11, 0)
-    ;[
-      torsoWrap,
-      shoulderCloth,
-      dhoti,
-      belt,
-      hair,
-      topKnot,
-      diadem,
-      sword,
-    ].forEach((mesh) => {
-      mesh.castShadow = true
-      mesh.receiveShadow = true
+    sword.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.material = bladeMaterial
+        child.castShadow = true
+        child.receiveShadow = true
+      }
     })
-    torso?.add(torsoWrap, shoulderCloth)
-    hips?.add(dhoti, belt)
-    head?.add(hair, topKnot, diadem)
-    hand?.add(sword)
+    sword.scale.setScalar(SWORD_SCALE)
+    sword.position.set(0, SWORD_GRIP_OFFSET, 0)
+    sword.rotation.x = Math.PI
+    hand.add(sword)
     return () => {
-      torso?.remove(torsoWrap, shoulderCloth)
-      hips?.remove(dhoti, belt)
-      head?.remove(hair, topKnot, diadem)
-      hand?.remove(sword)
-      ;[
-        torsoWrap,
-        shoulderCloth,
-        dhoti,
-        belt,
-        hair,
-        topKnot,
-        diadem,
-        sword,
-      ].forEach((mesh) => mesh.geometry.dispose())
-      clothMaterial.dispose()
-      sashMaterial.dispose()
-      goldMaterial.dispose()
-      hairMaterial.dispose()
-      swordMaterial.dispose()
+      hand.remove(sword)
+      sword.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose()
+        }
+      })
+      bladeMaterial.dispose()
       mixer.stopAllAction()
     }
-  }, [
-    actions,
-    actor,
-    colors.accent,
-    colors.groundSoft,
-    colors.text,
-    colors.warning,
-    mixer,
-  ])
+  }, [actor, mixer, swordGltf.scene])
 
   useFrame((_, delta) => {
     const motion = motionRef.current
     if (!motion) {
       return
     }
+    // The combo drives the clip so each cut in the chain reads differently.
     const clipName = motion.hurt
       ? 'RecieveHit'
       : motion.attacking
-        ? 'SwordSlash'
+        ? (motion.cutClip ?? 'SwordSlash')
         : motion.airborne
           ? 'Jump'
           : motion.moving
@@ -1115,9 +1105,14 @@ function HeroFigure({
             : 'Idle'
     const next = actions[clipName] ?? actions.Idle
     if (next && activeAction.current !== next) {
-      activeAction.current?.fadeOut(0.12)
-      next.reset().fadeIn(0.12).play()
+      activeAction.current?.fadeOut(0.1)
+      next.reset().fadeIn(0.1).play()
       activeAction.current = next
+    }
+    if (next) {
+      // A cut's tempo is part of its identity: the cleave has to feel heavier
+      // than the opening cut even though both derive from the same source clip.
+      next.timeScale = motion.attacking ? (motion.cutTimeScale ?? 1) : 1
     }
     // Hit-stop dilates the mission clock; the skeleton has to freeze with it or
     // the frozen impact reads as a stutter instead of a punch.
@@ -1200,7 +1195,7 @@ function GuardFigure({
     const geometries: THREE.BufferGeometry[] = []
 
     const attach = (boneName: string, node: THREE.Object3D) => {
-      const bone = actor.getObjectByName(boneName)
+      const bone = findBone(actor, boneName)
       if (!bone) {
         return false
       }
@@ -1446,7 +1441,7 @@ function BossFigure({
   // commander rather than an enlarged guard. Fail-soft: if the rig lacks a Head
   // bone the boss simply renders without the crest.
   useEffect(() => {
-    const head = actor.getObjectByName('Head')
+    const head = findBone(actor, 'Head')
     if (!head) {
       return undefined
     }
@@ -1642,6 +1637,9 @@ function MissionScene({
     guarding: false,
   })
   const cameraShake = useRef(0)
+  const comboState = useRef(createComboState())
+  const attackHeld = useRef(false)
+  const comboFlash = useRef(0)
   const cameraPunch = useRef(0)
   const hitstop = useRef(0)
   /** 1 normally, HITSTOP_TIME_SCALE during a hit-stop. Read by the figures. */
@@ -1929,6 +1927,7 @@ function MissionScene({
     timeScale.current = hitstop.current > 0 ? HITSTOP_TIME_SCALE : 1
     cameraShake.current = Math.max(0, cameraShake.current - rawStep * 1.8)
     cameraPunch.current = Math.max(0, cameraPunch.current - rawStep * 3.4)
+    comboFlash.current = Math.max(0, comboFlash.current - rawStep * 2.6)
     riposteHint.current = Math.max(0, riposteHint.current - rawStep)
     elapsedSeconds.current += step
     attackCooldown.current = Math.max(0, attackCooldown.current - step)
@@ -2058,11 +2057,69 @@ function MissionScene({
       playerPosition.current.y = floor + 0.85
     }
 
-    if (controls.attack && attackCooldown.current <= 0) {
-      attackCooldown.current = 0.42
-      attackAnimation.current = 0.34
-      onSound('sword')
+    // The chain, not a cooldown, now decides when a swing may start. Advancing
+    // it first means a press this frame can still be buffered into the link.
+    const comboEvents = advanceCombo(
+      comboState.current,
+      step,
+      stance.current.resolve,
+      MISSION_COMBO,
+    )
+    const pressedAttack =
+      controls.attackPressed || (controls.attack && !attackHeld.current)
+    controls.attackPressed = false
+    attackHeld.current = controls.attack
+    if (pressedAttack) {
+      const request = requestStrike(
+        comboState.current,
+        stance.current.resolve,
+        MISSION_COMBO,
+      )
+      if (request.started && request.cut) {
+        comboEvents.push({
+          type: 'started',
+          step: request.step,
+          cut: request.cut,
+          flowed: request.flowed,
+        })
+      }
+    }
 
+    for (const event of comboEvents) {
+      if (event.type !== 'started') {
+        continue
+      }
+      // Paying on commit, not on contact, is what makes the cleave a decision.
+      if (event.cut.resolveCost > 0) {
+        stance.current.resolve = Math.max(
+          0,
+          stance.current.resolve - event.cut.resolveCost,
+        )
+      }
+      attackAnimation.current = cutDuration(event.cut, false)
+      heroMotion.current.cutClip = event.cut.clip
+      heroMotion.current.cutTimeScale = event.cut.timeScale
+      // A cut that links in rhythm gets a stronger kick than one that merely
+      // links, so a clean chain is felt and not just scored.
+      comboFlash.current = event.flowed ? 0.5 : 0.28
+      cameraPunch.current = Math.max(
+        cameraPunch.current,
+        event.cut.weight * (event.flowed ? 0.38 : 0.24),
+      )
+      onSound('sword')
+    }
+
+    const swingingCut =
+      comboEvents.some((event) => event.type === 'active')
+        ? activeCut(comboState.current)
+        : null
+
+    if (swingingCut) {
+      const cut = swingingCut
+      const damageMultiplier = comboDamageMultiplier(
+        comboState.current,
+        MISSION_COMBO,
+      )
       // Honest targeting: only what is in reach AND inside the swing arc can be
       // hit, and the hero turns onto whatever the swing actually lands on.
       for (let index = 0; index < enemies.current.length; index += 1) {
@@ -2080,6 +2137,7 @@ function MissionScene({
         heroFlat,
         meleeCandidates,
         MISSION_COMBAT,
+        cut.reach,
       )
 
       let bossTarget: MeleeTarget | null = null
@@ -2092,7 +2150,7 @@ function MissionScene({
           heroFlat,
           bossCandidates,
           MISSION_COMBAT,
-          BOSS_STRIKE_REACH,
+          BOSS_STRIKE_REACH + (cut.reach - CUTS[0].reach),
         )
       }
 
@@ -2115,10 +2173,12 @@ function MissionScene({
         }
         // The shieldbearer answers with the player's own mechanic: a long, narrow
         // buckler covers his front, so a frontal swing is deflected and only a
-        // flank — or the window after his own blow — gets through.
+        // flank — or the window after his own blow — gets through. The cleave is
+        // the one cut heavy enough to go through the shield instead.
         scratchFlat.x = heroFlat.x
         scratchFlat.z = heroFlat.z
         const deflects =
+          !cut.breaksGuard &&
           enemy.guarding &&
           enemy.archetype.behaviour.ownGuard &&
           isWithinArc(
@@ -2130,7 +2190,7 @@ function MissionScene({
         const strike = resolveOutgoingStrike(
           stance.current,
           {
-            baseDamage: modifiers.attackDamage,
+            baseDamage: modifiers.attackDamage * damageMultiplier,
             targetVulnerable: enemy.stagger > 0,
             targetDeflects: deflects,
           },
@@ -2141,6 +2201,7 @@ function MissionScene({
             attackCooldown.current,
             strike.recoil,
           )
+          resetCombo(comboState.current)
           onSound('deflect')
           registerImpact(
             'deflected',
@@ -2154,6 +2215,7 @@ function MissionScene({
           return
         }
         enemy.hp -= strike.damage
+        registerHit(comboState.current)
         knockBack(enemy.position, 0.18 + strike.impact * 0.3)
         onSound(strike.consumedRiposte ? 'riposte' : 'impact')
         registerImpact(
@@ -2193,13 +2255,14 @@ function MissionScene({
         const strike = resolveOutgoingStrike(
           stance.current,
           {
-            baseDamage: modifiers.attackDamage,
+            baseDamage: modifiers.attackDamage * damageMultiplier,
             targetVulnerable:
               bossMotion.current.vulnerable || bossStagger.current > 0,
           },
           MISSION_COMBAT,
         )
         bossHp.current -= strike.damage
+        registerHit(comboState.current)
         bossHitFlash.current = 0.12
         onSound(strike.consumedRiposte ? 'riposte' : 'impact')
         registerImpact(
@@ -2807,6 +2870,9 @@ function MissionScene({
         riposteReady: stance.current.riposteFor > 0,
         parries: parries.current,
         perfectParries: perfectParries.current,
+        comboStep: comboState.current.step,
+        comboFlow: comboState.current.flow,
+        comboLabel: cutLabel(comboState.current),
         threat:
           bossAlive.current && bossEngagedNow
             ? MISSION_BOSS.displayName
@@ -2850,7 +2916,6 @@ function MissionScene({
       <OpenAssetProps colors={colors} />
       <TorchLights colors={colors} />
       <HeroFigure
-        colors={colors}
         heroRef={heroRef}
         motionRef={heroMotion}
         timeScaleRef={timeScale}

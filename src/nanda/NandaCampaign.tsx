@@ -806,6 +806,9 @@ function MissionPanel({
     onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => {
       event.currentTarget.setPointerCapture(event.pointerId)
       void audio.ensureStarted()
+      if (control === 'attack') {
+        controlsRef.current.attackPressed = true
+      }
       setControl(control, true)
     },
     onPointerUp: () => setControl(control, false),
@@ -997,6 +1000,30 @@ function MissionPanel({
               />
             </div>
           </section>
+
+          {hud.comboStep > 0 ? (
+            <section
+              className={`nanda-combo${hud.comboFlow > 0 ? ' flowing' : ''}`}
+              aria-live="off"
+            >
+              <span className="nanda-combo-label">{hud.comboLabel}</span>
+              <span className="nanda-combo-pips">
+                {[1, 2, 3].map((step) => (
+                  <span
+                    key={step}
+                    className={`nanda-combo-pip${
+                      step <= hud.comboStep ? ' lit' : ''
+                    }`}
+                  />
+                ))}
+              </span>
+              {hud.comboFlow > 0 ? (
+                <span className="nanda-combo-flow">
+                  Flow &times;{hud.comboFlow}
+                </span>
+              ) : null}
+            </section>
+          ) : null}
 
           {hud.threat ? (
             <section className="nanda-threat" aria-live="polite">

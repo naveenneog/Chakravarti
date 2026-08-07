@@ -104,6 +104,27 @@ The chapter must also state that:
 - The Timber Gate district, dispatches, guards, routes, combat, and outcomes are
   gameplay reconstruction.
 
+### The player character and his sword
+
+- **No contemporary likeness or physical description of Chandragupta Maurya
+  survives.** The hero figure is a **gameplay reconstruction** assembled from
+  broad Mauryan-era material culture — a draped cotton dhoti, a waist sash, a
+  folded turban, simple ornament — and is never presented as a portrait, nor as
+  evidence of his appearance, age, build or features.
+- The concept art was generated with Azure `gpt-image-2` from prompts written
+  against that material culture, converted to a mesh with the Tencent
+  Hunyuan3D-2 model, and skinned to the CC0 Quaternius rig. Prompts, seeds and
+  file hashes are recorded in `tooling/nanda-asset-manifest.json`.
+- **No independent specialist review of these visual prompts was obtained.** The
+  review workflow below asks for one; the repository owner signed off instead.
+- The sword follows the one surviving description of Indian infantry equipment,
+  in Megasthenes as summarised by Arrian (*Indica* 16), which reports a **broad**
+  blade rather than a slender one. Its dimensions, weight and fittings are
+  gameplay reconstruction, and it does not reproduce any excavated object.
+- The three-cut combo — its timings, damage, reach, resolve cost and the rule
+  that only the heaviest cut strips a raised shield — is **entirely gameplay
+  reconstruction**. No source describes Mauryan sword technique.
+
 ### The Nanda infantry roster
 
 The four guard archetypes are equipment-led, and the equipment is a **claim in a
