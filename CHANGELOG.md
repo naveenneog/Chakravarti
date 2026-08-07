@@ -1,5 +1,79 @@
 # Changelog
 
+## 0.12.0 - 2026-08-07
+
+**A real Chandragupta, and a real reason to keep swinging.**
+
+The hero was an untextured CC0 mannequin: two materials, no UV map, no clothes,
+with a cone for a dhoti, a torus for a belt and a cuboid for a sword. Worse, the
+sword was never visible at all — `getObjectByName('Fist.R')` had been silently
+returning nothing for the whole life of the mission, because THREE's GLTFLoader
+strips `.` from node names when it sanitizes them for animation binding paths.
+The blade had been parented to `undefined` since it was written.
+
+### The hero
+
+Built with a three-stage pipeline, all of it re-runnable and recorded in
+`tooling/nanda-asset-manifest.json`:
+
+1. **Concept art** — Azure `gpt-image-2`, prompted against Mauryan material
+   culture: folded turban, draped *uttariya*, pleated cotton dhoti, ochre waist
+   sash, plain gold armlets. Front, rear and T-pose views.
+2. **Mesh** — the Tencent **Hunyuan3D-2** Space on Hugging Face, then decimated
+   to a 12k-triangle mobile budget. (TripoSR was tried first and melted the
+   sword into a slab 1.67 units thick; Hunyuan3D returns one 0.09 thick.)
+3. **Rig** — `tooling/rig_hero_mesh.py` skins the T-pose mesh onto the existing
+   23-bone Quaternius skeleton with envelope weights, so it inherits all sixteen
+   animation clips without any of them being re-derived.
+
+Colour comes from projecting the concept art onto the mesh as vertex colours,
+using the **front view for front-facing vertices and the rear view for
+back-facing ones**. That distinction is the whole point: the third-person camera
+sits behind the player, so mirroring the front would have put a face on the back
+of the skull and hidden the dark hair at the nape for the entire mission.
+
+The sword is a separate generated mesh — a broad iron blade following the one
+surviving description of Indian infantry equipment, in Megasthenes as summarised
+by Arrian (*Indica* 16) — parented to the fist and wielded through every swing.
+
+### The three-cut chain
+
+Attacking was one flat swing on a cooldown, so every fight was solved by tapping
+Strike as fast as possible. It is now a chain of three cuts that are
+deliberately **asymmetric**:
+
+| Cut | Feel | Trade |
+| --- | --- | --- |
+| **Opening cut** | fast, wide, light | safe, but a raised shield eats it |
+| **Cross cut** | returns from the other side | more damage, more commitment |
+| **Cleave** | slow overhead finisher | the **only** cut that strips a raised guard — and a 0.52s recovery that a javelineer or archer will punish |
+
+So spamming cut 1 is survivable but cannot beat a shieldbearer, and committing
+to the full chain beats him while exposing you to everyone else. A press during
+a swing is **buffered** rather than dropped, and a press inside the tighter
+*flow* window banks a compounding damage bonus, so rhythm is rewarded twice.
+A deflected cut breaks the chain outright.
+
+The CC0 rig ships only one sword animation, so `swordAnimations.ts` derives the
+other two from it — the cross cut is the slash run backwards with a torso
+counter-yaw, the cleave is re-timed to hang on the wind-up and snap, with the
+shoulder and torso pitched over. Deriving rather than hand-keying means neither
+clip can produce an impossible joint.
+
+### Also
+
+- Touch and key presses shorter than one frame no longer vanish: a press is
+  latched and consumed by the mission loop instead of being sampled.
+- Combo timings are unit-tested at the 0.05s step a slow phone actually runs at,
+  because a chain that only links at 60fps is a chain that breaks on mobile.
+- The generated hero, sword and concept art are copied into the Unity prototype
+  with import notes (`unity/.../Characters/CHANDRAGUPTA.md`).
+- `HISTORICAL_METHOD.md` records that no likeness of Chandragupta survives, that
+  the figure is a gameplay reconstruction, and that no independent specialist
+  reviewed the visual prompts.
+
+Unit tests 302 → **334**.
+
 ## 0.11.1 - 2026-08-03
 
 **Fix: the phone was playing the wrong game.** On some Android devices the app
